@@ -131,17 +131,7 @@ NEXT_PUBLIC_API_URL=http://localhost:3001
 │     ├─ public/                   # Static files (images, icons, etc.)
 │     ├─ next.config.js
 │     └─ tsconfig.json
-│
-├─ docs/                           # Project documentation
-│  ├─ management/                  # Planning docs, progress reports
-│  ├─ requirements/                # Vision document, use cases, requirements
-│  ├─ analysis and design/         # Architecture, UML, UI design
-│  └─ test/                        # Test plans, cases, and reports
-│
-├─ pa/                             # Submission folders
-│  ├─ PA01/
-│  └─ PA02/
-│
+
 ├─ .env                            # Environment variables (excluded from Git)
 ├─ docker-compose.yml              # Docker configuration
 ├─ .gitignore
