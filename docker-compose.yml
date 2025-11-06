@@ -1,0 +1,74 @@
+version: "3.9"
+
+services:
+  # ========================
+  # MongoDB Database Service
+  # ========================
+  mongo:
+    image: mongo:6.0
+    container_name: bif-mongo
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    environment:
+      MONGO_INITDB_DATABASE: auction_db
+    networks:
+      - bif-network
+
+  # ========================
+  # Backend Service (Express.js)
+  # ========================
+  backend:
+    container_name: bif-backend
+    build:
+      context: ./src/backend
+      dockerfile: Dockerfile
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./src/backend:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      - PORT=3001
+      - MONGO_URI=mongodb://mongo:27017/auction_db
+      - JWT_SECRET=supersecretkey
+    depends_on:
+      - mongo
+    networks:
+      - bif-network
+    command: npm run dev
+
+  # ========================
+  # Frontend Service (Next.js)
+  # ========================
+  frontend:
+    container_name: bif-frontend
+    build:
+      context: ./src/frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./src/frontend:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_API_URL=http://localhost:3001
+    depends_on:
+      - backend
+    networks:
+      - bif-network
+    command: npm run dev
+
+# ========================
+# Named Volumes & Networks
+# ========================
+volumes:
+  mongo_data:
+
+networks:
+  bif-network:
+    driver: bridge
