@@ -131,7 +131,7 @@ NEXT_PUBLIC_API_URL=http://localhost:3001
 │     ├─ public/                   # Static files (images, icons, etc.)
 │     ├─ next.config.js
 │     └─ tsconfig.json
-
+│
 ├─ .env                            # Environment variables (excluded from Git)
 ├─ docker-compose.yml              # Docker configuration
 ├─ .gitignore
