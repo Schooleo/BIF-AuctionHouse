@@ -148,5 +148,40 @@ NEXT_PUBLIC_API_URL=http://localhost:3001
 └─ README.md
 ```
 
+### 👥 Contributors
+
+<table>
+  <tr>
+    <td align="center">
+      <a href="https://github.com/KwanTheAsian">
+        <img src="https://avatars.githubusercontent.com/KwanTheAsian" width="100px;" alt="KwanTheAsian"/><br />
+        <sub><b>23127020 - Biện Xuân An</b></sub>
+      </a><br />
+      ⚙️ Tester / Developer
+    </td>
+    <td align="center">
+      <a href="https://github.com/PaoPao1406">
+        <img src="https://avatars.githubusercontent.com/PaoPao1406" width="100px;" alt="PaoPao1406"/><br />
+        <sub><b>23127025 - Đoàn Lê Gia Bảo</b></sub>
+      </a><br />
+      🎨 Designer / Developer
+    </td>
+    <td align="center">
+      <a href="https://github.com/VNQuy94">
+        <img src="https://avatars.githubusercontent.com/VNQuy94" width="100px;" alt="VNQuy94"/><br />
+        <sub><b>23127114 - Văn Ngọc Quý</b></sub>
+      </a><br />
+      ⚙️ Tester / Developer
+    </td>
+    <td align="center">
+      <a href="https://github.com/Schooleo">
+        <img src="https://avatars.githubusercontent.com/Schooleo" width="100px;" alt="Schooleo"/><br />
+        <sub><b>23127136 - Lê Nguyễn Nhật Trường</b></sub>
+      </a><br />
+      💻 Project Manager / Developer
+    </td>
+  </tr>
+</table>
+
 ### 📜 License
 This project is for educational purposes only and not intended for commercial use.
