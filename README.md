@@ -102,7 +102,7 @@ NEXT_PUBLIC_API_URL=http://localhost:3001
 
 ```bash
 /
-├─ src/
+├─ root/
 │  ├─ backend/                     # Express.js backend service
 │  │  ├─ src/
 │  │  │  ├─ api/                   # API routes (controllers)
