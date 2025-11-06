@@ -100,6 +100,7 @@ NEXT_PUBLIC_API_URL=http://localhost:3001
 
 ### 5️⃣ Project Directory Structure
 
+```bash
 /
 ├─ src/
 │  ├─ backend/                     # Express.js backend service
@@ -145,7 +146,7 @@ NEXT_PUBLIC_API_URL=http://localhost:3001
 ├─ docker-compose.yml              # Docker configuration
 ├─ .gitignore
 └─ README.md
----
+```
 
 ### 📜 License
 This project is for educational purposes only and not intended for commercial use.
