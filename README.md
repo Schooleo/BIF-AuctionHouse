@@ -1,14 +1,20 @@
 # 🧩 🏠 BIF-AuctionHouse: A Fullstack Auction Platform
 
-**Next.js (Frontend) + Express.js (Backend) + MongoDB (Database)**  
-Server-Side Rendered (SSR) Web Application
+**React (Frontend) + Express.js (Backend) + MongoDB (Database)**  
+Client-Side Rendered (CSR) Web Application
 
 ---
 
 ## 🚀 Project Overview
 
-This project is a full-featured online auction platform built with a **Next.js** frontend (SSR enabled), an **Express.js** backend API, and a **MongoDB** database.  
-It supports multiple user roles (Guest, Bidder, Seller, Administrator) and implements a live auction system with bidding, product management, account upgrades, and more.
+**BIF-AuctionHouse** is a full-featured online auction platform built with a **React** frontend, an **Express.js** backend API, and a **MongoDB** database.  
+It supports multiple user roles (Guest, Bidder, Seller, Administrator) and provides features such as:
+
+- 🛒 Product listings and live bidding
+- 💰 Seller and bidder role upgrades
+- 🔐 Secure authentication and authorization
+- ⚙️ Account management and admin control
+- 🖥️ Responsive and modern UI built with TailwindCSS
 
 ---
 
@@ -16,13 +22,22 @@ It supports multiple user roles (Guest, Bidder, Seller, Administrator) and imple
 
 | Layer                | Framework / Library        | Description                                              |
 | -------------------- | -------------------------- | -------------------------------------------------------- |
-| **Frontend**         | React + Vite + Tailwindcss | Responsive client-side application                       |
-| **Backend**          | Express.js + Typescript    | REST API service and authentication                      |
+| **Frontend**         | React + Vite + TailwindCSS | Responsive client-side application                       |
+| **Backend**          | Express.js + TypeScript    | REST API service and authentication                      |
 | **Database**         | MongoDB (Mongoose)         | Stores users, products, bids, and system data            |
 | **Containerization** | Docker + Docker Compose    | Isolated environments for backend, frontend, and MongoDB |
 | **Auth & Security**  | Passport.js + bcrypt       | Handles login, registration, and role-based access       |
 
 ---
+
+## ⚙️ Installation & Setup Guide
+
+### 0️⃣ Clone the Repository
+
+```bash
+git clone https://github.com/your-username/BIF-AuctionHouse.git
+cd BIF-AuctionHouse
+```
 
 ## ⚙️ Installation & Setup Guide
 
@@ -33,15 +48,17 @@ Before running the project, install dependencies for both frontend and backend.
 ### Frontend
 
 ```bash
-cd src/frontend
-npm install
+cd client
+npm install react react-dom react-router-dom axios classnames @headlessui/react @heroicons/react
+npm install -D tailwindcss postcss autoprefixer vite @vitejs/plugin-react typescript eslint prettier
 ```
 
 #### Backend
 
 ```bash
-cd src/backend
-npm install
+cd server
+npm install express mongoose passport passport-local bcrypt jsonwebtoken cookie-parser express-session cors dotenv morgan helmet compression body-parser
+npm install -D typescript ts-node nodemon @types/express @types/node @types/passport-local @types/bcrypt @types/jsonwebtoken @types/cors @types/morgan
 ```
 
 ### 2️⃣ Run with Docker (Recommended)
@@ -85,7 +102,7 @@ Make sure you have MongoDB installed and running on your machine.
 In one terminal:
 
 ```bash
-cd src/backend
+cd server
 npm run dev
 ```
 
@@ -94,7 +111,7 @@ npm run dev
 In a new terminal:
 
 ```bash
-cd src/frontend
+cd client
 npm run dev
 ```
 
@@ -110,8 +127,8 @@ MONGO_URI=mongodb://mongo:27017/auction_db
 PORT=3001
 JWT_SECRET=supersecretkey
 
-# Frontend
-NEXT_PUBLIC_API_URL=http://localhost:3001
+# Frontend (used for CORS)
+CLIENT_URL=http://localhost:3000
 ```
 
 ### 5️⃣ Project Directory Structure
