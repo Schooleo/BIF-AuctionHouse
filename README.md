@@ -117,7 +117,7 @@ npm run dev
 
 ### 4️⃣ Environment Variables
 
-Create a `.env` file at the project root with the following variables:
+Create a .env file inside the /server directory with the following variables:
 
 ```bash
 # MongoDB
