@@ -58,7 +58,7 @@ npm install -D tailwindcss postcss autoprefixer vite @vitejs/plugin-react typesc
 ```bash
 cd server
 npm install express mongoose passport passport-local bcrypt jsonwebtoken cookie-parser express-session cors dotenv morgan helmet compression body-parser
-npm install -D typescript ts-node nodemon @types/express @types/node @types/passport-local @types/bcrypt @types/jsonwebtoken @types/cors @types/morgan
+npm install -D typescript ts-node nodemon @types/express @types/node @types/passport-local @types/bcrypt @types/jsonwebtoken @types/cors @types/morgan @types/cookie-parser @types/express-session @types/dotenv @types/helmet
 ```
 
 ### 2️⃣ Run with Docker (Recommended)
