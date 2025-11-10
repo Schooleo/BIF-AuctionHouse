@@ -1,20 +1,23 @@
 import passport from "passport";
-import { Strategy as LocalStrategy } from "passport-local";
-import bcrypt from "bcrypt";
-import User from "../models/User";
+import { Strategy as JwtStrategy, ExtractJwt } from "passport-jwt";
+import { env } from "./env";
+import { User } from "../models/user.model";
+
+const options = {
+  jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+  secretOrKey: env.JWT_SECRET,
+};
 
 passport.use(
-  new LocalStrategy(async (username, password, done) => {
-    const user = await User.findOne({ username });
-    if (!user) return done(null, false);
-    const match = await bcrypt.compare(password, user.password || "");
-    return match ? done(null, user) : done(null, false);
+  new JwtStrategy(options, async (jwtPayload, done) => {
+    try {
+      const user = await User.findById(jwtPayload.id).select("-password");
+      if (!user) return done(null, false);
+      return done(null, user);
+    } catch (error) {
+      done(error, false);
+    }
   })
 );
-
-passport.serializeUser((user: any, done) => done(null, user.id));
-passport.deserializeUser((id, done) => {
-  User.findById(id, (err: any, user: any) => done(err, user));
-});
 
 export default passport;

@@ -5,8 +5,8 @@ import {
   createRoutesFromElements,
 } from "react-router-dom";
 import MainLayout from "./layouts/MainLayout";
-import HomePage from "./pages/HomePage";
-import NotFoundPage from "./pages/NotFoundPage";
+import HomePage from "./pages/user/HomePage";
+import NotFoundPage from "./pages/shared/NotFoundPage";
 
 const router = createBrowserRouter(
   createRoutesFromElements(

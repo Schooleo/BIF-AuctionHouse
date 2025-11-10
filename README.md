@@ -148,8 +148,15 @@ BIF-AuctionHouse/
     │       ├── main.tsx             # React entry point
     │       ├── App.tsx              # Root component
     │       ├── components/          # Reusable UI components
+    │       │   ├── forms/           # Form/Input components
+    │       │   └── ui/              # UI components (Navbar, Footer, etc.)
     │       ├── layouts/             # Layout components
-    │       ├── pages/               # Page components (Home, Auctions, etc.)
+    │       ├── containers/          # Container components
+    │       ├── pages/               # Page components
+    │       │   ├── auth/            # Auth pages (Login, Register, Reset Password)
+    │       │   ├── user/            # User account pages
+    │       │   └── admin/           # Admin dashboard pages
+    │       │   └── shared/          # Shared pages (NotFound, Forbidden, etc.)
     │       └── assets/              # Static assets
     │           └── img/             # Images
     │
