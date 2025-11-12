@@ -49,16 +49,14 @@ Before running the project, install dependencies for both frontend and backend.
 
 ```bash
 cd client
-npm install react react-dom react-router-dom axios classnames @headlessui/react @heroicons/react
-npm install -D tailwindcss postcss autoprefixer vite @vitejs/plugin-react typescript eslint prettier
+npm install
 ```
 
 #### Backend
 
 ```bash
 cd server
-npm install express mongoose passport passport-local bcrypt jsonwebtoken cookie-parser express-session cors dotenv morgan helmet compression body-parser
-npm install -D typescript ts-node nodemon @types/express @types/node @types/passport-local @types/bcrypt @types/jsonwebtoken @types/cors @types/morgan @types/cookie-parser @types/express-session @types/dotenv @types/helmet
+npm install
 ```
 
 ### 2️⃣ Run with Docker (Recommended)
