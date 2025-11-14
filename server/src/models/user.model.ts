@@ -12,8 +12,8 @@ export interface IUser extends Document {
   positiveRatings: number; // Yêu cầu 2.2 
   negativeRatings: number; // Yêu cầu 2.2
 
-  resetPasswordToken?: string;
-  resetPasswordExpires?: Date;
+  resetPasswordToken?: string | null;
+  resetPasswordExpires?: Date | null;
 
   // Thuộc tính ảo
   reputationScore: number;
@@ -44,7 +44,7 @@ const userSchema = new Schema<IUser>(
   }
 );
 
-// Hash mật khẩu trước khi lưu người dùng mới
+// Hash mật khẩu trước khi lưu người dùng
 userSchema.pre<IUser>("save", async function (next) {
   // Chỉ chạy khi mật khấu thay đổi
   if (!this.isModified("password")) return next();
@@ -54,8 +54,8 @@ userSchema.pre<IUser>("save", async function (next) {
   this.password = await bcrypt.hash(this.password, salt);
 
   // Xóa các trường token reset mật khẩu nếu mật khẩu được thay đổi
-  delete this.resetPasswordToken;
-  delete this.resetPasswordExpires;
+  this.resetPasswordToken = null;
+  this.resetPasswordExpires = null;
   next();
 });
 

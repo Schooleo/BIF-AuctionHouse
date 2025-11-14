@@ -93,8 +93,8 @@ export const requestPasswordReset = async (req: Request, res: Response) => {
     if (req.body.email) {
       const user = await User.findOne({ email: req.body.email });
       if (user) {
-        delete user.resetPasswordToken;
-        delete user.resetPasswordExpires;
+        //user.resetPasswordToken = null;
+        //user.resetPasswordExpires = null;
         await user.save({ validateBeforeSave: false });
       }
     }
@@ -131,8 +131,8 @@ export const resetPassword = async (req: Request, res: Response) => {
     user.password = password; // 'pre-save hook' bên user.model sẽ tự động hash lại
 
     // 4. Xóa các trường token sau khi sử dụng
-    delete user.resetPasswordToken;
-    delete user.resetPasswordExpires;
+    user.resetPasswordToken = null;
+    user.resetPasswordExpires = null;
 
     await user.save();
 
