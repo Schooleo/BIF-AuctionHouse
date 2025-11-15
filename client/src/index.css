@@ -3,3 +3,13 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  input[type="password"]::-webkit-password-reveal-button {
+    @apply hidden;
+  }
+  
+  input[type="password"]::-ms-reveal {
+    @apply hidden;
+  }
+}
