@@ -1,6 +1,5 @@
 export interface FormField extends React.InputHTMLAttributes<HTMLInputElement> {
   label: string;
-  value: string;
   isRequired?: boolean;
   className?: string;
   type?: 'password' | 'text' | 'email' | 'number';

@@ -12,7 +12,7 @@ const Button: React.FC<ButtonProps> = ({
 }) => {
   const Styles = {
     primary: `${baseStyles} hover:bg-[#003333]`,
-    secondary: `${baseStyles} bg-opacity-60 hover:bg-opacity-80`,
+    secondary: `${baseStyles} bg-[#00336660] hover:bg-[#00336690]`,
   }[variant]
   return (
     <button onClick={onClick} 
