@@ -1,53 +1,219 @@
 import { Request, Response } from "express";
-import bcrypt from "bcrypt";
 import crypto from "crypto";
 import { User } from "../models/user.model";
 import { generateToken } from "../utils/jwt.util";
 import { sendResetEmail } from "../utils/email.util";
+import {
+  RegisterBody,
+  LoginBody,
+  RequestPasswordResetBody,
+  ResetPasswordBody,
+  ResetPasswordParams,
+} from "../types/auth";
+import { AuthMessages } from "../constants/messages";
 
-export const register = async (req: Request, res: Response) => {
-  const { name, email, password } = req.body;
+// Kiểm tra định dạng email cơ bản
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+export const register = async (
+  req: Request<{}, {}, RegisterBody>,
+  res: Response
+) => {
+  const { name, email, password, address } = req.body;
+
+  // Kiểm tra input
+  if (!name || !email || !password) {
+    return res.status(400).json({ message: AuthMessages.MISSING_FIELDS });
+  }
+
+  if (!emailRegex.test(email)) {
+    return res.status(400).json({ message: AuthMessages.EMAIL_INVALID });
+  }
+
+  if (password.length < 8) {
+    return res.status(400).json({ message: AuthMessages.PASSWORD_TOO_SHORT });
+  }
+
   try {
     const existing = await User.findOne({ email });
-    if (existing)
-      return res.status(400).json({ message: "Email already registered" });
 
-    const hashed = await bcrypt.hash(password, 10);
-    const user = await User.create({ name, email, password: hashed });
+    // Kiểm tra email đã được đăng ký
+    if (existing) {
+      return res.status(400).json({ message: AuthMessages.EMAIL_REGISTERED });
+    }
 
-    const token = generateToken(user.id);
-    res.status(201).json({ user, token });
+    const user = await User.create({
+      name,
+      email,
+      password, // Gửi mật khẩu gốc (Hash ở user.model)
+      address,
+    });
+
+    // Tạo token JWT để đăng nhập
+    const token = generateToken({
+      id: user.id,
+      role: user.role,
+      email: user.email,
+    });
+
+    const userResponse = {
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+    };
+
+    res.status(201).json({ user: userResponse, token });
   } catch (error) {
     res.status(500).json({ message: "Server error" });
   }
 };
 
-export const login = async (req: Request, res: Response) => {
+export const login = async (req: Request<{}, {}, LoginBody>, res: Response) => {
   const { email, password } = req.body;
+
+  // Kiểm tra input
+  if (!email || !password) {
+    return res
+      .status(400)
+      .json({ message: AuthMessages.MISSING_EMAIL_OR_PASSWORD });
+  }
+
+  try {
+    const user = await User.findOne({ email }).select("+password");
+
+    if (!user) {
+      return res
+        .status(401)
+        .json({ message: AuthMessages.INVALID_CREDENTIALS });
+    }
+
+    // Method comparePassword ở user.model
+    const valid = await user.comparePassword(password);
+
+    if (!valid) {
+      return res
+        .status(401)
+        .json({ message: AuthMessages.INVALID_CREDENTIALS });
+    }
+
+    const token = generateToken({
+      id: user.id,
+      role: user.role,
+      email: user.email,
+    });
+
+    // Tạo phản hồi an toàn
+    const userResponse = {
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+    };
+
+    res.json({ user: userResponse, token });
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+export const requestPasswordReset = async (
+  req: Request<{}, {}, RequestPasswordResetBody>,
+  res: Response
+) => {
+  const { email } = req.body;
+
+  // Kiểm tra email hợp lệ
+  if (!email || !emailRegex.test(email)) {
+    return res.status(400).json({ message: AuthMessages.EMAIL_INVALID });
+  }
+
   try {
     const user = await User.findOne({ email });
-    if (!user) return res.status(404).json({ message: "User not found" });
 
-    const valid = await bcrypt.compare(password, user.password);
-    if (!valid) return res.status(401).json({ message: "Invalid credentials" });
+    if (!user) {
+      return res.json({ message: AuthMessages.PASSWORD_RESET_EMAIL_SENT }); // Không tiết lộ email không tồn tại
+    }
 
-    const token = generateToken(user.id);
-    res.json({ user, token });
+    // Dùng method ở user để tạo token và hashed token (trả về token gốc)
+    const resetToken = user.generatePasswordResetToken();
+
+    // Lưu các thay đổi (token đã băm và thời gian hết hạn) vào DB
+    await user.save({ validateBeforeSave: false }); // Bỏ qua xác thực vì chúng ta chỉ lưu token
+
+    // Gửi email với token gốc được tạo trong hàm util
+    await sendResetEmail(user.email, resetToken);
+
+    res.json({ message: AuthMessages.PASSWORD_RESET_EMAIL_SENT });
   } catch (error) {
-    res.status(500).json({ message: "Server error" });
+    console.error("Password reset error:", error);
+
+    // Xóa token nếu có lỗi xảy ra để ngăn trạng thái không nhất quán
+    if (req.body.email) {
+      const user = await User.findOne({ email: req.body.email });
+      if (user) {
+        user.resetPasswordToken = null;
+        user.resetPasswordExpires = null;
+        await user.save({ validateBeforeSave: false });
+      }
+    }
+    res.status(500).json({ message: "Server Error" });
   }
 };
 
-export const requestPasswordReset = async (req: Request, res: Response) => {
-  const { email } = req.body;
-  const user = await User.findOne({ email });
-  if (!user) return res.status(404).json({ message: "User not found" });
+export const resetPassword = async (
+  req: Request<ResetPasswordParams, {}, ResetPasswordBody>,
+  res: Response
+) => {
+  const { token } = req.params;
+  const { password } = req.body;
 
-  const token = crypto.randomBytes(32).toString("hex");
-  user.resetPasswordToken = token;
-  user.resetPasswordExpires = new Date(Date.now() + 3600000); // 1 hour
-  await user.save();
+  // Kiểm tra token và mật khẩu mới
+  if (!token) {
+    return res
+      .status(400)
+      .json({ message: AuthMessages.RESET_TOKEN_NOT_FOUND });
+  }
 
-  await sendResetEmail(user.email, token);
-  res.json({ message: "Password reset email sent" });
+  if (!password || password.length < 8) {
+    return res.status(400).json({ message: AuthMessages.PASSWORD_TOO_SHORT });
+  }
+
+  try {
+    // 1. Hash token gốc nhận được từ URL
+    const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+
+    // 2. Tìm người dùng bằng token sau khi hash và kiểm tra thời gian hết hạn
+    const user = await User.findOne({
+      resetPasswordToken: hashedToken,
+      resetPasswordExpires: { $gt: Date.now() },
+    });
+
+    if (!user) {
+      return res
+        .status(400)
+        .json({ message: AuthMessages.RESET_TOKEN_INVALID });
+    }
+
+    // 3. Đặt mật khẩu mới
+    user.password = password; // 'pre-save hook' bên user.model sẽ tự động hash lại
+
+    // 4. Xóa các trường token sau khi sử dụng
+    user.resetPasswordToken = null;
+    user.resetPasswordExpires = null;
+
+    await user.save();
+
+    // 5. Đăng nhập người dùng bằng cách cấp token JWT mới
+    const jwtToken = generateToken({
+      id: user.id,
+      role: user.role,
+      email: user.email,
+    });
+
+    res.json({ message: AuthMessages.PASSWORD_RESET_SUCCESS, token: jwtToken });
+  } catch (error) {
+    console.error("Password reset error:", error);
+    res.status(500).json({ message: "Server Error" });
+  }
 };
