@@ -82,7 +82,7 @@ const RegisterContainer = () => {
         buttonProps={{
           label: "REGISTER",
           type: "submit",
-          variant: "primary",
+          variant: "secondary",
         }}
         onSubmit={handleSubmit}
       >
