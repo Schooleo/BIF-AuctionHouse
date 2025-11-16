@@ -5,6 +5,7 @@ export const AuthMessages = {
   EMAIL_REGISTERED: "Email is already registered",
   EMAIL_INVALID: "Invalid email",
   MISSING_EMAIL_OR_PASSWORD: "Missing email or password",
+  RECAPTCHA_FAILED: "reCAPTCHA verification failed",
   OTP_SENT: "OTP has been sent to your email",
   OTP_INVALID: "Invalid or expired OTP",
   PASSWORD_RESET_SUCCESS: "Password has been reset successfully",
