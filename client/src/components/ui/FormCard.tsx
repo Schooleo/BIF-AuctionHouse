@@ -8,7 +8,8 @@ const FormCard: React.FC<FormCardProps> = ({
   fields = [],
   className = "",
   buttonProps = {},
-  onSubmit
+  onSubmit,
+  children = null
 }) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,7 +25,7 @@ const FormCard: React.FC<FormCardProps> = ({
       `}
     >
       <h2 className="text-2xl font-semibold">{title}</h2>
-        <div className="bg-white flex flex-col gap-10 mt-16">
+        <div className="bg-white flex flex-col gap-10 mt-10">
           {fields.map((field, index) => (
             field.type == "password" ? (
               <PasswordField
@@ -38,6 +39,7 @@ const FormCard: React.FC<FormCardProps> = ({
             />
           )
         ))}
+          {children && children}
           <Button className={'w-full mt-5'} {...buttonProps} />
         </div>
     </form>
