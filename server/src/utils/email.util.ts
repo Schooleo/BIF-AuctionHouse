@@ -1,42 +1,48 @@
-import nodemailer from "nodemailer";
+import axios from "axios";
 import { env } from "../config/env";
 
-export const sendResetEmail = async (toEmail: string, token: string) => {
-  try {
-    // Tạo transporter sử dụng cấu hình SMTP
-    const transporter = nodemailer.createTransport({
-      host: env.SMTP_HOST,
-      port: Number(env.SMTP_PORT),
-      secure: false, // true cho port 465, false cho các port khác
-      auth: {
-        user: env.SMTP_USER,
-        pass: env.SMTP_PASS,
-      },
-    });
+export const sendOTPEmail = async (to: string, otp: string) => {
+  if (env.EMAIL_WEBHOOK_URL.length === 0) {
+    throw new Error("Email webhook URL is not configured");
+  }
 
-    // Tạo URL reset password
-    const resetURL = `${env.FRONTEND_URL}/reset-password/${token}`;
+  const htmlBody = `
+    <p>Hello,</p>
+    <p>Your One-Time Password (OTP) for BIF Auction House is:</p>
 
-    // Cấu hình email
-    const mailOptions = {
-      from: `"BIF Auction House" <no-reply@bifauction.com>`, // Sender name and email
-      to: toEmail, // Recipient email
-      subject: "Password Reset Request", // Email subject
-      html: `
-        <p>Hello,</p>
+    <h2>${otp}</h2>
+
+    <p>This OTP is valid for the next 5 minutes. Please do not share it with anyone.</p>
+    <p>If you did not request this OTP, plsease ignore this email.</p>
+    <p>Thanks,<br/>The BIF Auction House Team</p>
+  `;
+
+  await axios.post(env.EMAIL_WEBHOOK_URL, {
+    to,
+    subject: "Your OTP for BIF Auction House",
+    htmlBody,
+  });
+};
+
+export const sendResetEmail = async (to: string, token: string) => {
+  if (env.EMAIL_WEBHOOK_URL.length === 0) {
+    throw new Error("Email webhook URL is not configured");
+  }
+
+  const resetURL = `${env.FRONTEND_URL}/reset-password/${token}`;
+
+  const htmlBody = `
+    <p>Hello,</p>
         <p>We received a request to reset your password for your BIF Auction House account.</p>
         <p>Click the link below to reset your password. This link will expire in 10 minutes.</p>
         <p><a href="${resetURL}">Reset Password</a></p>
         <p>If you did not request a password reset, please ignore this email.</p>
         <p>Thanks,<br/>The BIF Auction House Team</p>
-      `, // Email body in HTML
-    };
+  `;
 
-    // Gửi email
-    const info = await transporter.sendMail(mailOptions);
-    console.log("Reset email sent:", info.messageId);
-  } catch (error) {
-    console.error("Error sending reset email:", error);
-    throw new Error("Could not send reset email");
-  }
+  await axios.post(env.EMAIL_WEBHOOK_URL, {
+    to,
+    subject: "Password Reset Request",
+    htmlBody,
+  });
 };

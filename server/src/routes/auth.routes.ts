@@ -1,16 +1,18 @@
 import { Router } from "express";
 import {
+  requestOtp,
   register,
   login,
   requestPasswordReset,
-  resetPassword
+  resetPassword,
 } from "../controllers/auth.controller";
 
 const router = Router();
 
+router.post("/request-otp", requestOtp);
 router.post("/register", register);
 router.post("/login", login);
 router.post("/reset-password", requestPasswordReset);
-router.post("/reset-password/:token", resetPassword);
+router.patch("/reset-password/:token", resetPassword);
 
 export default router;

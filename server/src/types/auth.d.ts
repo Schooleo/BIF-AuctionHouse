@@ -12,11 +12,16 @@ export interface JwtPayload {
   exp?: number;
 }
 
+export interface RequestOtpBody {
+  email: string;
+}
+
 export interface RegisterBody {
   name: string;
   email: string;
   password: string;
   address?: string;
+  otp: string;
 }
 
 export interface LoginBody {
