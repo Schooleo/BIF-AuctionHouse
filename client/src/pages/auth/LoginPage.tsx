@@ -1,5 +1,38 @@
+import LoginContainer from "../../containers/LoginContainer";
+import { Link } from "react-router-dom";
+import LoginPageImage from "@img/LoginPage.png";
+
 const LoginPage = () => {
-  return <div>LoginPage</div>;
+  return (
+    <div className="flex flex-col md:flex-row h-screen">
+      <div
+        className="md:flex-grow-[0.6] bg-cover bg-center bg-no-repeat flex flex-col p-5"
+        style={{ backgroundImage: `url(${LoginPageImage})` }}
+      >
+        <h2 className="font-semibold text-4xl text-black drop-shadow-lg">Welcome!</h2>
+        <p className="text-black mt-2 drop-shadow-lg">
+          BIF Auction - Reputable Auction - Bid anytime, bid anywhere
+        </p>
+      </div>
+
+      <div className="flex-grow-[0.4] flex flex-col justify-center px-10">
+        
+        <LoginContainer />
+
+        <a href="/auth/ResetPasswordPage" className="mt-4 text-sm text-gray-600 cursor-pointer hover:underline">
+          Forgot Password?
+        </a>
+
+        <p className="mt-4 text-center">
+          New to BIF?{" "}
+          <a href="/auth/RegisterPage" className="text-blue-500 hover:underline">
+            Sign Up
+          </a>
+        </p>
+      </div>
+
+    </div>
+  );
 };
 
 export default LoginPage;
