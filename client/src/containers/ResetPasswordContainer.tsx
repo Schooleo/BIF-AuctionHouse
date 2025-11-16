@@ -1,12 +1,10 @@
 import { useState } from "react";
 import FormCard from "../components/ui/FormCard";
-import ReCAPTCHA from "react-google-recaptcha";
 
 const ResetPasswordContainer = () => {
   const [email, setEmail]  = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [error, setError] = useState<{email?: string, password?: string, confirmPassword?: string, captcha?: string}>({});
 
   const handleSubmit = () => {
@@ -17,7 +15,6 @@ const ResetPasswordContainer = () => {
     if (!email) newErrors.email = "Email is required";
     if (!password) newErrors.password = "Password is required";
     if (!confirmPassword) newErrors.confirmPassword = "Confirm Password is required";
-    if (!captchaToken) newErrors.captcha = "Please complete the reCAPTCHA";
     
     if (password !== confirmPassword) {
         newErrors.confirmPassword = "Passwords do not match";
@@ -29,7 +26,6 @@ const ResetPasswordContainer = () => {
       console.log({
         email,
         password,
-        captchaToken,
       });
     }
   };
@@ -73,19 +69,7 @@ const ResetPasswordContainer = () => {
           variant: "secondary",
         }}
         onSubmit={handleSubmit}
-      >
-        {/* reCAPTCHA */}
-        <div className="mt-5">
-          <ReCAPTCHA
-            sitekey={String(import.meta.env.VITE_RECAPTCHA_SITE_KEY)}
-            onChange={(token) => setCaptchaToken(token)}
-          />
-        </div>
-
-        {/* Error message */}
-        {error.captcha && <p className="text-red-500 mt-3">{error.captcha}</p>}
-      
-    </FormCard>
+      />
   );
 };
 
