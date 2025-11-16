@@ -5,6 +5,8 @@ export const AuthMessages = {
   EMAIL_REGISTERED: "Email is already registered",
   EMAIL_INVALID: "Invalid email",
   MISSING_EMAIL_OR_PASSWORD: "Missing email or password",
+  OTP_SENT: "OTP has been sent to your email",
+  OTP_INVALID: "Invalid or expired OTP",
   PASSWORD_RESET_SUCCESS: "Password has been reset successfully",
   PASSWORD_TOO_SHORT: "Password must be at least 8 characters long",
   PASSWORD_RESET_EMAIL_SENT: "Password reset confirmation email sent",

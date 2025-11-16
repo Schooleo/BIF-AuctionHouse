@@ -1,9 +1,11 @@
 import { Request, Response } from "express";
 import crypto from "crypto";
 import { User } from "../models/user.model";
+import { OtpModel } from "../models/otp.model";
 import { generateToken } from "../utils/jwt.util";
-import { sendResetEmail } from "../utils/email.util";
+import { sendOTPEmail, sendResetEmail } from "../utils/email.util";
 import {
+  RequestOtpBody,
   RegisterBody,
   LoginBody,
   RequestPasswordResetBody,
@@ -15,14 +17,49 @@ import { AuthMessages } from "../constants/messages";
 // Kiểm tra định dạng email cơ bản
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+export const requestOtp = async (
+  req: Request<{}, {}, RequestOtpBody>,
+  res: Response
+) => {
+  const { email } = req.body;
+
+  if (!email || !emailRegex.test(email)) {
+    return res.status(400).json({ message: AuthMessages.EMAIL_INVALID });
+  }
+
+  // Kiểm tra email đã được đăng ký
+  const existing = await User.findOne({ email });
+  if (existing) {
+    return res.status(400).json({ message: AuthMessages.EMAIL_REGISTERED });
+  }
+
+  // Tạo OTP 6 chữ số ngẫu nhiên
+  const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+  // Xóa OTP cũ nếu tồn tại
+  await OtpModel.findOneAndDelete({ email });
+
+  // Tạo OTP mới
+  await OtpModel.create({
+    email,
+    otp,
+    expiresAt: new Date(Date.now() + 5 * 60 * 1000),
+  });
+
+  // Gửi OTP bằng Apps Script
+  await sendOTPEmail(email, otp);
+
+  return res.json({ message: AuthMessages.OTP_SENT });
+};
+
 export const register = async (
   req: Request<{}, {}, RegisterBody>,
   res: Response
 ) => {
-  const { name, email, password, address } = req.body;
+  const { name, email, password, address, otp } = req.body;
 
   // Kiểm tra input
-  if (!name || !email || !password) {
+  if (!name || !email || !password || !otp) {
     return res.status(400).json({ message: AuthMessages.MISSING_FIELDS });
   }
 
@@ -35,12 +72,18 @@ export const register = async (
   }
 
   try {
-    const existing = await User.findOne({ email });
-
-    // Kiểm tra email đã được đăng ký
-    if (existing) {
-      return res.status(400).json({ message: AuthMessages.EMAIL_REGISTERED });
+    // Kiểm tra OTP
+    const otpRecord = await OtpModel.findOne({ email });
+    if (
+      !otpRecord ||
+      otpRecord.otp !== otp ||
+      otpRecord.expiresAt < new Date()
+    ) {
+      return res.status(400).json({ message: AuthMessages.OTP_INVALID });
     }
+
+    // Xóa OTP sau khi sử dụng
+    await OtpModel.findOneAndDelete({ email });
 
     const user = await User.create({
       name,
