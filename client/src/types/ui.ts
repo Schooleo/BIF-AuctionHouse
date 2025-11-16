@@ -20,4 +20,5 @@ export interface FormCardProps {
   buttonProps?: ButtonProps;
   className?: string;
   onSubmit?: () => void;
+  children?: React.ReactNode;
 }

@@ -69,11 +69,11 @@ export default function Navbar() {
           <Link to='/notifications' className='hover:text-[#FFD700] hover:font-semibold transition-all duration-200'>
             Notifications
           </Link>
-          <Link to='/signup' className='hover:text-[#FFD700] hover:font-semibold transition-all duration-200'>
+          <Link to='/auth/register' className='hover:text-[#FFD700] hover:font-semibold transition-all duration-200'>
             Sign Up
           </Link>
           <div className='h-6 w-px bg-white' />
-          <Link to='/login' className='hover:text-[#FFD700] hover:font-semibold transition-all duration-200'>
+          <Link to='/auth/login' className='hover:text-[#FFD700] hover:font-semibold transition-all duration-200'>
             Login
           </Link>
         </div>
@@ -118,7 +118,7 @@ export default function Navbar() {
               Notifications
             </Link>
             <Link
-              to='/signup'
+              to='/auth/register'
               className='hover:text-[#FFD700] hover:font-semibold transition-all duration-200'
               onClick={() => setIsMobileMenuOpen(false)}
             >
@@ -126,7 +126,7 @@ export default function Navbar() {
             </Link>
             <div className='w-24 h-px bg-white my-2' /> 
             <Link
-              to='/login'
+              to='/auth/login'
               className='hover:text-[#FFD700] hover:font-semibold transition-all duration-200'
               onClick={() => setIsMobileMenuOpen(false)}
             >
