@@ -1,13 +1,23 @@
-export interface FormField {
+export interface FormField extends React.InputHTMLAttributes<HTMLInputElement> {
   label: string;
-  value: string;
+  isRequired?: boolean;
+  className?: string;
+  type?: 'password' | 'text' | 'email' | 'number';
   error?: string;
-  placeholder?: string;
-  type?: string; // text, password, email
+  disabled?: boolean;
 }
 
-export interface ButtonProps {
-  label: string;
-  onClick: () => void;
+export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  variant?: 'primary' | 'secondary';
+  label?: string;
   disabled?: boolean;
+  className?: string;
+}
+
+export interface FormCardProps {
+  title?: string;
+  fields?: FormField[];
+  buttonProps?: ButtonProps;
+  className?: string;
+  onSubmit?: () => void;
 }
