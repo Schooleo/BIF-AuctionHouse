@@ -1,6 +1,5 @@
 import mongoose, { Document, Schema } from "mongoose";
 import bcrypt from "bcrypt";
-import crypto from "crypto";
 
 export interface IUser extends Document {
   name: string;
@@ -12,15 +11,11 @@ export interface IUser extends Document {
   positiveRatings: number; // Yêu cầu 2.2 
   negativeRatings: number; // Yêu cầu 2.2
 
-  resetPasswordToken?: string | null;
-  resetPasswordExpires?: Date | null;
-
   // Thuộc tính ảo
   reputationScore: number;
 
   // Methods
   comparePassword(candidatePassword: string): Promise<boolean>;
-  generatePasswordResetToken(): string;
 }
 
 const userSchema = new Schema<IUser>(
@@ -33,8 +28,6 @@ const userSchema = new Schema<IUser>(
     role: { type: String, enum: ["bidder", "seller", "admin"], default: "bidder" },
     positiveRatings: { type: Number, default: 0 },
     negativeRatings: { type: Number, default: 0 },
-    resetPasswordToken: { type: String },
-    resetPasswordExpires: { type: Date },
   },
   { 
     timestamps: true,
@@ -53,9 +46,6 @@ userSchema.pre<IUser>("save", async function (next) {
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);
 
-  // Xóa các trường token reset mật khẩu nếu mật khẩu được thay đổi
-  this.resetPasswordToken = null;
-  this.resetPasswordExpires = null;
   next();
 });
 
@@ -64,24 +54,6 @@ userSchema.methods.comparePassword = async function (
   candidatePassword: string
 ): Promise<boolean> {
   return await bcrypt.compare(candidatePassword, this.password);
-};
-
-// Method token reset mật khẩu
-userSchema.methods.generatePasswordResetToken = function (): string {
-  // 1. Tạo raw token
-  const resetToken = crypto.randomBytes(32).toString("hex");
-
-  // 2. Hash token và lưu vào cơ sở dữ liệu
-  this.resetPasswordToken = crypto
-   .createHash("sha256")
-   .update(resetToken)
-   .digest("hex");
-
-  // 3. Đặt timeout (10p)
-  this.resetPasswordExpires = Date.now() + 10 * 60 * 1000;
-
-  // 4. Return raw token
-  return resetToken;
 };
 
 // Thuộc tính ảo để tính điểm đánh giá

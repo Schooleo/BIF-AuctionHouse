@@ -13,6 +13,6 @@ router.post("/request-otp", requestOtp);
 router.post("/register", register);
 router.post("/login", login);
 router.post("/reset-password", requestPasswordReset);
-router.patch("/reset-password/:token", resetPassword);
+router.patch("/reset-password", resetPassword);
 
 export default router;
