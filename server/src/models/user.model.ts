@@ -1,24 +1,68 @@
 import mongoose, { Document, Schema } from "mongoose";
+import bcrypt from "bcrypt";
 
 export interface IUser extends Document {
   name: string;
   email: string;
   password: string;
-  role: "user" | "admin";
-  resetPasswordToken?: string;
-  resetPasswordExpires?: Date;
+  address: string;
+  role: "bidder" | "seller" | "admin";
+
+  positiveRatings: number; // Yêu cầu 2.2
+  negativeRatings: number; // Yêu cầu 2.2
+
+  // Thuộc tính ảo
+  reputationScore: number;
+
+  // Methods
+  comparePassword(candidatePassword: string): Promise<boolean>;
 }
 
 const userSchema = new Schema<IUser>(
   {
     name: { type: String, required: true },
     email: { type: String, required: true, unique: true },
-    password: { type: String, required: true },
-    role: { type: String, enum: ["user", "admin"], default: "user" },
-    resetPasswordToken: { type: String },
-    resetPasswordExpires: { type: Date },
+    // 'select: false' để không tự động trả về mật khẩu khi truy vấn
+    password: { type: String, required: true, select: false },
+    address: { type: String },
+    role: {
+      type: String,
+      enum: ["bidder", "seller", "admin"],
+      default: "bidder",
+    },
+    positiveRatings: { type: Number, default: 0 },
+    negativeRatings: { type: Number, default: 0 },
   },
   { timestamps: true }
 );
+
+// Hash mật khẩu trước khi lưu người dùng
+userSchema.pre<IUser>("save", async function (next) {
+  // Chỉ chạy khi mật khấu thay đổi
+  if (!this.isModified("password")) return next();
+
+  // Băm mật khẩu với cost factor là 10
+  const salt = await bcrypt.genSalt(10);
+  this.password = await bcrypt.hash(this.password, salt);
+
+  next();
+});
+
+// So sánh mật khẩu candidate với mật khẩu đã hash
+userSchema.methods.comparePassword = async function (
+  candidatePassword: string
+): Promise<boolean> {
+  return await bcrypt.compare(candidatePassword, this.password);
+};
+
+// Thuộc tính ảo để tính điểm đánh giá
+userSchema.virtual("reputationScore").get(function (this: IUser) {
+  const totalRatings = this.positiveRatings + this.negativeRatings;
+  if (totalRatings === 0) {
+    // Trường hợp chưa được đánh giá
+    return 1.0;
+  }
+  return this.positiveRatings / totalRatings;
+});
 
 export const User = mongoose.model<IUser>("User", userSchema);

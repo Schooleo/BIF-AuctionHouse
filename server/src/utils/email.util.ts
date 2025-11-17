@@ -1,24 +1,48 @@
-import nodemailer from "nodemailer";
+import axios from "axios";
 import { env } from "../config/env";
 
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: env.EMAIL_USER,
-    pass: env.EMAIL_PASS,
-  },
-});
+export const sendOTPEmail = async (to: string, otp: string) => {
+  if (env.EMAIL_WEBHOOK_URL.length === 0) {
+    throw new Error("Email webhook URL is not configured");
+  }
 
-export const sendResetEmail = async (email: string, token: string) => {
-  const resetLink = `${env.FRONTEND_URL}/reset-password/${token}`;
+  const htmlBody = `
+    <p>Hello,</p>
+    <p>Your One-Time Password (OTP) for BIF Auction House is:</p>
 
-  await transporter.sendMail({
-    from: `"AuctionHouse" <${env.EMAIL_USER}>`,
-    to: email,
-    subject: "Password Reset Request",
-    html: `
-      <p>You requested a password reset.</p>
-      <p>Click <a href="${resetLink}">here</a> to reset your password.</p>
-    `,
+    <h2>${otp}</h2>
+
+    <p>This OTP is valid for the next 5 minutes. Please do not share it with anyone.</p>
+    <p>If you did not request this OTP, plsease ignore this email.</p>
+    <p>Thanks,<br/>The BIF Auction House Team</p>
+  `;
+
+  await axios.post(env.EMAIL_WEBHOOK_URL, {
+    to,
+    subject: "Your OTP for BIF Auction House",
+    htmlBody,
+  });
+};
+
+export const sendPasswordResetOTPEmail = async (to: string, otp: string) => {
+  if (env.EMAIL_WEBHOOK_URL.length === 0) {
+    throw new Error("Email webhook URL is not configured");
+  }
+
+  const htmlBody = `
+    <p>Hello,</p>
+    <p>We received a request to reset your password. Use the One-Time Password (OTP) below to proceed:</p>
+
+    <h2>${otp}</h2>
+
+    <p>This OTP is valid for the next 5 minutes. Please do not share it with anyone.</p>
+    <p>If you did not request a password reset, please ignore this email.</p>
+    <p>Thanks,<br/>The BIF Auction House Team</p>
+  `;
+
+  await axios.post(env.EMAIL_WEBHOOK_URL, {
+    to,
+    subject: "Your Password Reset OTP for BIF Auction House",
+    htmlBody,
   });
 };
