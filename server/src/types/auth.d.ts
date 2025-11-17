@@ -22,6 +22,7 @@ export interface RegisterBody {
   password: string;
   address?: string;
   otp: string;
+  recaptchaToken: string;
 }
 
 export interface LoginBody {

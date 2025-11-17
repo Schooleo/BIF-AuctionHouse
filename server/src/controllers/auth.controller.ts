@@ -3,6 +3,8 @@ import { User } from "../models/user.model";
 import { OtpModel } from "../models/otp.model";
 import { generateToken } from "../utils/jwt.util";
 import { sendOTPEmail, sendPasswordResetOTPEmail } from "../utils/email.util";
+import { verifyRecaptcha } from "../utils/recaptcha.util";
+import { sendOTPEmail, sendResetEmail } from "../utils/email.util";
 import {
   RequestOtpBody,
   RegisterBody,
@@ -54,15 +56,26 @@ export const register = async (
   req: Request<{}, {}, RegisterBody>,
   res: Response
 ) => {
-  const { name, email, password, address, otp } = req.body;
+  const { name, email, password, address, otp, recaptchaToken } = req.body;
 
   // Kiểm tra input
-  if (!name || !email || !password || !otp) {
+  if (!name || !email || !password || !otp || !recaptchaToken) {
     return res.status(400).json({ message: AuthMessages.MISSING_FIELDS });
   }
 
   if (!emailRegex.test(email)) {
     return res.status(400).json({ message: AuthMessages.EMAIL_INVALID });
+  }
+
+  // Kiểm tra reCAPTCHA
+  try {
+    const valid = await verifyRecaptcha(recaptchaToken);
+    if (!valid) {
+      return res.status(400).json({ message: AuthMessages.RECAPTCHA_FAILED });
+    }
+  } catch (error) {
+    console.error("reCAPTCHA verification error:", error);
+    return res.status(500).json({ message: "Server Error" });
   }
 
   if (password.length < 8) {
