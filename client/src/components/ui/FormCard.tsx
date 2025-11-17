@@ -1,4 +1,4 @@
-import type { FormCardProps } from "../../types/ui";
+import type { FormCardProps } from "@types/ui";
 import InputField from "../forms/InputField";
 import PasswordField from "../forms/PasswordField";
 import Button from "../forms/Button";
@@ -9,7 +9,7 @@ const FormCard: React.FC<FormCardProps> = ({
   className = "",
   buttonProps = {},
   onSubmit,
-  children = null
+  children = null,
 }) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -17,7 +17,8 @@ const FormCard: React.FC<FormCardProps> = ({
   };
 
   return (
-    <form onSubmit={handleSubmit}
+    <form
+      onSubmit={handleSubmit}
       className={`
           bg-white p-8 rounded-xl shadow-lg flex flex-col gap-6
           transition-all duration-300 ease-in-out hover:scale-[1.01] hover:shadow-2xl
@@ -25,25 +26,19 @@ const FormCard: React.FC<FormCardProps> = ({
       `}
     >
       <h2 className="text-2xl font-semibold">{title}</h2>
-        <div className="bg-white flex flex-col gap-10 mt-10">
-          {fields.map((field, index) => (
-            field.type == "password" ? (
-              <PasswordField
-                key={index}
-              {...field}
-            />
+      <div className="bg-white flex flex-col gap-10 mt-10">
+        {fields.map((field, index) =>
+          field.type == "password" ? (
+            <PasswordField key={index} {...field} />
           ) : (
-            <InputField
-              key={index}
-              {...field}
-            />
+            <InputField key={index} {...field} />
           )
-        ))}
-          {children && children}
-          <Button className={'w-full mt-5'} {...buttonProps} />
-        </div>
+        )}
+        {children && children}
+        <Button className={"w-full mt-5"} {...buttonProps} />
+      </div>
     </form>
-  )
-}
+  );
+};
 
-export default FormCard
+export default FormCard;

@@ -1,28 +1,28 @@
-export interface LoginRequest {
+export interface RegisterDto {
+  name: string;
+  email: string;
+  password: string;
+  address?: string;
+  otp: string;
+  recaptchaToken: string;
+}
+
+export interface LoginDto {
   email: string;
   password: string;
 }
 
-export interface LoginResponse {
-  user: User;
-  token: string;
+export interface RequestPasswordResetDto {
+  email: string;
 }
 
-export interface RegisterRequest {
-  name: string;
+export interface ResetPasswordDto {
   email: string;
+  otp: string;
   password: string;
 }
 
-export interface ResetPasswordRequest {
-  email: string;
-}
-
-export interface User {
-  _id: string;
-  name: string;
-  email: string;
-  role: "user" | "admin" | "seller";
-  createdAt?: string;
-  updatedAt?: string;
+export interface AuthResponse {
+  token?: string;
+  message?: string;
 }

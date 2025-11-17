@@ -2,13 +2,14 @@ export interface FormField extends React.InputHTMLAttributes<HTMLInputElement> {
   label: string;
   isRequired?: boolean;
   className?: string;
-  type?: 'password' | 'text' | 'email' | 'number';
+  type?: "password" | "text" | "email" | "number";
   error?: string;
   disabled?: boolean;
 }
 
-export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary';
+export interface ButtonProps
+  extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  variant?: "primary" | "secondary";
   label?: string;
   disabled?: boolean;
   className?: string;
