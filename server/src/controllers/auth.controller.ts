@@ -1,16 +1,14 @@
 import { Request, Response } from "express";
-import crypto from "crypto";
 import { User } from "../models/user.model";
 import { OtpModel } from "../models/otp.model";
 import { generateToken } from "../utils/jwt.util";
-import { sendOTPEmail, sendResetEmail } from "../utils/email.util";
+import { sendOTPEmail, sendPasswordResetOTPEmail } from "../utils/email.util";
 import {
   RequestOtpBody,
   RegisterBody,
   LoginBody,
   RequestPasswordResetBody,
   ResetPasswordBody,
-  ResetPasswordParams,
 } from "../types/auth";
 import { AuthMessages } from "../constants/messages";
 
@@ -168,7 +166,6 @@ export const requestPasswordReset = async (
 ) => {
   const { email } = req.body;
 
-  // Kiểm tra email hợp lệ
   if (!email || !emailRegex.test(email)) {
     return res.status(400).json({ message: AuthMessages.EMAIL_INVALID });
   }
@@ -177,86 +174,85 @@ export const requestPasswordReset = async (
     const user = await User.findOne({ email });
 
     if (!user) {
-      return res.json({ message: AuthMessages.PASSWORD_RESET_EMAIL_SENT }); // Không tiết lộ email không tồn tại
+      return res.json({ message: AuthMessages.PASSWORD_RESET_EMAIL_SENT });
     }
 
-    // Dùng method ở user để tạo token và hashed token (trả về token gốc)
-    const resetToken = user.generatePasswordResetToken();
+    // Generate a 6-digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
-    // Lưu các thay đổi (token đã băm và thời gian hết hạn) vào DB
-    await user.save({ validateBeforeSave: false }); // Bỏ qua xác thực vì chúng ta chỉ lưu token
+    // Delete any old OTP for this email to prevent conflicts
+    await OtpModel.findOneAndDelete({ email });
 
-    // Gửi email với token gốc được tạo trong hàm util
-    await sendResetEmail(user.email, resetToken);
+    // Create a new OTP record, valid for 5 minutes
+    await OtpModel.create({
+      email,
+      otp,
+      expiresAt: new Date(Date.now() + 5 * 60 * 1000), // 5-minute expiry
+    });
 
-    res.json({ message: AuthMessages.PASSWORD_RESET_EMAIL_SENT });
+    // Send the password reset OTP email
+    await sendPasswordResetOTPEmail(email, otp);
+
+    return res.json({ message: AuthMessages.PASSWORD_RESET_EMAIL_SENT });
   } catch (error) {
-    console.error("Password reset error:", error);
-
-    // Xóa token nếu có lỗi xảy ra để ngăn trạng thái không nhất quán
-    if (req.body.email) {
-      const user = await User.findOne({ email: req.body.email });
-      if (user) {
-        user.resetPasswordToken = null;
-        user.resetPasswordExpires = null;
-        await user.save({ validateBeforeSave: false });
-      }
-    }
-    res.status(500).json({ message: "Server Error" });
+    console.error("Request Password Reset error:", error);
+    return res.status(500).json({ message: "Server Error" });
   }
 };
 
 export const resetPassword = async (
-  req: Request<ResetPasswordParams, {}, ResetPasswordBody>,
+  req: Request<{}, {}, ResetPasswordBody>,
   res: Response
 ) => {
-  const { token } = req.params;
-  const { password } = req.body;
+  const { email, otp, password } = req.body;
 
-  // Kiểm tra token và mật khẩu mới
-  if (!token) {
-    return res
-      .status(400)
-      .json({ message: AuthMessages.RESET_TOKEN_NOT_FOUND });
+  // Validate inputs
+  if (!email || !otp || !password) {
+    return res.status(400).json({ message: AuthMessages.MISSING_FIELDS });
   }
 
-  if (!password || password.length < 8) {
+  if (password.length < 8) {
     return res.status(400).json({ message: AuthMessages.PASSWORD_TOO_SHORT });
   }
 
   try {
-    // 1. Hash token gốc nhận được từ URL
-    const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
-
-    // 2. Tìm người dùng bằng token sau khi hash và kiểm tra thời gian hết hạn
-    const user = await User.findOne({
-      resetPasswordToken: hashedToken,
-      resetPasswordExpires: { $gt: Date.now() },
-    });
-
-    if (!user) {
-      return res
-        .status(400)
-        .json({ message: AuthMessages.RESET_TOKEN_INVALID });
+    // Find and validate the OTP
+    const otpRecord = await OtpModel.findOne({ email });
+    if (
+      !otpRecord ||
+      otpRecord.otp !== otp ||
+      otpRecord.expiresAt < new Date()
+    ) {
+      return res.status(400).json({ message: AuthMessages.OTP_INVALID });
     }
 
-    // 3. Đặt mật khẩu mới
-    user.password = password; // 'pre-save hook' bên user.model sẽ tự động hash lại
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(400).json({ message: AuthMessages.OTP_INVALID });
+    }
 
-    // 4. Xóa các trường token sau khi sử dụng
-    user.resetPasswordToken = null;
-    user.resetPasswordExpires = null;
+    // Delete the OTP
+    await OtpModel.findOneAndDelete({ email });
 
+    // Update the password
+    user.password = password;
     await user.save();
 
-    // 5. Đăng nhập người dùng bằng cách cấp token JWT mới
-    const jwtToken = generateToken({
+    // Log the user in by issuing a new JWT
+    const token = generateToken({
       id: user.id,
       role: user.role,
       email: user.email,
     });
+    
+    const userResponse = {
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+    };
 
-    res.json({ message: AuthMessages.PASSWORD_RESET_SUCCESS, token: jwtToken });
+    res.json({ message: AuthMessages.PASSWORD_RESET_SUCCESS, token, user: userResponse });
   } catch (error) {
     console.error("Password reset error:", error);
     res.status(500).json({ message: "Server Error" });

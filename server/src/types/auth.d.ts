@@ -34,9 +34,7 @@ export interface RequestPasswordResetBody {
 }
 
 export interface ResetPasswordBody {
+  email: string;
+  otp: string;
   password: string;
-}
-
-export interface ResetPasswordParams {
-  token: string;
 }

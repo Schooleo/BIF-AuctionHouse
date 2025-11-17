@@ -9,7 +9,7 @@ export const AuthMessages = {
   OTP_INVALID: "Invalid or expired OTP",
   PASSWORD_RESET_SUCCESS: "Password has been reset successfully",
   PASSWORD_TOO_SHORT: "Password must be at least 8 characters long",
-  PASSWORD_RESET_EMAIL_SENT: "Password reset confirmation email sent",
+  PASSWORD_RESET_EMAIL_SENT: "Password reset OTP email sent",
   RESET_TOKEN_NOT_FOUND: "Reset token not found",
   RESET_TOKEN_INVALID: "Invalid or expired token",
 };
