@@ -1,20 +1,20 @@
-import type { FormField } from '../../types/ui';
+import type { FormField } from "@interfaces/ui";
 
-const InputField: React.FC<FormField> = ({ 
+const InputField: React.FC<FormField> = ({
   label,
-  type = 'text',
-  className = '',
+  type = "text",
+  className = "",
   isRequired = false,
-  error = '',
+  error = "",
   disabled = false,
   ...rest
-  }) => {
-    return (
-      <div className='flex flex-col w-full'>
-        <input
-          type={type}
-          disabled={disabled}
-          className={`
+}) => {
+  return (
+    <div className="flex flex-col w-full">
+      <input
+        type={type}
+        disabled={disabled}
+        className={`
             rounded-md px-4 py-2 border 
             transition-all duration-200
             focus:outline-none 
@@ -23,15 +23,12 @@ const InputField: React.FC<FormField> = ({
             disabled:bg-gray-100 disabled:cursor-not-allowed
             ${className}
           `}
-          {...rest}
-          placeholder={`${label}` + (isRequired ? " *" : "")}
-        />
-        {error && (
-          <div className="mt-1 text-xs text-red-500">{error}</div>
-        )}
-      </div>
-    )
-    
+        {...rest}
+        placeholder={`${label}` + (isRequired ? " *" : "")}
+      />
+      {error && <div className="mt-1 text-xs text-red-500">{error}</div>}
+    </div>
+  );
 };
 
 export default InputField;

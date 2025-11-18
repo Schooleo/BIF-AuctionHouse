@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef } from "react";
 import InputField from "../forms/InputField";
 import Button from "../forms/Button";
-import type { EmailCardProps } from "@types/ui";
-import type { RequestOtpDto } from "@types/auth";
+import type { EmailCardProps } from "@interfaces/ui";
+import type { RequestOtpDto } from "@interfaces/auth";
 import { authApi } from "@services/auth.api";
 
 const EmailCard: React.FC<EmailCardProps> = ({
+  label,
   value,
   onChange,
   otpValue,
@@ -29,11 +30,11 @@ const EmailCard: React.FC<EmailCardProps> = ({
       }
     };
   }, []);
-  
+
   const validateEmail = (email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
-  }
+  };
 
   const sendOtp = async () => {
     setError(null);
@@ -50,18 +51,29 @@ const EmailCard: React.FC<EmailCardProps> = ({
     }
 
     setLoading(true);
+
+    // Email gửi OTP phụ thuộc vào ngữ cảnh sử dụng
+    if (!label) {
+      setError("Internal error: missing label for email context.");
+      setLoading(false);
+      return;
+    }
+    const from = label === "register" ? "register" : "reset-password";
+
     try {
-      const payload: RequestOtpDto = { email: value };
+      const payload: RequestOtpDto = { email: value, from };
       const response = await authApi.requestOtp(payload);
-      setSuccess(response.message || "OTP sent successfully! Check your email.");
-      
+      setSuccess(
+        response.message || "OTP sent successfully! Check your email."
+      );
+
       // Clear timer cũ nếu có
       if (timerRef.current) {
         clearInterval(timerRef.current);
       }
 
       // Đếm ngược từ 60 giây
-      setCountdown(60);
+      setCountdown(300);
       timerRef.current = setInterval(() => {
         setCountdown((prev) => {
           if (prev <= 1) {
@@ -83,7 +95,7 @@ const EmailCard: React.FC<EmailCardProps> = ({
     } finally {
       setLoading(false);
     }
-  }
+  };
 
   return (
     <div className={`flex flex-col md:flex-row items-start gap-3 ${className}`}>
@@ -101,11 +113,11 @@ const EmailCard: React.FC<EmailCardProps> = ({
           <Button
             type="button"
             label={
-              loading 
-                ? "Sending..." 
-                : countdown > 0 
-                ? `Resend (${countdown}s)` 
-                : "Send OTP"
+              loading
+                ? "Sending..."
+                : countdown > 0
+                  ? `Resend (${countdown}s)`
+                  : "Send OTP"
             }
             onClick={sendOtp}
             disabled={disabled || loading || countdown > 0}
@@ -121,12 +133,14 @@ const EmailCard: React.FC<EmailCardProps> = ({
               disabled:cursor-not-allowed"
           />
         </div>
-        {error && <div className="text-sm text-red-500 mt-1">{error}</div>}
-        {success && <div className="text-sm text-green-600 mt-1">{success}</div>}
+        {error && <div className="text-xs text-red-500 mt-1">{error}</div>}
+        {success && (
+          <div className="text-sm text-green-600 mt-1">{success}</div>
+        )}
       </div>
 
       <div className="w-full md:flex-3 min-w-0">
-        <InputField 
+        <InputField
           label="OTP"
           type="text"
           value={otpValue}

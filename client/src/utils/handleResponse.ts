@@ -1,4 +1,4 @@
-import type { AuthResponse } from "../types/auth";
+import type { AuthResponse } from "@interfaces/auth";
 
 export const handleResponse = async <T = AuthResponse>(
   res: Response

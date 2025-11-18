@@ -20,16 +20,30 @@ export const requestOtp = async (
   req: Request<{}, {}, RequestOtpBody>,
   res: Response
 ) => {
-  const { email } = req.body;
+  const { email, from } = req.body;
 
   if (!email || !emailRegex.test(email)) {
     return res.status(400).json({ message: AuthMessages.EMAIL_INVALID });
   }
 
-  // Kiểm tra email đã được đăng ký
-  const existing = await User.findOne({ email });
-  if (existing) {
-    return res.status(400).json({ message: AuthMessages.EMAIL_REGISTERED });
+  if (from !== "register" && from !== "reset-password") {
+    return res.status(400).json({ message: AuthMessages.INVALID_OTP_CONTEXT });
+  }
+
+  // Kiểm tra email chưa được đăng ký nếu từ "register"
+  if (from === "register") {
+    const existing = await User.findOne({ email });
+    if (existing) {
+      return res.status(400).json({ message: AuthMessages.EMAIL_REGISTERED });
+    }
+  }
+
+  // Kiểm tra email được đăng ký nếu từ "reset-password"
+  if (from === "reset-password") {
+    const existing = await User.findOne({ email });
+    if (!existing) {
+      return res.status(400).json({ message: AuthMessages.EMAIL_INVALID });
+    }
   }
 
   // Tạo OTP 6 chữ số ngẫu nhiên
@@ -58,7 +72,7 @@ export const register = async (
   const { name, email, password, address, otp, recaptchaToken } = req.body;
 
   // Kiểm tra input
-  if (!name || !email || !password || !otp || !recaptchaToken) {
+  if (!name || !email || !otp || !address || !password || !recaptchaToken) {
     return res.status(400).json({ message: AuthMessages.MISSING_FIELDS });
   }
 
@@ -128,9 +142,15 @@ export const login = async (req: Request<{}, {}, LoginBody>, res: Response) => {
 
   // Kiểm tra input
   if (!email || !password) {
-    return res
-      .status(400)
-      .json({ message: AuthMessages.MISSING_EMAIL_OR_PASSWORD });
+    return res.status(400).json({ message: AuthMessages.MISSING_FIELDS });
+  }
+
+  if (!emailRegex.test(email)) {
+    return res.status(400).json({ message: AuthMessages.EMAIL_INVALID });
+  }
+
+  if (password.length < 8) {
+    return res.status(400).json({ message: AuthMessages.PASSWORD_TOO_SHORT });
   }
 
   try {

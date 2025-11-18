@@ -2,7 +2,7 @@ import { useState } from "react";
 import FormCard from "@components/ui/FormCard";
 import ReCAPTCHA from "react-google-recaptcha";
 import { authApi } from "@services/auth.api";
-import type { RegisterDto } from "@types/auth";
+import type { RegisterDto } from "@interfaces/auth";
 import EmailCard from "@components/ui/EmailCard";
 
 const RegisterContainer = () => {
@@ -95,6 +95,7 @@ const RegisterContainer = () => {
           error: error.name,
         },
         <EmailCard
+          label="register"
           value={email}
           onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
             setEmail(e.target.value)
@@ -104,7 +105,7 @@ const RegisterContainer = () => {
           emailError={error.email}
           otpError={error.otp}
           otpValue={otp}
-          onOtpChange={(e: React.ChangeEvent<HTMLInputElement>) => 
+          onOtpChange={(e: React.ChangeEvent<HTMLInputElement>) =>
             setOtp(e.target.value)
           }
         />,
@@ -138,7 +139,7 @@ const RegisterContainer = () => {
         <ReCAPTCHA
           sitekey={String(import.meta.env.VITE_RECAPTCHA_SITE_KEY)}
           onChange={(token) => setReCaptchaToken(token)}
-        />
+        />,
       ]}
       buttonProps={{
         label: "REGISTER",
@@ -148,7 +149,8 @@ const RegisterContainer = () => {
       onSubmit={handleSubmit}
     >
       {/* Error message */}
-      {error.captcha && <p className="text-red-500 mt-3">{error.captcha}</p>}
+      {error.captcha && <p className="text-xs text-red-500">{error.captcha}</p>}
+      {error.general && <p className="text-xs text-red-500">{error.general}</p>}
     </FormCard>
   );
 };

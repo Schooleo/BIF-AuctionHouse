@@ -14,13 +14,14 @@ export interface JwtPayload {
 
 export interface RequestOtpBody {
   email: string;
+  from: "register" | "reset-password";
 }
 
 export interface RegisterBody {
   name: string;
   email: string;
   password: string;
-  address?: string;
+  address: string;
   otp: string;
   recaptchaToken: string;
 }

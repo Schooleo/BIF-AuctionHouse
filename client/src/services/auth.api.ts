@@ -5,8 +5,8 @@ import type {
   RequestPasswordResetDto,
   ResetPasswordDto,
   AuthResponse,
-} from "../types/auth";
-import { handleResponse } from "../utils/handleResponse";
+} from "@interfaces/auth";
+import { handleResponse } from "@utils/handleResponse";
 const API_BASE = import.meta.env.VITE_APP_API_URL || "";
 
 export const authApi = {
