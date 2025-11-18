@@ -7,11 +7,11 @@ const LoginPage = () => {
   return (
     <div className="flex flex-col md:flex-row h-screen">
       <div
-        className="md:grow-[0.6] bg-cover bg-center bg-no-repeat flex p-1"
+        className="md:flex-6 bg-cover bg-center bg-no-repeat flex p-1"
         style={{ backgroundImage: `url(${LoginPageImage})` }}
       >
-        <Link to="/">
-          <img src={BIFLogo} alt="Logo" className="h-30 w-30" />
+        <Link to="/" className="h-30 w-30">
+          <img src={BIFLogo} alt="Logo" />
         </Link>
         <div className="flex flex-col p-5">
           <h2 className="font-semibold text-4xl text-black drop-shadow-lg">
@@ -23,7 +23,7 @@ const LoginPage = () => {
         </div>
       </div>
 
-      <div className="grow-[0.4] flex flex-col justify-center px-10">
+      <div className="md:flex-4 flex flex-col justify-center px-10">
         <LoginContainer />
 
         <Link

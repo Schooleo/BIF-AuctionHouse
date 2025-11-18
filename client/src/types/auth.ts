@@ -1,3 +1,7 @@
+export interface RequestOtpDto {
+  email: string;
+}
+
 export interface RegisterDto {
   name: string;
   email: string;

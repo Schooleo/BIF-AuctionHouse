@@ -15,11 +15,26 @@ export interface ButtonProps
   className?: string;
 }
 
+type FieldItem = FormField | React.ReactNode;
+
 export interface FormCardProps {
   title?: string;
-  fields?: FormField[];
+  fields?: FieldItem[];
   buttonProps?: ButtonProps;
   className?: string;
   onSubmit?: () => void;
   children?: React.ReactNode;
+}
+
+export interface EmailCardProps {
+  label?: string;
+  value?: string;
+  onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  otpValue?: string;
+  onOtpChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  disabled?: boolean;
+  className?: string;
+  sendOtpUrl?: string;
+  emailError?: string;
+  otpError?: string;
 }

@@ -3,6 +3,7 @@ import FormCard from "@components/ui/FormCard";
 import ReCAPTCHA from "react-google-recaptcha";
 import { authApi } from "@services/auth.api";
 import type { RegisterDto } from "@types/auth";
+import EmailCard from "@components/ui/EmailCard";
 
 const RegisterContainer = () => {
   const [name, setName] = useState<string>("");
@@ -15,6 +16,7 @@ const RegisterContainer = () => {
   const [error, setError] = useState<{
     name?: string;
     email?: string;
+    otp?: string;
     password?: string;
     confirmPassword?: string;
     address?: string;
@@ -31,6 +33,7 @@ const RegisterContainer = () => {
       otp?: string;
       password?: string;
       confirmPassword?: string;
+      address?: string;
       captcha?: string;
       general?: string;
     } = {};
@@ -39,6 +42,7 @@ const RegisterContainer = () => {
     if (!email) newErrors.email = "Email is required";
     if (!otp) newErrors.otp = "OTP is required";
     if (!password) newErrors.password = "Password is required";
+    if (!address) newErrors.address = "Address is required";
     if (!confirmPassword)
       newErrors.confirmPassword = "Confirm Password is required";
     if (!recaptchaToken) newErrors.captcha = "Please complete the reCAPTCHA";
@@ -55,7 +59,7 @@ const RegisterContainer = () => {
           name,
           email,
           password,
-          address: address || undefined,
+          address: address,
           otp,
           recaptchaToken,
         };
@@ -79,7 +83,7 @@ const RegisterContainer = () => {
   return (
     <FormCard
       title="Sign Up"
-      className="p-6 shadow-lg flex flex-col gap-2"
+      className="p-6 shadow-lg"
       fields={[
         {
           label: "Username",
@@ -90,31 +94,27 @@ const RegisterContainer = () => {
           isRequired: true,
           error: error.name,
         },
-        {
-          label: "Email",
-          type: "email",
-          value: email,
-          onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
-            setEmail(e.target.value),
-          isRequired: true,
-          error: error.email,
-        },
-        {
-          label: "OTP",
-          type: "text",
-          value: otp,
-          onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
-            setOtp(e.target.value),
-          isRequired: true,
-          error: error.general,
-        },
+        <EmailCard
+          value={email}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+            setEmail(e.target.value)
+          }
+          sendOtpUrl="/api/auth/send-otp"
+          disabled={false}
+          emailError={error.email}
+          otpError={error.otp}
+          otpValue={otp}
+          onOtpChange={(e: React.ChangeEvent<HTMLInputElement>) => 
+            setOtp(e.target.value)
+          }
+        />,
         {
           label: "Address",
           type: "text",
           value: address,
           onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
             setAddress(e.target.value),
-          isRequired: false,
+          isRequired: true,
           error: error.address,
         },
         {
@@ -135,6 +135,10 @@ const RegisterContainer = () => {
           isRequired: true,
           error: error.confirmPassword,
         },
+        <ReCAPTCHA
+          sitekey={String(import.meta.env.VITE_RECAPTCHA_SITE_KEY)}
+          onChange={(token) => setReCaptchaToken(token)}
+        />
       ]}
       buttonProps={{
         label: "REGISTER",
@@ -143,14 +147,6 @@ const RegisterContainer = () => {
       }}
       onSubmit={handleSubmit}
     >
-      {/* reCAPTCHA */}
-      <div className="mt-5">
-        <ReCAPTCHA
-          sitekey={String(import.meta.env.VITE_RECAPTCHA_SITE_KEY)}
-          onChange={(token) => setReCaptchaToken(token)}
-        />
-      </div>
-
       {/* Error message */}
       {error.captcha && <p className="text-red-500 mt-3">{error.captcha}</p>}
     </FormCard>

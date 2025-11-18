@@ -2,6 +2,7 @@ import { useState } from "react";
 import FormCard from "../components/ui/FormCard";
 import { authApi } from "@services/auth.api";
 import type { ResetPasswordDto } from "@types/auth";
+import EmailCard from "@components/ui/EmailCard";
 
 const ResetPasswordContainer = () => {
   const [email, setEmail] = useState("");
@@ -40,7 +41,7 @@ const ResetPasswordContainer = () => {
 
     setError(newErrors);
 
-    if (Object.keys(newErrors).length == 0) {
+    if (Object.keys(newErrors).length === 0) {
       try {
         const payload: ResetPasswordDto = { email, otp, password };
         const response = await authApi.resetPassword(payload);
@@ -63,24 +64,18 @@ const ResetPasswordContainer = () => {
       title="Reset Password"
       className="p-6 shadow-lg flex flex-col gap-2"
       fields={[
-        {
-          label: "Email",
-          type: "email",
-          value: email,
-          onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
-            setEmail(e.target.value),
-          isRequired: true,
-          error: error.email,
-        },
-        {
-          label: "OTP",
-          type: "text",
-          value: otp,
-          onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
-            setOtp(e.target.value),
-          isRequired: true,
-          error: error.otp,
-        },
+        <EmailCard
+          value={email}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+            setEmail(e.target.value)
+          }
+          otpValue={otp}
+          onOtpChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+            setOtp(e.target.value)
+          }
+          emailError={error.email}
+          otpError={error.otp}
+        />,
         {
           label: "Password",
           type: "password",
