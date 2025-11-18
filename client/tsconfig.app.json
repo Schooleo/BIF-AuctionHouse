@@ -25,7 +25,7 @@
     "baseUrl": "src",
     "paths": {
       "@img/*": ["assets/img/*"],
-      "@types/*": ["types/*"],
+      "@interfaces/*": ["interfaces/*"],
       "@components/*": ["components/*"],
       "@containers/*": ["containers/*"],
       "@layouts/*": ["layouts/*"],

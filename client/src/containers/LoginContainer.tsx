@@ -1,26 +1,29 @@
 import { useState } from "react";
 import FormCard from "@components/ui/FormCard";
 import { authApi } from "@services/auth.api";
-import type { LoginDto } from "@types/auth";
+import type { LoginDto } from "@interfaces/auth";
 
 const LoginContainer = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [errors, setErrors] = useState<{
+  const [error, setError] = useState<{
     email?: string;
     password?: string;
     general?: string;
   }>({});
 
   const handleSubmit = async () => {
-    const newErrors: { email?: string; password?: string } = {};
+    const newErrors: {
+      email?: string;
+      password?: string;
+      general?: string;
+    } = {};
     if (!email) newErrors.email = "Email is required";
     if (!password) newErrors.password = "Password is required";
 
-    setErrors(newErrors);
+    setError(newErrors);
 
     if (Object.keys(newErrors).length === 0) {
-
       try {
         const payload: LoginDto = { email, password };
         const response = await authApi.login(payload);
@@ -28,13 +31,13 @@ const LoginContainer = () => {
           localStorage.setItem("token", response.token);
           window.location.href = "/";
         } else {
-          setErrors({ general: response.message });
+          setError({ general: response.message });
         }
       } catch (err: unknown) {
         if (err instanceof Error) {
-          setErrors({ general: err.message });
+          setError({ general: err.message });
         } else {
-          setErrors({ general: "An unknown error occurred" });
+          setError({ general: "An unknown error occurred" });
         }
       }
     }
@@ -51,7 +54,7 @@ const LoginContainer = () => {
           onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
             setEmail(e.target.value),
           isRequired: true,
-          error: errors.email,
+          error: error.email,
         },
         {
           label: "Password",
@@ -60,7 +63,7 @@ const LoginContainer = () => {
           onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
             setPassword(e.target.value),
           isRequired: true,
-          error: errors.password,
+          error: error.password ? error.password : error.general,
         },
       ]}
       buttonProps={{ label: "LOGIN", variant: "primary", type: "submit" }}

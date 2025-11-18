@@ -1,4 +1,4 @@
-import type { FormCardProps, FormField } from "../../types/ui";
+import type { FormCardProps, FormField } from "@interfaces/ui";
 import InputField from "../forms/InputField";
 import PasswordField from "../forms/PasswordField";
 import Button from "../forms/Button";
@@ -14,7 +14,7 @@ const FormCard: React.FC<FormCardProps> = ({
 }) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit && onSubmit();
+    onSubmit?.();
   };
 
   return (
@@ -30,7 +30,7 @@ const FormCard: React.FC<FormCardProps> = ({
       <div className="bg-white flex flex-col gap-4">
         {fields.map((item, i) => {
           if (React.isValidElement(item)) return <div key={i}>{item}</div>;
-          
+
           // Mặc định là FormField khi không phải là React element
           const field = item as FormField;
           return field.type === "password" ? (
@@ -39,6 +39,7 @@ const FormCard: React.FC<FormCardProps> = ({
             <InputField key={i} {...field} />
           );
         })}
+
         {children && children}
         <Button className={"w-full mt-5"} {...buttonProps} />
       </div>

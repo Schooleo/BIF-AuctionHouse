@@ -1,7 +1,7 @@
 import { useState } from "react";
-import FormCard from "../components/ui/FormCard";
+import FormCard from "@components/ui/FormCard";
 import { authApi } from "@services/auth.api";
-import type { ResetPasswordDto } from "@types/auth";
+import type { ResetPasswordDto } from "@interfaces/auth";
 import EmailCard from "@components/ui/EmailCard";
 
 const ResetPasswordContainer = () => {
@@ -65,10 +65,12 @@ const ResetPasswordContainer = () => {
       className="p-6 shadow-lg flex flex-col gap-2"
       fields={[
         <EmailCard
+          label="reset-password"
           value={email}
           onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
             setEmail(e.target.value)
           }
+          sendOtpUrl="/api/auth/send-otp"
           otpValue={otp}
           onOtpChange={(e: React.ChangeEvent<HTMLInputElement>) =>
             setOtp(e.target.value)
@@ -92,7 +94,7 @@ const ResetPasswordContainer = () => {
           onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
             setConfirmPassword(e.target.value),
           isRequired: true,
-          error: error.confirmPassword,
+          error: error.confirmPassword ? error.confirmPassword : error.general,
         },
       ]}
       buttonProps={{

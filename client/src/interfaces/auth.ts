@@ -1,5 +1,6 @@
 export interface RequestOtpDto {
   email: string;
+  from: "register" | "reset-password";
 }
 
 export interface RegisterDto {
