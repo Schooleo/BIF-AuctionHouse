@@ -20,7 +20,6 @@ const LoginContainer = () => {
     setErrors(newErrors);
 
     if (Object.keys(newErrors).length === 0) {
-      setErrors({});
 
       try {
         const payload: LoginDto = { email, password };
