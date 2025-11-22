@@ -34,7 +34,6 @@ export interface EmailCardProps {
   onOtpChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
   disabled?: boolean;
   className?: string;
-  sendOtpUrl?: string;
   emailError?: string;
   otpError?: string;
 }

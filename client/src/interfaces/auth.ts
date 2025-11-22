@@ -1,3 +1,27 @@
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: "bidder" | "seller" | "admin";
+  address?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AuthStore {
+  user: User | null;
+  token: string | null;
+  loading: boolean;
+  setUser: (user: User | null) => void;
+  setToken: (token: string | null) => void;
+  setLoading: (value: boolean) => void;
+
+  login: (data: LoginDto) => Promise<void>;
+  register: (data: RegisterDto) => Promise<void>;
+  logout: () => void;
+  refreshUser: () => Promise<void>;
+}
+
 export interface RequestOtpDto {
   email: string;
   from: "register" | "reset-password";
@@ -28,6 +52,7 @@ export interface ResetPasswordDto {
 }
 
 export interface AuthResponse {
+  user?: User;
   token?: string;
   message?: string;
 }

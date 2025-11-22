@@ -42,6 +42,8 @@ const RegisterContainer = () => {
     if (!email) newErrors.email = "Email is required";
     if (!otp) newErrors.otp = "OTP is required";
     if (!password) newErrors.password = "Password is required";
+    if (password.length < 8)
+      newErrors.password = "Password must be at least 8 characters";
     if (!address) newErrors.address = "Address is required";
     if (!confirmPassword)
       newErrors.confirmPassword = "Confirm Password is required";
@@ -100,7 +102,6 @@ const RegisterContainer = () => {
           onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
             setEmail(e.target.value)
           }
-          sendOtpUrl="/api/auth/send-otp"
           disabled={false}
           emailError={error.email}
           otpError={error.otp}
@@ -144,7 +145,7 @@ const RegisterContainer = () => {
       buttonProps={{
         label: "REGISTER",
         type: "submit",
-        variant: "secondary",
+        variant: "primary",
       }}
       onSubmit={handleSubmit}
     >

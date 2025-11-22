@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import FormCard from "@components/forms/FormCard";
 import { authApi } from "@services/auth.api";
 import type { ResetPasswordDto } from "@interfaces/auth";
@@ -18,6 +19,9 @@ const ResetPasswordContainer = () => {
     general?: string;
   }>({});
 
+  // Dùng để điều hướng sau khi đặt lại mật khẩu thành công
+  const Navigate = useNavigate();
+
   const handleSubmit = async () => {
     setError({});
 
@@ -32,6 +36,8 @@ const ResetPasswordContainer = () => {
     if (!email) newErrors.email = "Email is required";
     if (!otp) newErrors.otp = "OTP is required";
     if (!password) newErrors.password = "Password is required";
+    if (password.length < 8)
+      newErrors.password = "Password must be at least 8 characters";
     if (!confirmPassword)
       newErrors.confirmPassword = "Confirm Password is required";
 
@@ -46,8 +52,7 @@ const ResetPasswordContainer = () => {
         const payload: ResetPasswordDto = { email, otp, password };
         const response = await authApi.resetPassword(payload);
         if (response.message) {
-          alert(response.message);
-          window.location.href = "/auth/login";
+          Navigate("/auth/login");
         }
       } catch (err: unknown) {
         if (err instanceof Error) {
@@ -70,7 +75,6 @@ const ResetPasswordContainer = () => {
           onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
             setEmail(e.target.value)
           }
-          sendOtpUrl="/api/auth/send-otp"
           otpValue={otp}
           onOtpChange={(e: React.ChangeEvent<HTMLInputElement>) =>
             setOtp(e.target.value)
@@ -100,7 +104,7 @@ const ResetPasswordContainer = () => {
       buttonProps={{
         label: "RESET PASSWORD",
         type: "submit",
-        variant: "secondary",
+        variant: "primary",
       }}
       onSubmit={handleSubmit}
     />
