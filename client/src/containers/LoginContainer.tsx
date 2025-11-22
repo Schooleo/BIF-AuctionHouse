@@ -20,6 +20,8 @@ const LoginContainer = () => {
     } = {};
     if (!email) newErrors.email = "Email is required";
     if (!password) newErrors.password = "Password is required";
+    if (password.length < 8)
+      newErrors.password = "Password must be at least 8 characters";
 
     setError(newErrors);
 

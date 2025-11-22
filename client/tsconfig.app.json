@@ -31,7 +31,8 @@
       "@layouts/*": ["layouts/*"],
       "@pages/*": ["pages/*"],
       "@utils/*": ["utils/*"],
-      "@services/*": ["services/*"]
+      "@services/*": ["services/*"],
+      "@stores/*": ["stores/*"]
     }
   },
   "include": ["src"]

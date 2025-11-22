@@ -36,10 +36,13 @@ const SearchBar: React.FC<SearchBarProps> = ({
         value={currentValue}
         onChange={handleChange}
         placeholder={placeholder}
-        className="w-full max-w-sm px-4 py-2 placeholder-gray-300 focus:outline-none"
+        className="w-full max-w-sm px-4 py-2 placeholder-gray-400 focus:outline-none"
       />
 
-      <button type="submit" className="mr-3 text-gray-400 hover:text-gray-600">
+      <button
+        type="submit"
+        className="mr-3 text-gray-300 hover:text-gray-100 hover:scale-110 transition-all duration-200"
+      >
         <Search size={20} />
       </button>
     </form>
