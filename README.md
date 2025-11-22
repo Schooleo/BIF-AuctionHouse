@@ -134,45 +134,56 @@ CLIENT_URL=http://localhost:3000
 ```bash
 BIF-AuctionHouse/
 │
+├── .gitignore
 ├── docker-compose.yml
+├── LICENSE
 ├── README.md
 │
-└── src/
-    ├── client/                      # Frontend (React + Vite)
-    │   ├── index.html
-    │   ├── vite.config.ts
-    │   └── src/
-    │       ├── index.css            # Tailwind directives
-    │       ├── main.tsx             # React entry point
-    │       ├── App.tsx              # Root component
-    │       ├── components/          # Reusable UI components
-    │       │   ├── forms/           # Form/Input components
-    │       │   └── ui/              # UI components (Navbar, Footer, etc.)
-    │       ├── layouts/             # Layout components
-    │       ├── containers/          # Container components
-    │       ├── pages/               # Page components
-    │       │   ├── auth/            # Auth pages (Login, Register, Reset Password)
-    │       │   ├── user/            # User account pages
-    │       │   └── admin/           # Admin dashboard pages
-    │       │   └── shared/          # Shared pages (NotFound, Forbidden, etc.)
-    │       └── assets/              # Static assets
-    │           └── img/             # Images
-    │
-    └── server/                      # Backend (Express + MongoDB)
-        ├── src/
-        │   ├── app.ts               # Express app initialization
-        │   ├── server.ts            # Entry point
-        │   ├── config/              # Config files
-        │   │   ├── db.ts            # MongoDB connection
-        │   │   ├── passport.ts      # Passport strategy
-        │   │   └── env.ts           # Environment variable loader
-        │   ├── routes/              # Express routes
-        │   ├── controllers/         # Request handlers
-        │   ├── models/              # Mongoose models
-        │   ├── middleware/          # Custom middleware (auth, validation, etc.)
-        │   └── utils/               # Helper functions
-        ├── package.json
-        └── tsconfig.json
+├── client/                      # Frontend (React + Vite)
+│   ├── .env
+│   ├── .env.example
+│   ├── Dockerfile
+│   ├── package.json
+│   └── src/
+│       ├── index.css            # Tailwind directives
+│       ├── main.tsx             # React entry point
+│       ├── App.tsx              # Root component
+│       ├── components/          # Reusable UI components
+│       │   ├── forms/           # Form/Input components
+│       │   ├── navbar/          # Navbar components
+│       │   ├── product/         # Product-related components
+│       │   └── ui/              # UI components (Footer, Spinner, etc.)
+│       ├── containers/          # Container components (Login, Register, etc.)
+│       ├── interfaces/          # TypeScript interfaces/types
+│       ├── layouts/             # Layout components (MainLayout, AuthLayout)
+│       ├── pages/               # Page components
+│       │   ├── admin/           # Admin dashboard pages
+│       │   ├── auth/            # Auth pages (Login, Register, Reset Password)
+│       │   ├── shared/          # Shared pages (NotFound)
+│       │   └── user/            # User account pages (HomePage)
+│       ├── services/            # API services (auth.api.ts, product.api.ts)
+│       ├── stores/              # State management (e.g., useAuthStore)
+│       └── utils/               # Helper functions
+│
+└── server/                      # Backend (Express + MongoDB)
+    ├── .env
+    ├── .env.example
+    ├── Dockerfile
+    ├── package.json
+    ├── tsconfig.json
+    └── src/
+        ├── app.ts               # Express app initialization
+        ├── server.ts            # Entry point
+        ├── config/              # Config files (db.ts, passport.ts, env.ts)
+        ├── constants/           # Global constants (e.g., messages.ts)
+        ├── controllers/         # Request handlers
+        ├── middleware/          # Custom middleware (auth, validation, etc.)
+        ├── models/              # Mongoose models
+        ├── routes/              # Express routes
+        ├── schemas/             # Validation schemas (e.g., auth.schema.ts)
+        ├── services/            # Service layer logic (e.g., auth.service.ts)
+        ├── types/               # TypeScript types/declarations
+        └── utils/               # Helper functions (jwt.util.ts, email.util.ts)
 ```
 
 ### 👥 Contributors
