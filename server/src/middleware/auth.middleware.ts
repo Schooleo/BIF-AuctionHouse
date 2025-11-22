@@ -1,18 +1,18 @@
 import { Request, Response, NextFunction } from "express";
 import passport from "../config/passport";
 
-// Bảo vệ route bằng JWT và kiểm tra role nếu được cung cấp
-// @param roles - Danh sách role được phép truy cập route này
-export const protect = (roles?: string[]) => {
+type UserRole = "bidder" | "seller" | "admin";
+
+export const protect = (roles?: UserRole[]) => {
   return [
-    // Xác thực JWT
+    // Xác thực người dùng bằng JWT
     passport.authenticate("jwt", { session: false }),
 
-    // Kiểm tra role nếu có
+    // Kiểm tra vai trò người dùng
     (req: Request, res: Response, next: NextFunction) => {
       if (!roles || roles.length === 0) return next();
 
-      const user = req.user as { role: string };
+      const user = req.user as { role: UserRole };
 
       if (!user || !roles.includes(user.role)) {
         return res

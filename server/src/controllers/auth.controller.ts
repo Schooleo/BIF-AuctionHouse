@@ -1,296 +1,76 @@
 import { Request, Response } from "express";
-import { User } from "../models/user.model";
-import { OtpModel } from "../models/otp.model";
-import { generateToken } from "../utils/jwt.util";
-import { sendOTPEmail, sendPasswordResetOTPEmail } from "../utils/email.util";
-import { verifyRecaptcha } from "../utils/recaptcha.util";
-import {
-  RequestOtpBody,
-  RegisterBody,
-  LoginBody,
-  RequestPasswordResetBody,
-  ResetPasswordBody,
-} from "../types/auth";
+import { authService } from "../services/auth.service";
 import { AuthMessages } from "../constants/messages";
+import { User } from "../models/user.model";
 
-// Kiểm tra định dạng email cơ bản
-const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+export const getUser = async (req: Request, res: Response) => {
+  if (!req.user) return res.status(200).json({ user: null });
 
-export const requestOtp = async (
-  req: Request<{}, {}, RequestOtpBody>,
-  res: Response
-) => {
+  try {
+    const userData = await authService.getUser(req.user.id);
+    if (!userData) return res.status(404).json({ user: null });
+
+    res.json({ user: userData });
+  } catch (e: any) {
+    res.status(500).json({ message: e.message });
+  }
+};
+
+export const requestOtp = async (req: Request, res: Response) => {
   const { email, from } = req.body;
 
-  if (!email || !emailRegex.test(email)) {
-    return res.status(400).json({ message: AuthMessages.EMAIL_INVALID });
-  }
-
-  if (from !== "register" && from !== "reset-password") {
-    return res.status(400).json({ message: AuthMessages.INVALID_OTP_CONTEXT });
-  }
-
-  // Kiểm tra email chưa được đăng ký nếu từ "register"
-  if (from === "register") {
-    const existing = await User.findOne({ email });
-    if (existing) {
-      return res.status(400).json({ message: AuthMessages.EMAIL_REGISTERED });
-    }
-  }
-
-  // Kiểm tra email được đăng ký nếu từ "reset-password"
-  if (from === "reset-password") {
-    const existing = await User.findOne({ email });
-    if (!existing) {
-      return res.status(400).json({ message: AuthMessages.EMAIL_INVALID });
-    }
-  }
-
-  // Tạo OTP 6 chữ số ngẫu nhiên
-  const otp = Math.floor(100000 + Math.random() * 900000).toString();
-
-  // Xóa OTP cũ nếu tồn tại
-  await OtpModel.findOneAndDelete({ email });
-
-  // Tạo OTP mới
-  await OtpModel.create({
-    email,
-    otp,
-    expiresAt: new Date(Date.now() + 5 * 60 * 1000),
-  });
-
-  // Gửi OTP bằng Apps Script
-  await sendOTPEmail(email, otp);
-
-  return res.json({ message: AuthMessages.OTP_SENT });
-};
-
-export const register = async (
-  req: Request<{}, {}, RegisterBody>,
-  res: Response
-) => {
-  const { name, email, password, address, otp, recaptchaToken } = req.body;
-
-  // Kiểm tra input
-  if (!name || !email || !otp || !address || !password || !recaptchaToken) {
-    return res.status(400).json({ message: AuthMessages.MISSING_FIELDS });
-  }
-
-  if (!emailRegex.test(email)) {
-    return res.status(400).json({ message: AuthMessages.EMAIL_INVALID });
-  }
-
-  // Kiểm tra reCAPTCHA
   try {
-    const valid = await verifyRecaptcha(recaptchaToken);
-    if (!valid) {
-      return res.status(400).json({ message: AuthMessages.RECAPTCHA_FAILED });
-    }
-  } catch (error) {
-    console.error("reCAPTCHA verification error:", error);
-    return res.status(500).json({ message: "Server Error" });
-  }
-
-  if (password.length < 8) {
-    return res.status(400).json({ message: AuthMessages.PASSWORD_TOO_SHORT });
-  }
-
-  try {
-    // Kiểm tra OTP
-    const otpRecord = await OtpModel.findOne({ email });
-    if (
-      !otpRecord ||
-      otpRecord.otp !== otp ||
-      otpRecord.expiresAt < new Date()
-    ) {
-      return res.status(400).json({ message: AuthMessages.OTP_INVALID });
-    }
-
-    // Xóa OTP sau khi sử dụng
-    await OtpModel.findOneAndDelete({ email });
-
-    const user = await User.create({
-      name,
-      email,
-      password, // Gửi mật khẩu gốc (Hash ở user.model)
-      address,
-    });
-
-    // Tạo token JWT để đăng nhập
-    const token = generateToken({
-      id: user.id,
-      role: user.role,
-      email: user.email,
-    });
-
-    const userResponse = {
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-    };
-
-    res.status(201).json({ user: userResponse, token });
-  } catch (error) {
-    console.error("Register error:", error);
-    res.status(500).json({ message: "Server Error" });
+    await authService.requestOtp(email, from);
+    res.json({ message: AuthMessages.OTP_SENT });
+  } catch (e: any) {
+    res.status(400).json({ message: e.message });
   }
 };
 
-export const login = async (req: Request<{}, {}, LoginBody>, res: Response) => {
-  const { email, password } = req.body;
-
-  // Kiểm tra input
-  if (!email || !password) {
-    return res.status(400).json({ message: AuthMessages.MISSING_FIELDS });
-  }
-
-  if (!emailRegex.test(email)) {
-    return res.status(400).json({ message: AuthMessages.EMAIL_INVALID });
-  }
-
-  if (password.length < 8) {
-    return res.status(400).json({ message: AuthMessages.PASSWORD_TOO_SHORT });
-  }
-
+export const register = async (req: Request, res: Response) => {
   try {
-    const user = await User.findOne({ email }).select("+password");
-
-    if (!user) {
-      return res
-        .status(401)
-        .json({ message: AuthMessages.INVALID_CREDENTIALS });
-    }
-
-    // Method comparePassword ở user.model
-    const valid = await user.comparePassword(password);
-
-    if (!valid) {
-      return res
-        .status(401)
-        .json({ message: AuthMessages.INVALID_CREDENTIALS });
-    }
-
-    const token = generateToken({
-      id: user.id,
-      role: user.role,
-      email: user.email,
-    });
-
-    // Tạo phản hồi an toàn
-    const userResponse = {
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-    };
-
-    res.json({ user: userResponse, token });
-  } catch (error) {
-    console.error("Login error:", error);
-    res.status(500).json({ message: "Server Error" });
+    const { user, token } = await authService.register(req.body);
+    res.status(201).json({ user, token });
+  } catch (e: any) {
+    res.status(400).json({ message: e.message });
   }
 };
 
-export const requestPasswordReset = async (
-  req: Request<{}, {}, RequestPasswordResetBody>,
-  res: Response
-) => {
-  const { email } = req.body;
-
-  if (!email || !emailRegex.test(email)) {
-    return res.status(400).json({ message: AuthMessages.EMAIL_INVALID });
-  }
-
+export const login = async (req: Request, res: Response) => {
   try {
-    const user = await User.findOne({ email });
-
-    if (!user) {
-      return res.json({ message: AuthMessages.PASSWORD_RESET_EMAIL_SENT });
-    }
-
-    // Generate a 6-digit OTP
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
-
-    // Delete any old OTP for this email to prevent conflicts
-    await OtpModel.findOneAndDelete({ email });
-
-    // Create a new OTP record, valid for 5 minutes
-    await OtpModel.create({
-      email,
-      otp,
-      expiresAt: new Date(Date.now() + 5 * 60 * 1000), // 5-minute expiry
-    });
-
-    // Send the password reset OTP email
-    await sendPasswordResetOTPEmail(email, otp);
-
-    return res.json({ message: AuthMessages.PASSWORD_RESET_EMAIL_SENT });
-  } catch (error) {
-    console.error("Request Password Reset error:", error);
-    return res.status(500).json({ message: "Server Error" });
+    const { user, token } = await authService.login(
+      req.body.email,
+      req.body.password
+    );
+    res.json({ user, token });
+  } catch (e: any) {
+    res.status(401).json({ message: e.message });
   }
 };
 
-export const resetPassword = async (
-  req: Request<{}, {}, ResetPasswordBody>,
-  res: Response
-) => {
-  const { email, otp, password } = req.body;
-
-  // Validate inputs
-  if (!email || !otp || !password) {
-    return res.status(400).json({ message: AuthMessages.MISSING_FIELDS });
-  }
-
-  if (password.length < 8) {
-    return res.status(400).json({ message: AuthMessages.PASSWORD_TOO_SHORT });
-  }
-
+export const requestPasswordReset = async (req: Request, res: Response) => {
   try {
-    // Find and validate the OTP
-    const otpRecord = await OtpModel.findOne({ email });
-    if (
-      !otpRecord ||
-      otpRecord.otp !== otp ||
-      otpRecord.expiresAt < new Date()
-    ) {
-      return res.status(400).json({ message: AuthMessages.OTP_INVALID });
-    }
+    await authService.requestPasswordReset(req.body.email);
+    res.json({ message: AuthMessages.PASSWORD_RESET_EMAIL_SENT });
+  } catch (e: any) {
+    res.status(400).json({ message: e.message });
+  }
+};
 
-    const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(400).json({ message: AuthMessages.OTP_INVALID });
-    }
-
-    // Delete the OTP
-    await OtpModel.findOneAndDelete({ email });
-
-    // Update the password
-    user.password = password;
-    await user.save();
-
-    // Log the user in by issuing a new JWT
-    const token = generateToken({
-      id: user.id,
-      role: user.role,
-      email: user.email,
-    });
-
-    const userResponse = {
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-    };
+export const resetPassword = async (req: Request, res: Response) => {
+  try {
+    const { user, token } = await authService.resetPassword(
+      req.body.email,
+      req.body.otp,
+      req.body.password
+    );
 
     res.json({
       message: AuthMessages.PASSWORD_RESET_SUCCESS,
       token,
-      user: userResponse,
+      user,
     });
-  } catch (error) {
-    console.error("Password reset error:", error);
-    res.status(500).json({ message: "Server Error" });
+  } catch (e: any) {
+    res.status(400).json({ message: e.message });
   }
 };
