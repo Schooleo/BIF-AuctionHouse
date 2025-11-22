@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
-import InputField from "../forms/InputField";
-import Button from "../forms/Button";
+import InputField from "./InputField";
+import Button from "./Button";
 import type { EmailCardProps } from "@interfaces/ui";
 import type { RequestOtpDto } from "@interfaces/auth";
 import { authApi } from "@services/auth.api";

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import FormCard from "@components/ui/FormCard";
+import FormCard from "@components/forms/FormCard";
 import { authApi } from "@services/auth.api";
 import type { LoginDto } from "@interfaces/auth";
 

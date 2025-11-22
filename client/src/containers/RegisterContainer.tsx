@@ -1,9 +1,9 @@
 import { useState } from "react";
-import FormCard from "@components/ui/FormCard";
+import FormCard from "@components/forms/FormCard";
 import ReCAPTCHA from "react-google-recaptcha";
 import { authApi } from "@services/auth.api";
 import type { RegisterDto } from "@interfaces/auth";
-import EmailCard from "@components/ui/EmailCard";
+import EmailCard from "@components/forms/EmailCard";
 
 const RegisterContainer = () => {
   const [name, setName] = useState<string>("");

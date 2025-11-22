@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import ProductCard from "@components/ui/ProductCard";
+import ProductCard from "@components/product/ProductCard";
 import type { Product, Bid } from "@interfaces/product";
 
 const generateMockProduct = (
@@ -9,7 +9,7 @@ const generateMockProduct = (
   timeToEndHours: number
 ): Product => {
   const now = Date.now();
-  const startTime = new Date(now - 3 * 24 * 60 * 60 * 1000).toISOString();
+  const startTime = new Date(now - 0.5 * 24 * 60 * 60 * 1000).toISOString();
   const endTime = new Date(now + timeToEndHours * 60 * 60 * 1000).toISOString();
 
   const mockBidders: Bid[] = Array.from({ length: bids }).map((_, index) => ({

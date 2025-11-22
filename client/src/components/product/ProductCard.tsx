@@ -1,5 +1,6 @@
 import React from "react";
 import type { Product } from "@interfaces/product";
+import ProductImage from "./ProductImage";
 import { Link } from "react-router-dom";
 
 interface ProductCard {
@@ -17,6 +18,14 @@ const ProductCard: React.FC<ProductCard> = ({ product }) => {
     startTime,
     endTime,
   } = product;
+
+  const checkRecentlyAdded = (startStr: string) => {
+    const start = new Date(startStr).getTime();
+    const now = Date.now();
+    const diff = now - start;
+    const oneDayMs = 24 * 60 * 60 * 1000;
+    return diff <= oneDayMs;
+  };
 
   const topBidder = bidders.length > 0 ? bidders[bidders.length - 1] : null;
 
@@ -54,13 +63,10 @@ const ProductCard: React.FC<ProductCard> = ({ product }) => {
       to={`/product/${_id}`}
       className="group block bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-lg transition-all duration-300 ease-in-out transform hover:-translate-y-1"
     >
-      <div className="w-full h-44 sm:h-48 md:h-52 lg:h-56 bg-gray-100 rounded-t-lg overflow-hidden flex items-center justify-center">
-        <img
-          src={images[0]}
-          alt={name}
-          className="w-full h-full object-cover object-center transition-transform duration-300 group-hover:scale-105"
-        />
-      </div>
+      <ProductImage
+        images={images}
+        recentlyAdded={checkRecentlyAdded(startTime)}
+      />
 
       <div className="p-3 sm:p-4 space-y-2">
         {" "}

@@ -1,8 +1,8 @@
 import { useState } from "react";
-import FormCard from "@components/ui/FormCard";
+import FormCard from "@components/forms/FormCard";
 import { authApi } from "@services/auth.api";
 import type { ResetPasswordDto } from "@interfaces/auth";
-import EmailCard from "@components/ui/EmailCard";
+import EmailCard from "@components/forms/EmailCard";
 
 const ResetPasswordContainer = () => {
   const [email, setEmail] = useState("");
