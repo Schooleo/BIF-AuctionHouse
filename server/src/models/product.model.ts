@@ -29,8 +29,8 @@ export interface IDescriptionUpdate extends Types.Subdocument {
 }
 
 const DescriptionUpdateSchema = new Schema<IDescriptionUpdate>({
-    content: { type: String, required: true },
-    updatedAt: { type: Date, default: Date.now },
+  content: { type: String, required: true },
+  updatedAt: { type: Date, default: Date.now },
 });
 
 // Interface của product
@@ -48,7 +48,7 @@ export interface IProduct extends Document {
   stepPrice: number; // Bước giá (3.1)
   buyNowPrice?: number; // Giá mua ngay (nếu có) (3/1)
   autoExtends: boolean; // Tự động gia hạn (3.1)
-  
+
   // Dữ liệu đáu giá trực tiếp
   currentPrice: number;
   currentBidder?: Types.ObjectId;
@@ -72,10 +72,7 @@ const productSchema = new Schema<IProduct>(
     subImages: {
       type: [String],
       required: true,
-      validate: [
-        (val: string[]) => val.length >= 3,
-        "Phải có ít nhất 3 ảnh",
-      ],
+      validate: [(val: string[]) => val.length >= 3, "Phải có ít nhất 3 ảnh"],
     },
     description: { type: String, required: true },
     descriptionHistory: { type: [DescriptionUpdateSchema], default: [] },
@@ -85,12 +82,12 @@ const productSchema = new Schema<IProduct>(
     stepPrice: { type: Number, required: true },
     buyNowPrice: { type: Number },
     autoExtends: { type: Boolean, default: false },
-    
+
     // Dữ liệu đáu giá trực tiếp cho truy vấn
     currentPrice: { type: Number }, // No longer required here, set in `pre` hook
     currentBidder: { type: Schema.Types.ObjectId, ref: "User" },
     bidCount: { type: Number, default: 0 },
-    
+
     // Embedded Q&A
     questions: { type: [QuestionAnswerSchema], default: [] },
   },
@@ -107,5 +104,7 @@ productSchema.pre<IProduct>("validate", function (next) {
 
 // Thêm Full-Text Search (1.4)
 productSchema.index({ name: "text", description: "text" });
+productSchema.index({ endTime: 1 });
+productSchema.index({ currentPrice: -1 });
 
 export const Product = mongoose.model<IProduct>("Product", productSchema);

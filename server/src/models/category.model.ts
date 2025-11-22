@@ -8,7 +8,7 @@ export interface ICategory extends Document {
 const categorySchema = new Schema<ICategory>(
   {
     name: { type: String, required: true },
-    // Reference cho catehory 2 cấp
+    // Reference cho category 2 cấp
     // "Điện thoại di động" -> parent: (ObjectId của "Điện tử")
     parent: {
       type: Schema.Types.ObjectId,
