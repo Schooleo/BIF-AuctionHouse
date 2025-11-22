@@ -8,8 +8,15 @@
   input[type="password"]::-webkit-password-reveal-button {
     @apply hidden;
   }
-  
+
   input[type="password"]::-ms-reveal {
     @apply hidden;
   }
+}
+
+@theme {
+  --color-primary-blue: #042443;
+  --color-primary-yellow: #ffd700;
+
+  --color-secondary-blue: #002147;
 }

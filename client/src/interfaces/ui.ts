@@ -38,3 +38,17 @@ export interface EmailCardProps {
   emailError?: string;
   otpError?: string;
 }
+
+export interface SearchBarProps {
+  placeholder?: string;
+  value?: string;
+  onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onSubmit?: () => void;
+  className?: string;
+}
+
+export interface LogoProps {
+  logoSizes?: number[];
+  spanText?: string;
+  className?: string;
+}
