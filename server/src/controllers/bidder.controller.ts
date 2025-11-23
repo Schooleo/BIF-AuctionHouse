@@ -1,11 +1,34 @@
 import { Request, Response } from "express";
-
+import { bidderService } from "../services/bidder.service";
+import { WatchlistMessages } from "../constants/messages";
 // Thêm các kiểu dữ liệu cho Request và Response nếu có sử dụng trong src/types/bidder.ts
 // Thêm các biến constants cho messages nếu có sử dụng trong src/constants/messages.ts
 
 export const addToWatchlist = async (req: Request, res: Response) => {
-  // TODO: implement add to watchlist logic
-  res.status(501).json({ message: "Not implemented" });
+  try {
+    const { productId } = req.body;
+    const userId = req.user!.id;
+
+    // Gọi service để xử lý logic
+    const watchlistItem = await bidderService.addToWatchlist(userId, productId);
+
+    // Trả về success message
+    res.status(200).json({
+      message: WatchlistMessages.ADDED_SUCCESS,
+      data: watchlistItem,
+    });
+  } catch (error : any) {
+    if (error.message === WatchlistMessages.ALREADY_EXISTS) {
+      return res.status(400).json({ message: error.message });
+    }
+
+    if (error.message === WatchlistMessages.PRODUCT_NOT_FOUND) {
+      return res.status(404).json({ message: error.message });
+    }
+
+    // Xử lý lỗi chung
+    res.status(500).json({ message: error.message });
+  }
 };
 
 export const placeBid = async (req: Request, res: Response) => {

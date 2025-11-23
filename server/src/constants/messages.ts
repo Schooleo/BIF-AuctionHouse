@@ -14,3 +14,9 @@ export const AuthMessages = {
   RESET_TOKEN_NOT_FOUND: "Reset token not found",
   RESET_TOKEN_INVALID: "Invalid or expired token",
 };
+
+export const WatchlistMessages = {
+  ADDED_SUCCESS: "Product added to watchlist successfully",
+  PRODUCT_NOT_FOUND: "Product not found",
+  ALREADY_EXISTS: "Product already exists in watchlist",
+};
