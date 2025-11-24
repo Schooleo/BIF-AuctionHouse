@@ -44,7 +44,7 @@ const SideBarCategory: React.FC<SideBarCategoryProps> = ({
                 {mockSubCategories(cat._id).map((sub) => (
                   <li key={sub._id}>
                     <Link
-                      to={`/category/${sub._id}`}
+                      to={`/products?category=${sub._id}`}
                       className="block px-2 py-1 rounded-md hover:bg-gray-100 text-gray-600"
                     >
                       {sub.name}

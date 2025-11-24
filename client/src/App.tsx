@@ -7,7 +7,10 @@ import {
 import { useAuthStore } from "./stores/useAuthStore";
 import MainLayout from "./layouts/MainLayout";
 import HomePage from "./pages/user/HomePage";
+import ProductsPage from "./pages/user/ProductsPage";
+import ProductDetailsPage from "./pages/user/ProductDetailsPage";
 import NotFoundPage from "./pages/shared/NotFoundPage";
+
 import AuthLayout from "./layouts/AuthLayout";
 import LoginPage from "./pages/auth/LoginPage";
 import RegisterPage from "./pages/auth/RegisterPage";
@@ -19,6 +22,9 @@ const router = createBrowserRouter(
     <>
       <Route path="/" element={<MainLayout />}>
         <Route index element={<HomePage />} />
+        <Route path="products" element={<ProductsPage />} />
+        <Route path="product/:id" element={<ProductDetailsPage />} />
+
         <Route path="*" element={<NotFoundPage />} />
       </Route>
 
