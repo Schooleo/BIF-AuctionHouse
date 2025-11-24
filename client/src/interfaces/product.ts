@@ -10,18 +10,27 @@ export interface QuestionAnswer {
 export interface Product {
   _id: string;
   name: string;
-  description: string;
-  images: string[];
+  description: string; 
+  images?: string[];   
+  mainImage?: string; 
+  
   startingPrice: number;
   currentPrice: number;
   buyNowPrice?: number;
-  category: Category;
-  seller: UserSummary;
-  bidders: Bid[];
+  
+  category: Category | string; 
+  seller: UserSummary | string;
+  
+  bidders?: Bid[]; 
+  bidCount?: number;      
+  highestBid?: number;    
+  highestBidder?: UserSummary; 
+  
   startTime: string;
   endTime: string;
   questions?: QuestionAnswer[];
 }
+
 
 export type ProductSortOption =
   | "default"
@@ -33,6 +42,7 @@ export interface Category {
   _id: string;
   name: string;
   parentCategoryId?: string;
+  children?: Category[];
 }
 
 export interface Bid {
@@ -68,4 +78,11 @@ export interface FetchByCategoryDto extends PaginatedFetchDto {
 // Arguments for searching products
 export interface SearchProductsDto extends PaginatedFetchDto {
   query: string;
+  categoryId?: string;
+}
+
+export interface HomeDataResponse {
+  endingSoon: Product[];
+  mostBids: Product[];
+  highestPrice: Product[];
 }
