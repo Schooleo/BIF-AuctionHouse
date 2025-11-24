@@ -20,3 +20,13 @@ export const WatchlistMessages = {
   PRODUCT_NOT_FOUND: "Product not found",
   ALREADY_EXISTS: "Product already exists in watchlist",
 };
+
+export const BidMessages = {
+  BID_PLACED: "Bid placed successfully",
+
+  PRODUCT_NOT_FOUND: "Product not found",
+  REPUTATION_TOO_LOW: "Your reputation score is too low to place a bid",
+  UNRATED_NOT_ALLOWED: "You must have at least one completed transaction to place a bid",
+  BID_TOO_LOW: "Your bid must be higher than the current highest bid",
+  HISTORY_RETRIEVED: "Bid history retrieved successfully",
+}

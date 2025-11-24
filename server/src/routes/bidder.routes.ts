@@ -1,6 +1,7 @@
 import { Router } from "express";
 import {
   addToWatchlist,
+  getSuggestedPrice,
   placeBid,
   viewBidHistory,
   askSellerQuestion,
@@ -13,6 +14,8 @@ import {
   requestSellerUpgrade,
 } from "../controllers/bidder.controller";
 import { protect } from "../middleware/auth.middleware";
+import { validate, validateQuery } from "../middleware/validate";
+import { placeBidSchema, bidHistoryQuerySchema } from "../schemas/bidder.schema";
 
 const router = Router();
 
@@ -20,8 +23,9 @@ const router = Router();
 router.use(protect(["bidder"]));
 
 router.post("/watchlist", addToWatchlist);
-router.post("/bid", placeBid);
-router.get("/bid-history/:productId", viewBidHistory);
+router.get("/bid/suggest/:productId", getSuggestedPrice);
+router.post("/bid", validate(placeBidSchema), placeBid);
+router.get("/bid-history/:productId", validateQuery(bidHistoryQuerySchema), viewBidHistory);
 router.post("/ask-seller/:productId", askSellerQuestion);
 
 router.get("/profile", viewProfile);

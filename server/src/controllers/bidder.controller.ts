@@ -1,6 +1,8 @@
 import { Request, Response } from "express";
 import { bidderService } from "../services/bidder.service";
 import { WatchlistMessages } from "../constants/messages";
+import { Bid } from "../models/bid.model";
+import { BidMessages } from "../constants/messages";
 // Thêm các kiểu dữ liệu cho Request và Response nếu có sử dụng trong src/types/bidder.ts
 // Thêm các biến constants cho messages nếu có sử dụng trong src/constants/messages.ts
 
@@ -31,14 +33,70 @@ export const addToWatchlist = async (req: Request, res: Response) => {
   }
 };
 
+export const getSuggestedPrice = async (req: Request, res: Response) => {
+  try {
+    const { productId } = req.params;
+    const userId = req.user!.id;
+
+    const result = await bidderService.getSuggestedPrice(userId, productId!);
+
+    res.status(200).json(result);
+  } catch (error : any) {
+    if (error.message === BidMessages.PRODUCT_NOT_FOUND) {
+      return res.status(404).json({ message: error.message });
+    }
+    if (error.message === BidMessages.UNRATED_NOT_ALLOWED ||
+        error.message === BidMessages.REPUTATION_TOO_LOW) {
+      return res.status(403).json({ message: error.message });
+    }
+    res.status(500).json({ message: error.message });
+  }
+};
+
 export const placeBid = async (req: Request, res: Response) => {
-  // TODO: implement place bid logic
-  res.status(501).json({ message: "Not implemented" });
+  try {
+    const { productId, price } = req.body;
+    const userId = req.user!.id;
+
+    const result = await bidderService.placeBid(userId, productId, price);
+
+    res.status(201).json({
+      message: BidMessages.BID_PLACED,
+      data: result,
+    });
+  } catch (error: any) {
+    if (error.message === BidMessages.PRODUCT_NOT_FOUND) {
+      return res.status(404).json({ message: error.message });
+    }
+    if (
+      error.message === BidMessages.UNRATED_NOT_ALLOWED ||
+      error.message === BidMessages.REPUTATION_TOO_LOW
+    ) {
+      return res.status(403).json({ message: error.message });
+    }
+    if (error.message === BidMessages.BID_TOO_LOW) {
+      return res.status(400).json({ message: error.message });
+    }
+    res.status(500).json({ message: error.message });
+  }
 };
 
 export const viewBidHistory = async (req: Request, res: Response) => {
-  // TODO: implement view bid history logic
-  res.status(501).json({ message: "Not implemented" });
+  try {
+    const { productId } = req.params;
+
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 20;
+
+    const result = await bidderService.getBidHistory(productId!, page, limit);
+
+    res.status(200).json(result);
+  } catch (error : any) {
+    if (error.message === BidMessages.PRODUCT_NOT_FOUND) {
+      return res.status(404).json({ message: error.message });
+    }
+    res.status(500).json({ message: error.message });
+  }
 };
 
 export const askSellerQuestion = async (req: Request, res: Response) => {
