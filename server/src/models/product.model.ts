@@ -104,7 +104,10 @@ productSchema.pre<IProduct>("validate", function (next) {
 
 // Thêm Full-Text Search (1.4)
 productSchema.index({ name: "text", description: "text" });
-productSchema.index({ endTime: 1 });
-productSchema.index({ currentPrice: -1 });
+
+productSchema.index({ category: 1 }); // Lọc theo danh mục
+productSchema.index({ startTime: -1 }); // Kiểm tra sản phẩm mới nhất
+productSchema.index({ endTime: -1 }); // Sort theo thời gian kết thúc
+productSchema.index({ currentPrice: 1 }); // Sort theo giá hiện tại giảm dần
 
 export const Product = mongoose.model<IProduct>("Product", productSchema);

@@ -11,7 +11,7 @@ export default function Navbar() {
 
   return (
     <header className="bg-primary-blue shadow-md relative">
-      <div className="relative flex items-center w-full px-4 sm:px-6 md:px-8 py-3">
+      <div className="relative flex items-center w-full px-4 sm:px-6 md:px-8 py-1">
         <div className="flex items-center space-x-6 z-10">
           <Logo logoSizes={[12, 16, 20]} />
           <NavLinks />

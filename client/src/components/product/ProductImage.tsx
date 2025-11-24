@@ -9,11 +9,11 @@ const ProductImage = ({ images, recentlyAdded }: ProductImageProps) => {
       <img
         src={images[0]}
         alt="Product Image"
-        className="w-full h-full object-cover object-center transition-transform duration-300 group-hover:scale-105"
+        className="w-full h-full bg-primary-blue object-cover object-center transition-transform duration-300 group-hover:scale-105"
       />
 
       {recentlyAdded && (
-        <span className="absolute bottom-2 right-2 bg-primary-blue text-white text-xs font-semibold px-2 py-1 rounded shadow-md">
+        <span className="absolute bottom-2 right-2 bg-linear-to-r from-indigo-500 via-purple-500 to-pink-500 text-white text-xs font-semibold italic px-2 py-1 rounded-md shadow-lg">
           Recently Added
         </span>
       )}

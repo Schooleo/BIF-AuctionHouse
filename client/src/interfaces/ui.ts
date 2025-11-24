@@ -1,3 +1,15 @@
+export interface IPagination {
+  page: number;
+  limit: number;
+  totalItems: number;
+  totalPages: number;
+}
+
+export interface IPaginatedResponse<T> {
+  data: T[];
+  pagination: IPagination;
+}
+
 export interface FormField extends React.InputHTMLAttributes<HTMLInputElement> {
   label: string;
   isRequired?: boolean;

@@ -1,15 +1,17 @@
 import { useState } from "react";
 import { Search } from "lucide-react";
+import { useNavigate, useLocation } from "react-router-dom";
 import type { SearchBarProps } from "@interfaces/ui";
 
 const SearchBar: React.FC<SearchBarProps> = ({
   placeholder,
   value,
   onChange,
-  onSubmit,
   className,
 }) => {
   const [internalValue, setInternalValue] = useState<string>(value || "");
+  const navigate = useNavigate();
+  const location = useLocation();
 
   const currentValue = value !== undefined ? value : internalValue;
 
@@ -23,7 +25,18 @@ const SearchBar: React.FC<SearchBarProps> = ({
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    onSubmit?.();
+    const trimmed = currentValue.trim();
+    if (!trimmed) return;
+
+    // Chuyển qua trang products với tham số tìm kiếm
+    const searchParams = new URLSearchParams();
+    searchParams.set("q", trimmed);
+
+    const currentParams = new URLSearchParams(location.search);
+    const category = currentParams.get("category");
+    if (category) searchParams.set("category", category);
+
+    navigate(`/products?${searchParams.toString()}`);
   }
 
   return (
@@ -38,7 +51,6 @@ const SearchBar: React.FC<SearchBarProps> = ({
         placeholder={placeholder}
         className="w-full max-w-sm px-4 py-2 placeholder-gray-400 focus:outline-none"
       />
-
       <button
         type="submit"
         className="mr-3 text-gray-300 hover:text-gray-100 hover:scale-110 transition-all duration-200"
