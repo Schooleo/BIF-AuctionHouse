@@ -46,3 +46,39 @@ export const sendPasswordResetOTPEmail = async (to: string, otp: string) => {
     htmlBody,
   });
 };
+
+export const sendQuestionEmail = async (
+  to: string,
+  sellerName: string,
+  productName: string,
+  productId: string,
+  bidderName: string,
+  question: string
+) => {
+  if (env.EMAIL_WEBHOOK_URL.length === 0) {
+    throw new Error('Email webhook URL is not configured');
+  }
+
+  const productUrl = `${env.FRONTEND_URL}/products/${productId}`;
+
+  const htmlBody = `
+    <p>Hello ${sellerName},</p>
+    <p>You have received a new question about your product <strong>${productName}</strong>.</p>
+
+    <p><strong>Question from ${bidderName}:</strong></p>
+    <blockquote style="border-left: 4px solid #ccc; padding-left: 10px; margin: 10px 0;">
+      ${question}
+    </blockquote>
+
+    <p>Click the link below to view the product and answer the question:</p>
+    <p><a href="${productUrl}" style="display: inline-block; padding: 10px 20px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px;">View Product Details</a></p>
+
+    <p>Thanks,<br/>The BIF Auction House Team</p>
+  `;
+
+  await axios.post(env.EMAIL_WEBHOOK_URL, {
+    to,
+    subject: `New Question About Your Product: ${productName}`,
+    htmlBody,
+  });
+};
