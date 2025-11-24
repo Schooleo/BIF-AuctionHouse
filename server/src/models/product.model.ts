@@ -54,6 +54,9 @@ export interface IProduct extends Document {
   currentBidder?: Types.ObjectId;
   bidCount: number;
 
+  // Cho phép bidder chưa được đánh giá đặt giá (2.2)
+  allowUnratedBidders: boolean;
+
   // Embedded Q&A
   questions: IQuestionAnswer[];
 }
@@ -82,8 +85,9 @@ const productSchema = new Schema<IProduct>(
     stepPrice: { type: Number, required: true },
     buyNowPrice: { type: Number },
     autoExtends: { type: Boolean, default: false },
+    allowUnratedBidders: { type: Boolean, default: false },
 
-    // Dữ liệu đáu giá trực tiếp cho truy vấn
+    // Dữ liệu đáu giá trực tiếp cho truy vấn
     currentPrice: { type: Number }, // No longer required here, set in `pre` hook
     currentBidder: { type: Schema.Types.ObjectId, ref: "User" },
     bidCount: { type: Number, default: 0 },
