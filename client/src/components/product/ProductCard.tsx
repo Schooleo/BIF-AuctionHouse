@@ -3,21 +3,27 @@ import type { Product } from "@interfaces/product";
 import ProductImage from "./ProductImage";
 import { Link } from "react-router-dom";
 
-interface ProductCard {
+interface ProductCardProps {
   product: Product;
 }
 
-const ProductCard: React.FC<ProductCard> = ({ product }) => {
+const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const {
     _id,
     name,
     images,
+    mainImage, 
     currentPrice,
     buyNowPrice,
-    bidders,
+    bidders,       
+    bidCount,     
+    highestBid,    
+    highestBidder, 
     startTime,
     endTime,
   } = product;
+
+  const displayImages = images && images.length > 0 ? images : [mainImage || ""];
 
   const checkRecentlyAdded = (startStr: string) => {
     const start = new Date(startStr).getTime();
@@ -27,7 +33,9 @@ const ProductCard: React.FC<ProductCard> = ({ product }) => {
     return diff <= oneDayMs;
   };
 
-  const topBidder = bidders.length > 0 ? bidders[bidders.length - 1] : null;
+  const currentTopBidderName = highestBidder?.name || (bidders && bidders.length > 0 ? bidders[bidders.length - 1].bidder.name : null);
+  const currentTopPrice = highestBid || (bidders && bidders.length > 0 ? bidders[bidders.length - 1].price : 0);
+  const totalBids = bidCount !== undefined ? bidCount : (bidders?.length || 0);
 
   const formatDate = (dateStr: string) =>
     new Date(dateStr).toLocaleDateString("en-US", {
@@ -64,7 +72,7 @@ const ProductCard: React.FC<ProductCard> = ({ product }) => {
       className="group block bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-lg transition-all duration-300 ease-in-out transform hover:-translate-y-1"
     >
       <ProductImage
-        images={images}
+        images={displayImages}
         recentlyAdded={checkRecentlyAdded(startTime)}
       />
 
@@ -81,11 +89,11 @@ const ProductCard: React.FC<ProductCard> = ({ product }) => {
         </p>
         <p className="text-xs sm:text-sm text-gray-600">
           <span className="font-semibold">Top Bidder: </span>
-          {topBidder ? (
+          {currentTopBidderName ? (
             <>
-              {topBidder.bidder.name} –{" "}
+              {currentTopBidderName} –{" "}
               <span className="text-green-600 font-medium">
-                {topBidder.price.toLocaleString()}₫
+                {currentTopPrice.toLocaleString()}₫
               </span>
             </>
           ) : (
@@ -110,7 +118,7 @@ const ProductCard: React.FC<ProductCard> = ({ product }) => {
         </p>
         <p className="text-xs sm:text-sm text-gray-700">
           <span className="font-semibold">Number of Bids: </span>
-          <span className="font-medium">{bidders.length}</span>
+          <span className="font-medium">{totalBids}</span>
         </p>
       </div>
     </Link>

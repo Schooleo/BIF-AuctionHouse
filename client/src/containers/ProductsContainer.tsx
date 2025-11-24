@@ -6,7 +6,8 @@ import Spinner from "@components/ui/Spinner";
 import ErrorMessage from "@components/message/ErrorMessage";
 import EmptyMessage from "@components/message/EmptyMessage";
 import Pagination from "@components/pagination/Pagination";
-import { mockFetchProducts, getTopProducts } from "@utils/product";
+//import { mockFetchProducts, getTopProducts } from "@utils/product";
+import { productApi } from "@services/product.api";
 import type { Product, ProductSortOption } from "@interfaces/product";
 import type { IPagination, IPaginatedResponse } from "@interfaces/ui";
 
@@ -53,20 +54,23 @@ const ProductsContainer: React.FC<ProductsContainerProps> = ({
         setLoading(true);
         setError(null);
 
-        const response = await mockFetchProducts({
-          page: currentPage,
-          limit: ITEMS_PER_PAGE,
-          search: query,
-          categoryId: category,
-        });
-
-        let sortedData = response.data;
-        if (sort !== "default") {
-          sortedData = getTopProducts(sortedData, sort, sortedData.length);
+        let response;
+        if (category) {
+             response = await productApi.fetchProductsByCategory({
+                page: currentPage,
+                limit: ITEMS_PER_PAGE,
+                categoryId: category
+            });
+        } else {
+             response = await productApi.searchProducts({
+                page: currentPage,
+                limit: ITEMS_PER_PAGE,
+                query: query
+            });
         }
 
         setData({
-          data: sortedData,
+          data: response.data,
           pagination: response.pagination,
         });
       } catch (err) {
