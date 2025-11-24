@@ -35,3 +35,19 @@ export const validate =
 
     next();
   };
+
+export const validateQuery = (schema: ZodObject<any>) => 
+  (req: Request, res: Response, next: NextFunction) => {
+    const result = schema.safeParse(req.query);
+
+    if (!result.success) {
+      const { fieldErrors } = result.error.flatten((issue) => issue.message);
+      return res.status(400).json({
+        message: "Invalid query parameters",
+        errors: fieldErrors,
+      });
+    }
+    
+    next();
+  };
+
