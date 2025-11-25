@@ -2,17 +2,15 @@ import { Router } from "express";
 import {
   listCategories,
   viewHome,
-  viewProductsByCategory,
-  searchProducts,
+  viewProducts,
   viewProductDetail,
 } from "../controllers/guest.controller";
 import { getHealth } from "../controllers/health.controller";
 import { validate } from "../middleware/validate";
 
-// Import your Zod schemas
+// Import Zod schemas
 import {
-  viewByCategoryQuerySchema,
-  searchProductsQuerySchema,
+  viewProductsSchema,
   viewProductDetailParamsSchema,
 } from "../schemas/guest/index.schema";
 
@@ -23,23 +21,11 @@ router.get("/categories", listCategories);
 
 router.get("/home", viewHome);
 
-// Get products by category
-router.get(
-  "/products",
-  viewProductsByCategory
-);
+router.get("/products", validate(viewProductsSchema, "query"), viewProducts);
 
-// Search products (query validation)
 router.get(
-  "/products/search",
-  /*validate(searchProductsQuerySchema, "query"),*/
-  searchProducts
-);
-
-// View product detail (params + query validation)
-router.get(
-  "/products/:id",
-  /*validate(viewProductDetailParamsSchema, "params"),*/
+  "/product/:id",
+  validate(viewProductDetailParamsSchema, "params"),
   viewProductDetail
 );
 

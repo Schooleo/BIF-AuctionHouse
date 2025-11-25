@@ -1,12 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import ProductCard from "@components/product/ProductCard";
 import SortBar from "@components/ui/SortBar";
-import Spinner from "@components/ui/Spinner";
+import Pagination from "@components/pagination/Pagination";
+import ProductCard from "@components/product/ProductCard";
 import ErrorMessage from "@components/message/ErrorMessage";
 import EmptyMessage from "@components/message/EmptyMessage";
-import Pagination from "@components/pagination/Pagination";
-//import { mockFetchProducts, getTopProducts } from "@utils/product";
+import Spinner from "@components/ui/Spinner";
 import { productApi } from "@services/product.api";
 import type { Product, ProductSortOption } from "@interfaces/product";
 import type { IPagination, IPaginatedResponse } from "@interfaces/ui";
@@ -54,20 +53,13 @@ const ProductsContainer: React.FC<ProductsContainerProps> = ({
         setLoading(true);
         setError(null);
 
-        let response;
-        if (category) {
-             response = await productApi.fetchProductsByCategory({
-                page: currentPage,
-                limit: ITEMS_PER_PAGE,
-                categoryId: category
-            });
-        } else {
-             response = await productApi.searchProducts({
-                page: currentPage,
-                limit: ITEMS_PER_PAGE,
-                query: query
-            });
-        }
+        const response = await productApi.fetchProducts({
+          page: currentPage,
+          limit: ITEMS_PER_PAGE,
+          categoryId: category,
+          query: query,
+          sort: sort,
+        });
 
         setData({
           data: response.data,
@@ -82,14 +74,12 @@ const ProductsContainer: React.FC<ProductsContainerProps> = ({
     };
 
     fetchProducts();
+    window.scrollTo(0, 0);
   }, [category, query, sort, currentPage]);
 
   const handlePageChange = (newPage: number) => {
     if (newPage !== currentPage) {
       setCurrentPage(newPage);
-
-      // searchParams.set("page", newPage.toString());
-      // history.push({ search: searchParams.toString() });
     }
   };
 
@@ -97,6 +87,8 @@ const ProductsContainer: React.FC<ProductsContainerProps> = ({
     setSort(newSort);
     setCurrentPage(1);
   };
+
+  console.log(data);
 
   // --- Render Logic ---
   if (loading) return <Spinner />;

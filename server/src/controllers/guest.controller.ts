@@ -1,16 +1,14 @@
 import { Request, Response } from "express";
-import { ZodError } from "zod";
+import { z, ZodError } from "zod";
 import { ProductService } from "../services/product.service";
 import { CategoryService } from "../services/category.service";
+import { viewProductsSchema } from "../schemas/guest/viewProducts.schema";
 
-import { searchProductsQuerySchema } from "../schemas/guest/searchProduct.schema";
-import { viewByCategoryQuerySchema } from "../schemas/guest/viewByCategory.schema";
 import {
   viewProductDetailParamsSchema,
   viewProductDetailQuerySchema,
 } from "../schemas/guest/viewProductDetail.schema";
 
-// Centralized error handler
 const handleError = (res: Response, error: any, status = 500) => {
   console.error(error);
   return res
@@ -23,7 +21,7 @@ const handleError = (res: Response, error: any, status = 500) => {
 // GET /categories
 export const listCategories = async (req: Request, res: Response) => {
   try {
-    const categories = await CategoryService.listCategories(); 
+    const categories = await CategoryService.listCategories();
     return res.status(200).json(categories);
   } catch (err) {
     return handleError(res, err);
@@ -40,17 +38,17 @@ export const viewHome = async (req: Request, res: Response) => {
   }
 };
 
-// GET /products (by category)
-export const viewProductsByCategory = async (req: Request, res: Response) => {
+// GET /products
+export const viewProducts = async (req: Request, res: Response) => {
   try {
-    const query = viewByCategoryQuerySchema.parse(req.query);
+    const query = viewProductsSchema.parse(req.query);
 
     const results = await ProductService.searchProducts({
+      q: query.q ?? "",
       category: query.category,
       page: query.page,
       limit: query.limit,
-      sort: "createdDesc",
-      q: "",
+      sort: query.sort,
     });
 
     return res.status(200).json(results);
@@ -58,36 +56,14 @@ export const viewProductsByCategory = async (req: Request, res: Response) => {
     if (err instanceof ZodError) {
       return res.status(400).json({
         message: "Invalid query parameters",
-        errors: err.format(),
+        errors: z.treeifyError(err),
       });
     }
     return handleError(res, err);
   }
 };
 
-// GET /products/search
-export const searchProducts = async (req: Request, res: Response) => {
-  try {
-    const query = searchProductsQuerySchema.parse(req.query);
-
-    const results = await ProductService.searchProducts({
-      ...query,
-      q: query.q ?? "",
-    });
-
-    return res.status(200).json(results);
-  } catch (err) {
-    if (err instanceof ZodError) {
-      return res.status(400).json({
-        message: "Invalid query parameters",
-        errors: err.format(),
-      });
-    }
-    return handleError(res, err);
-  }
-};
-
-// GET /products/:id
+// GET /product/:id
 export const viewProductDetail = async (req: Request, res: Response) => {
   try {
     const params = viewProductDetailParamsSchema.parse(req.params);
@@ -107,7 +83,7 @@ export const viewProductDetail = async (req: Request, res: Response) => {
     if (err instanceof ZodError) {
       return res.status(400).json({
         message: "Invalid request parameters",
-        errors: err.format(),
+        errors: z.treeifyError(err),
       });
     }
     return handleError(res, err);

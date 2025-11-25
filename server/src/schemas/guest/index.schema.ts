@@ -1,5 +1,5 @@
 import { paginationSchema } from "./pagination.schema";
-import { searchProductsQuerySchema } from "./searchProduct.schema";
+import { viewProductsSchema } from "./viewProducts.schema";
 import {
   viewProductDetailParamsSchema,
   viewProductDetailQuerySchema,
@@ -8,7 +8,7 @@ import { viewByCategoryQuerySchema } from "./viewByCategory.schema";
 
 export {
   paginationSchema,
-  searchProductsQuerySchema,
+  viewProductsSchema,
   viewProductDetailParamsSchema,
   viewProductDetailQuerySchema,
   viewByCategoryQuerySchema,
