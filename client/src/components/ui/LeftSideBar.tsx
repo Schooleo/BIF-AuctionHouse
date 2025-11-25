@@ -13,35 +13,45 @@ const SideBarCategory: React.FC<SideBarCategoryProps> = ({
 }) => {
   const [openCategory, setOpenCategory] = useState<string | null>(null);
 
-  const mockSubCategories = (parentId: string) => {
-    return [
-      { _id: parentId + "-1", name: "Sub categories 1" },
-      { _id: parentId + "-2", name: "Sub categories 2" },
-    ];
-  };
-
   const toggleCategory = (categoryId: string) => {
     setOpenCategory(openCategory === categoryId ? null : categoryId);
   };
 
   return (
     <aside className="w-full bg-white shadow-md rounded-lg p-4 border">
-      <h2 className="text-lg font-semibold text-gray-800 mb-3">{title}</h2>
+      <Link to="/products" className="block mb-3">
+        <h2 className="text-lg font-semibold text-gray-800 hover:text-primary-blue transition-colors">
+          {title}
+        </h2>
+      </Link>
 
       <ul className="space-y-2">
         {categories.map((cat) => (
           <li key={cat._id}>
-            <button
-              onClick={() => toggleCategory(cat._id)}
-              className="w-full flex justify-between px-3 py-2 rounded-md hover:bg-gray-100 text-gray-700 font-medium transition"
-            >
-              {cat.name}
-              <span>{openCategory === cat._id ? "−" : "+"}</span>
-            </button>
+            <div className="w-full flex justify-between items-center px-3 py-2 rounded-md hover:bg-gray-100 transition">
+              <Link
+                to={`/products?category=${cat._id}`}
+                className="flex-1 text-gray-700 font-medium text-left"
+              >
+                {cat.name}
+              </Link>
+              
+              {cat.children && cat.children.length > 0 && (
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    toggleCategory(cat._id);
+                  }}
+                  className="px-2 text-gray-500 font-bold hover:text-gray-800"
+                >
+                  {openCategory === cat._id ? "−" : "+"}
+                </button>
+              )}
+            </div>
 
-            {openCategory === cat._id && (
+            {openCategory === cat._id && cat.children && (
               <ul className="ml-4 mt-2 space-y-1 border-l pl-3">
-                {mockSubCategories(cat._id).map((sub) => (
+                {cat.children.map((sub) => (
                   <li key={sub._id}>
                     <Link
                       to={`/products?category=${sub._id}`}

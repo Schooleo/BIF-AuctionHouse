@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { ZodError } from "zod";
 import { ProductService } from "../services/product.service";
+import { CategoryService } from "../services/category.service";
 
 import { searchProductsQuerySchema } from "../schemas/guest/searchProduct.schema";
 import { viewByCategoryQuerySchema } from "../schemas/guest/viewByCategory.schema";
@@ -22,8 +23,8 @@ const handleError = (res: Response, error: any, status = 500) => {
 // GET /categories
 export const listCategories = async (req: Request, res: Response) => {
   try {
-    // TODO: Implement fetching categories from DB or service
-    return res.status(501).json({ message: "List categories not implemented" });
+    const categories = await CategoryService.listCategories(); 
+    return res.status(200).json(categories);
   } catch (err) {
     return handleError(res, err);
   }

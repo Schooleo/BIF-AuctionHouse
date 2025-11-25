@@ -23,24 +23,23 @@ router.get("/categories", listCategories);
 
 router.get("/home", viewHome);
 
-// Get products by category (query validation)
+// Get products by category
 router.get(
   "/products",
-  validate(viewByCategoryQuerySchema, "query"),
   viewProductsByCategory
 );
 
 // Search products (query validation)
 router.get(
   "/products/search",
-  validate(searchProductsQuerySchema, "query"),
+  /*validate(searchProductsQuerySchema, "query"),*/
   searchProducts
 );
 
 // View product detail (params + query validation)
 router.get(
   "/products/:id",
-  validate(viewProductDetailParamsSchema, "params"),
+  /*validate(viewProductDetailParamsSchema, "params"),*/
   viewProductDetail
 );
 

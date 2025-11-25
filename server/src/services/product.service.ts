@@ -1,6 +1,7 @@
 // server/src/services/product.service.ts
 import { Types } from "mongoose";
 import { Product } from "../models/product.model";
+import { Category } from "../models/category.model";
 import { Bid } from "../models/bid.model";
 import type { SearchParams } from "../types/product";
 
@@ -114,7 +115,18 @@ export const ProductService = {
     const filter: any = {};
     if (category) {
       if (Types.ObjectId.isValid(category)) {
-        filter.category = new Types.ObjectId(category);
+        // Find children categories
+        const catId = new Types.ObjectId(category);
+        
+        const childCats = await Category.find({ parent: catId }).select("_id");
+        const childIds = childCats.map(c => c._id);
+
+        const grandChildCats = await Category.find({ parent: { $in: childIds } }).select("_id");
+        const grandChildIds = grandChildCats.map(c => c._id);
+
+        const allCategoryIds = [catId, ...childIds, ...grandChildIds];
+
+        filter.category = { $in: allCategoryIds };
       } else {
         filter.category = category;
       }
@@ -252,7 +264,15 @@ export const ProductService = {
       q.trim().length > 0 ? { $text: { $search: q }, ...filter } : filter;
     const total = await Product.countDocuments(countFilter);
 
-    return { page: safePage, limit: safeLimit, total, results };
+    return {
+      data: results, // Map 'results' thành 'data'
+      pagination: {
+        page: safePage,
+        limit: safeLimit,
+        totalItems: total,
+        totalPages: Math.ceil(total / safeLimit),
+      },
+    };
   },
 
   /**

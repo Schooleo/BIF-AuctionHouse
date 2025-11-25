@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import ProductCard from "@components/product/ProductCard";
 import type { Product } from "@interfaces/product";
-import { allMockProducts, getTopProducts } from "@utils/product";
+//import { allMockProducts, getTopProducts } from "@utils/product";
+import { productApi } from "@services/product.api"; // Đổi import này
 import Spinner from "@components/ui/Spinner";
 
 const HomePage: React.FC = () => {
@@ -17,9 +18,13 @@ const HomePage: React.FC = () => {
     const fetchTopProducts = async () => {
       try {
         setLoading(true);
-        setTopEndingSoon(getTopProducts(allMockProducts, "endingSoon"));
-        setTopMostBidOn(getTopProducts(allMockProducts, "mostBidOn"));
-        setTopHighestPriced(getTopProducts(allMockProducts, "highestPriced"));
+
+        const data = await productApi.fetchHomeData(); 
+        
+        setTopEndingSoon(data.endingSoon);
+        setTopMostBidOn(data.mostBids);
+        setTopHighestPriced(data.highestPrice);
+        
       } catch (err) {
         console.error("Error fetching top products:", err);
         setError("Failed to load products. Please try again later.");
