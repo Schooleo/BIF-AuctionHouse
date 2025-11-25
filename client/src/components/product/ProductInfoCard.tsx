@@ -18,8 +18,6 @@ const ProductInfoCard: React.FC<ProductInfoCardProps> = ({
   product,
   isGuest,
 }) => {
-  const highestBidder = product.bidders[product.bidders.length - 1];
-
   return (
     <div className="flex flex-col gap-4 max-w-xl">
       <h1 className="text-3xl font-bold">{product.name}</h1>
@@ -42,22 +40,21 @@ const ProductInfoCard: React.FC<ProductInfoCardProps> = ({
       )}
 
       <p className="text-gray-700">
-        Seller - {product.seller.name} •{" "}
+        Seller - {product.seller?.name || "Seller"} •{" "}
         <span className="text-yellow-500">
-          {`★`.repeat(Math.round(product.seller.rating))}{" "}
-          {product.seller.rating.toFixed(1)}
+          {`★`.repeat(Math.round(product.seller?.rating || 0))}{" "}
+          {product.seller?.rating?.toFixed(1) || "N/A"}
         </span>
       </p>
 
-      {highestBidder && (
-        <p className="text-gray-700">
-          Current Highest Bidder - {maskName(highestBidder.bidder.name)} •{" "}
-          <span className="text-yellow-500">
-            {`★`.repeat(Math.round(highestBidder.bidder.rating))}{" "}
-            {highestBidder.bidder.rating.toFixed(1)}
-          </span>
-        </p>
-      )}
+      <p className="text-gray-700">
+        Current Highest Bidder -{" "}
+        {maskName(product.highestBidder.name || "Anonymous")} •{" "}
+        <span className="text-yellow-500">
+          {`★`.repeat(Math.round(product.highestBidder.rating))}{" "}
+          {product.highestBidder.rating.toFixed(1)}
+        </span>
+      </p>
 
       {/* Button Area */}
       <div className="flex flex-col gap-4 mt-6 max-w-sm">

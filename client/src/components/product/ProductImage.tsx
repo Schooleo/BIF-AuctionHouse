@@ -1,13 +1,13 @@
 interface ProductImageProps {
-  images: string[];
+  image: string;
   recentlyAdded?: boolean;
 }
 
-const ProductImage = ({ images, recentlyAdded }: ProductImageProps) => {
+const ProductImage = ({ image, recentlyAdded }: ProductImageProps) => {
   return (
     <div className="relative w-full h-44 sm:h-48 md:h-52 lg:h-56 bg-gray-100 rounded-t-lg overflow-hidden">
       <img
-        src={images[0]}
+        src={image}
         alt="Product Image"
         className="w-full h-full bg-primary-blue object-cover object-center transition-transform duration-300 group-hover:scale-105"
       />

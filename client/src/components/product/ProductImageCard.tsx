@@ -1,15 +1,21 @@
-import React, { useState, useRef, useEffect } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 
 interface ProductImageCardProps {
-  images: string[] | undefined | null;
+  images: string[] | undefined | null; // Allow undefined/null input
 }
 
 // Placeholder image if no images are provided
 const DEFAULT_IMAGE = "/no-image.jpg";
 
 const ProductImageCard: React.FC<ProductImageCardProps> = ({ images }) => {
-  const validImages = images || [];
+  console.log(images);
+
+  const validImages = useMemo(() => {
+    return (images || []).filter(
+      (img) => typeof img === "string" && img.length > 0
+    );
+  }, [images]);
 
   const [selectedImage, setSelectedImage] = useState<string>(
     validImages.length > 0 ? validImages[0] : DEFAULT_IMAGE
@@ -18,8 +24,7 @@ const ProductImageCard: React.FC<ProductImageCardProps> = ({ images }) => {
 
   useEffect(() => {
     setSelectedImage(validImages.length > 0 ? validImages[0] : DEFAULT_IMAGE);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [images]);
+  }, [validImages]);
 
   const scroll = (direction: "left" | "right") => {
     if (containerRef.current) {

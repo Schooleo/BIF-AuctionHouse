@@ -11,19 +11,16 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const {
     _id,
     name,
-    images,
-    mainImage, 
+    mainImage,
     currentPrice,
     buyNowPrice,
-    bidders,       
-    bidCount,     
-    highestBid,    
-    highestBidder, 
+    bidders,
+    bidCount,
+    highestBid,
+    highestBidder,
     startTime,
     endTime,
   } = product;
-
-  const displayImages = images && images.length > 0 ? images : [mainImage || ""];
 
   const checkRecentlyAdded = (startStr: string) => {
     const start = new Date(startStr).getTime();
@@ -33,9 +30,15 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     return diff <= oneDayMs;
   };
 
-  const currentTopBidderName = highestBidder?.name || (bidders && bidders.length > 0 ? bidders[bidders.length - 1].bidder.name : null);
-  const currentTopPrice = highestBid || (bidders && bidders.length > 0 ? bidders[bidders.length - 1].price : 0);
-  const totalBids = bidCount !== undefined ? bidCount : (bidders?.length || 0);
+  const currentTopBidderName =
+    highestBidder?.name ||
+    (bidders && bidders.length > 0
+      ? bidders[bidders.length - 1].bidder.name
+      : null);
+  const currentTopPrice =
+    highestBid ||
+    (bidders && bidders.length > 0 ? bidders[bidders.length - 1].price : 0);
+  const totalBids = bidCount !== undefined ? bidCount : bidders?.length || 0;
 
   const formatDate = (dateStr: string) =>
     new Date(dateStr).toLocaleDateString("en-US", {
@@ -72,7 +75,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
       className="group block bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-lg transition-all duration-300 ease-in-out transform hover:-translate-y-1"
     >
       <ProductImage
-        images={displayImages}
+        image={mainImage ?? ""}
         recentlyAdded={checkRecentlyAdded(startTime)}
       />
 

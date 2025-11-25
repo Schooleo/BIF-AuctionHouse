@@ -21,14 +21,18 @@ const router = Router();
 
 router.get("/me", protect(), getUser);
 
-router.post("/request-otp", validate(requestOtpSchema), requestOtp);
-router.post("/register", validate(registerSchema), register);
-router.post("/login", validate(loginSchema), login);
+router.post("/request-otp", validate(requestOtpSchema, "body"), requestOtp);
+router.post("/register", validate(registerSchema, "body"), register);
+router.post("/login", validate(loginSchema, "body"), login);
 router.post(
   "/reset-password",
-  validate(requestPasswordResetSchema),
+  validate(requestPasswordResetSchema, "body"),
   requestPasswordReset
 );
-router.patch("/reset-password", validate(resetPasswordSchema), resetPassword);
+router.patch(
+  "/reset-password",
+  validate(resetPasswordSchema, "body"),
+  resetPassword
+);
 
 export default router;

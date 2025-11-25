@@ -1,53 +1,36 @@
-import { ZodType } from "zod";
+import { ZodObject, ZodError, z } from "zod";
 import { Request, Response, NextFunction } from "express";
-import { ParsedQs } from "qs";
-import { ParamsDictionary } from "express-serve-static-core";
 
-type Target = "body" | "query" | "params";
+// Define a type for the custom request that includes properties for query, body, and params.
+// We use a general `Request` and cast internal properties as needed for validation logic.
+interface CustomRequest extends Request {
+  query: any;
+  body: any;
+  params: any;
+}
+
+type Location = "body" | "query" | "params";
 
 export const validate =
-  (schema: ZodType, target: Target = "body") =>
-  (req: Request, res: Response, next: NextFunction) => {
-    const data =
-      target === "body"
-        ? req.body
-        : target === "query"
-        ? req.query
-        : req.params;
+  (schema: ZodObject<any>, location: Location) =>
+  async (req: CustomRequest, res: Response, next: NextFunction) => {
+    try {
+      const parsedData = schema.parse(req[location]);
 
-    const result = schema.safeParse(data);
+      Object.assign(req[location], parsedData);
 
-    if (!result.success) {
-      const { fieldErrors } = result.error.flatten();
-      return res.status(400).json({
-        message: "Invalid input",
-        errors: fieldErrors,
+      return next();
+    } catch (error) {
+      if (error instanceof ZodError) {
+        return res.status(400).json({
+          message: `Invalid ${location} parameters`,
+          errors: z.treeifyError(error),
+        });
+      }
+
+      console.error(`Validation failed in ${location}:`, error);
+      return res.status(500).json({
+        message: "Internal validation error occurred.",
       });
     }
-
-    if (target === "body") {
-      req.body = result.data;
-    } else if (target === "query") {
-      req.query = result.data as unknown as ParsedQs;
-    } else if (target === "params") {
-      req.params = result.data as unknown as ParamsDictionary;
-    }
-
-    next();
   };
-
-export const validateQuery = (schema: ZodObject<any>) => 
-  (req: Request, res: Response, next: NextFunction) => {
-    const result = schema.safeParse(req.query);
-
-    if (!result.success) {
-      const { fieldErrors } = result.error.flatten((issue) => issue.message);
-      return res.status(400).json({
-        message: "Invalid query parameters",
-        errors: fieldErrors,
-      });
-    }
-    
-    next();
-  };
-

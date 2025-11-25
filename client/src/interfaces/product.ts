@@ -10,27 +10,62 @@ export interface QuestionAnswer {
 export interface Product {
   _id: string;
   name: string;
-  description: string; 
-  images?: string[];   
-  mainImage?: string; 
-  
+  description: string;
+
+  mainImage?: string;
+  subImages?: string[];
+
   startingPrice: number;
   currentPrice: number;
   buyNowPrice?: number;
-  
-  category: Category | string; 
-  seller: UserSummary | string;
-  
-  bidders?: Bid[]; 
-  bidCount?: number;      
-  highestBid?: number;    
-  highestBidder?: UserSummary; 
-  
+
+  category: Category | string;
+  seller: UserSummary;
+
+  // Auction State
   startTime: string;
   endTime: string;
+  timeRemainingMs?: number;
+  isEndingSoon?: boolean;
+  isNew?: boolean;
+
+  bidders?: Bid[];
+
+  highestBid?: {
+    amount: number;
+    bidder: UserSummary | string | null;
+    startTime: Date | string | null;
+  } | null;
+  highestBidder: UserSummary;
+
+  bidCount: number;
+
   questions?: QuestionAnswer[];
+  related?: Product[];
 }
 
+export interface BidHistoryEntry {
+  _id: string;
+  bidder: UserSummary | { _id: string };
+  price: number;
+  createdAt: string;
+}
+
+export interface ProductDetails {
+  product: Product;
+  highestBid: {
+    amount: number;
+    bidder: string | UserSummary;
+    startTime: string;
+  };
+  bidCount: number;
+  bidHistory: BidHistoryEntry[];
+  questions: QuestionAnswer[];
+  related: Product[];
+  timeRemainingMs: number;
+  isEndingSoon: boolean;
+  isNew: boolean;
+}
 
 export type ProductSortOption =
   | "default"
@@ -58,11 +93,10 @@ export interface UserSummary {
   rating: number;
 }
 
-export interface FetchProductsDto {
-  page: number;
-  limit: number;
-  search?: string;
-  categoryId?: string;
+export interface HomeDataResponse {
+  endingSoon: Product[];
+  mostBids: Product[];
+  highestPrice: Product[];
 }
 
 export interface PaginatedFetchDto {
@@ -71,18 +105,12 @@ export interface PaginatedFetchDto {
 }
 
 // Arguments for fetching products by category
-export interface FetchByCategoryDto extends PaginatedFetchDto {
+export interface FetchProductsDto extends PaginatedFetchDto {
   categoryId?: string;
+  query?: string;
+  sort?: ProductSortOption;
 }
 
-// Arguments for searching products
-export interface SearchProductsDto extends PaginatedFetchDto {
-  query: string;
-  categoryId?: string;
-}
-
-export interface HomeDataResponse {
-  endingSoon: Product[];
-  mostBids: Product[];
-  highestPrice: Product[];
+export interface FetchProductDetailsDto {
+  id: string;
 }
