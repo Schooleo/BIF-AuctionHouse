@@ -2,6 +2,7 @@ import React from "react";
 import type { Product } from "@interfaces/product";
 import ProductImage from "./ProductImage";
 import { Link } from "react-router-dom";
+import { maskName } from "@utils/product";
 
 interface ProductCardProps {
   product: Product;
@@ -16,7 +17,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     buyNowPrice,
     bidders,
     bidCount,
-    highestBid,
+
     highestBidder,
     startTime,
     endTime,
@@ -35,9 +36,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     (bidders && bidders.length > 0
       ? bidders[bidders.length - 1].bidder.name
       : null);
-  const currentTopPrice =
-    highestBid ||
-    (bidders && bidders.length > 0 ? bidders[bidders.length - 1].price : 0);
+
   const totalBids = bidCount !== undefined ? bidCount : bidders?.length || 0;
 
   const formatDate = (dateStr: string) =>
@@ -93,12 +92,9 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
         <p className="text-xs sm:text-sm text-gray-600">
           <span className="font-semibold">Top Bidder: </span>
           {currentTopBidderName ? (
-            <>
-              {currentTopBidderName} –{" "}
-              <span className="text-green-600 font-medium">
-                {currentTopPrice.toLocaleString()}₫
-              </span>
-            </>
+            <span className="font-medium">
+              {maskName(currentTopBidderName)}
+            </span>
           ) : (
             "No bids yet"
           )}

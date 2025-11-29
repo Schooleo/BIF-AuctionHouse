@@ -3,12 +3,16 @@ import { ArrowLeft, ArrowRight } from "lucide-react";
 
 interface ProductImageCardProps {
   images: string[] | undefined | null; // Allow undefined/null input
+  recentlyAdded?: boolean;
 }
 
 // Placeholder image if no images are provided
 const DEFAULT_IMAGE = "/no-image.jpg";
 
-const ProductImageCard: React.FC<ProductImageCardProps> = ({ images }) => {
+const ProductImageCard: React.FC<ProductImageCardProps> = ({
+  images,
+  recentlyAdded,
+}) => {
   console.log(images);
 
   const validImages = useMemo(() => {
@@ -17,13 +21,11 @@ const ProductImageCard: React.FC<ProductImageCardProps> = ({ images }) => {
     );
   }, [images]);
 
-  const [selectedImage, setSelectedImage] = useState<string>(
-    validImages.length > 0 ? validImages[0] : DEFAULT_IMAGE
-  );
+  const [selectedIndex, setSelectedIndex] = useState<number>(0);
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    setSelectedImage(validImages.length > 0 ? validImages[0] : DEFAULT_IMAGE);
+    setSelectedIndex(0);
   }, [validImages]);
 
   const scroll = (direction: "left" | "right") => {
@@ -38,15 +40,23 @@ const ProductImageCard: React.FC<ProductImageCardProps> = ({ images }) => {
 
   const shouldShowScrollArrows = validImages.length > 4;
 
+  const currentImage =
+    validImages.length > 0 ? validImages[selectedIndex] : DEFAULT_IMAGE;
+
   return (
     <div className="product-image-card w-full md:w-[500px] sticky top-20">
       {/* Main Image */}
-      <div className="w-full mb-4 flex justify-center">
+      <div className="w-full mb-4 flex justify-center relative group overflow-hidden rounded-lg shadow-md">
         <img
-          src={selectedImage}
+          src={currentImage}
           alt="Main product"
-          className="w-full h-[400px] md:h-[500px] object-contain rounded-lg shadow-md bg-primary-blue"
+          className="w-full h-[400px] md:h-[500px] object-contain bg-primary-blue transition-transform duration-300 group-hover:scale-105"
         />
+        {recentlyAdded && (
+          <span className="absolute bottom-4 right-4 bg-linear-to-r from-indigo-500 via-purple-500 to-pink-500 text-white text-sm font-semibold italic px-3 py-1.5 rounded-md shadow-lg z-10">
+            Recently Added
+          </span>
+        )}
       </div>
 
       {/* Sub Images Section */}
@@ -75,11 +85,11 @@ const ProductImageCard: React.FC<ProductImageCardProps> = ({ images }) => {
                   src={img}
                   alt={`Sub ${idx + 1}`}
                   className={`w-20 h-20 md:w-24 md:h-24 object-cover rounded-md cursor-pointer border-2 bg-gray-200 transition-all duration-300 ${
-                    selectedImage === img
+                    selectedIndex === idx
                       ? "scale-105 border-2 border-primary-blue ring-4 ring-primary-blue/30"
                       : "border-gray-300 opacity-70 hover:opacity-100"
                   }`}
-                  onClick={() => setSelectedImage(img)}
+                  onClick={() => setSelectedIndex(idx)}
                 />
               ))}
             </div>

@@ -16,7 +16,7 @@ const router = Router();
 router.use(protect(["seller"]));
 
 router.post("/products", createAuctionProduct);
-router.put("/products/:id/append-description", appendProductDescription);
+router.patch("/products/:id/description", appendProductDescription);
 router.post("/products/:productId/reject-bidder/:bidderId", rejectBidder);
 router.post(
   "/products/:productId/answer-question/:questionId",
