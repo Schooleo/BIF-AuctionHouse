@@ -20,7 +20,7 @@ const NUM_BIDDERS = 5;
 // --- DATA SETS ---
 const TECH_SUB_IMAGES = [
   "https://images.unsplash.com/photo-1550009158-9ebf69173e03?w=800&q=80",
-  "https://images.unsplash.com/photo-1690204731110-38e219fb093d?w=800&q=80",
+  "https://picsum.photos/id/0/500/333",
   "https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=800&q=80",
 ];
 
@@ -194,7 +194,12 @@ const seed = async () => {
   console.log("👤 Creating Users...");
   const commonPassword = "12345678";
 
+  const adminId = new mongoose.Types.ObjectId("64b0f1a9e1b9b1a2b3c4d5e6");
+  const seller1Id = new mongoose.Types.ObjectId("64b0f1a9e1b9b1a2b3c4d5e7");
+  const seller2Id = new mongoose.Types.ObjectId("64b0f1a9e1b9b1a2b3c4d5e8");
+
   const admin = await User.create({
+    _id: adminId,
     name: "System Admin",
     email: "admin@gmail.com",
     password: commonPassword,
@@ -203,6 +208,7 @@ const seed = async () => {
   });
 
   const seller1 = await User.create({
+    _id: seller1Id,
     name: "Tech World Seller",
     email: "seller1@gmail.com",
     password: commonPassword,
@@ -213,6 +219,7 @@ const seed = async () => {
   });
 
   const seller2 = await User.create({
+    _id: seller2Id,
     name: "Fashion Boutique",
     email: "seller2@gmail.com",
     password: commonPassword,
@@ -225,7 +232,13 @@ const seed = async () => {
   // Create Bidders
   let bidders = [];
   for (let i = 1; i <= NUM_BIDDERS; i++) {
+    // Generate deterministic IDs for bidders based on index
+    // Using a base hex string and replacing the last char
+    const hex = `64b0f1a9e1b9b1a2b3c4d5f${i}`;
+    const bidderId = new mongoose.Types.ObjectId(hex);
+
     const bidder = await User.create({
+      _id: bidderId,
       name: `Bidder ${String.fromCharCode(64 + i)}`, // Bidder A, B, C...
       email: `bidder${i}@gmail.com`,
       password: commonPassword,
