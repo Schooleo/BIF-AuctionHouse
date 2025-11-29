@@ -19,12 +19,11 @@ const HomePage: React.FC = () => {
       try {
         setLoading(true);
 
-        const data = await productApi.fetchHomeData(); 
-        
+        const data = await productApi.fetchHomeData();
+
         setTopEndingSoon(data.endingSoon);
         setTopMostBidOn(data.mostBids);
         setTopHighestPriced(data.highestPrice);
-        
       } catch (err) {
         console.error("Error fetching top products:", err);
         setError("Failed to load products. Please try again later.");
@@ -59,7 +58,7 @@ const HomePage: React.FC = () => {
           </h2>
           <button
             onClick={handleViewAll}
-            className="bg-primary-blue text-white px-4 py-2 rounded hover:scale-105 transition-transform duration-200"
+            className="bg-primary-blue text-white px-4 py-2 rounded-md hover:scale-105 transition-transform duration-200"
           >
             View All Products
           </button>

@@ -1,5 +1,5 @@
 import React from "react";
-import ProductsContainer from "@containers/ProductsContainer";
+import ProductsContainer from "@containers/user/ProductsContainer";
 import { useSearchParams } from "react-router-dom";
 
 const ProductsPage: React.FC = () => {

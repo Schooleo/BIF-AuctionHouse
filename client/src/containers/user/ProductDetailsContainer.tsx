@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { checkRecentlyAdded } from "@utils/product";
 import ProductImageCard from "@components/product/ProductImageCard";
 import ProductInfoCard from "@components/product/ProductInfoCard";
 import { QnACard, type IQuestionAnswer } from "@components/product/QnACard";
@@ -75,7 +76,10 @@ const ProductDetailsContainer: React.FC<ProductDetailsContainerProps> = ({
     <div className="py-6">
       <div className="product-details-container max-w-6xl mx-auto flex flex-col md:flex-row justify-center items-start gap-20 mb-8">
         <div className="w-full md:w-5/12 shrink-0 px-4 md:px-0">
-          <ProductImageCard images={allImages} />
+          <ProductImageCard
+            images={allImages}
+            recentlyAdded={checkRecentlyAdded(product.startTime)}
+          />
         </div>
 
         <div className="md:w-5/12 px-4 md:px-0">

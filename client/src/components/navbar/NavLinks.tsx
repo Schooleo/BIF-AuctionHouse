@@ -4,7 +4,7 @@ import { useAuthStore } from "@stores/useAuthStore";
 export default function NavbarLinks() {
   const { user } = useAuthStore();
 
-  if (user) {
+  if (user && user.role !== "seller") {
     return (
       <nav className="hidden md:flex items-center space-x-6 text-white text-xl">
         <Link

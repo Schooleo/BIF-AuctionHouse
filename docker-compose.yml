@@ -1,15 +1,25 @@
 services:
   frontend:
-    build: ./client
+    build:
+      context: ./client
+      target: development
     ports:
-      - "3000:80"
+      - "5173:5173"
+    volumes:
+      - ./client:/app
+      - /app/node_modules
     depends_on:
       - backend
 
   backend:
-    build: ./server
+    build:
+      context: ./server
+      target: development
     ports:
       - "3001:3001"
+    volumes:
+      - ./server:/app
+      - /app/node_modules
     environment:
       - MONGO_URI=mongodb://mongo:27017/auction_db
       - JWT_SECRET=your_jwt_secret
