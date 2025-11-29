@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Search } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import type { SearchBarProps } from "@interfaces/ui";
@@ -7,11 +7,20 @@ const SearchBar: React.FC<SearchBarProps> = ({
   placeholder,
   value,
   onChange,
+  onSubmit,
   className,
 }) => {
   const [internalValue, setInternalValue] = useState<string>(value || "");
   const navigate = useNavigate();
   const location = useLocation();
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const q = params.get("q") || "";
+    if (!value) {
+      setInternalValue(q);
+    }
+  }, [location.search, value]);
 
   const currentValue = value !== undefined ? value : internalValue;
 
@@ -26,17 +35,31 @@ const SearchBar: React.FC<SearchBarProps> = ({
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const trimmed = currentValue.trim();
-    if (!trimmed) return;
+
+    if (onSubmit) {
+      onSubmit(trimmed);
+      return;
+    }
 
     // Chuyển qua trang products với tham số tìm kiếm
     const searchParams = new URLSearchParams();
-    searchParams.set("q", trimmed);
+    if (trimmed) {
+      searchParams.set("q", trimmed);
+    }
 
     const currentParams = new URLSearchParams(location.search);
     const category = currentParams.get("category");
     if (category) searchParams.set("category", category);
 
-    navigate(`/products?${searchParams.toString()}`);
+    if (location.pathname.startsWith("/seller")) {
+      if (location.pathname.includes("ended-products")) {
+        navigate(`/seller/ended-products?${searchParams.toString()}`);
+      } else {
+        navigate(`/seller/products?${searchParams.toString()}`);
+      }
+    } else {
+      navigate(`/products?${searchParams.toString()}`);
+    }
   }
 
   return (

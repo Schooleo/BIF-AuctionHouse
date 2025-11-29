@@ -1,8 +1,17 @@
-import { Link } from "react-router-dom";
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuthStore } from "@stores/useAuthStore";
+import ConfirmationModal from "@components/ui/ConfirmationModal";
 
 export default function NavbarAuthLinks() {
   const { user, logout } = useAuthStore();
+  const navigate = useNavigate();
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+
+  const handleLogout = () => {
+    logout();
+    navigate("/");
+  };
 
   if (user) {
     // Đã có người dùng đăng nhập
@@ -21,11 +30,21 @@ export default function NavbarAuthLinks() {
           {user.name}
         </Link>
         <button
-          onClick={logout}
+          onClick={() => setShowLogoutModal(true)}
           className="hover:text-red-600 hover:font-semibold transition-all duration-200"
         >
           Logout
         </button>
+
+        <ConfirmationModal
+          isOpen={showLogoutModal}
+          onClose={() => setShowLogoutModal(false)}
+          onConfirm={handleLogout}
+          title="Confirm Logout"
+          message="Are you sure you want to log out?"
+          confirmText="Logout"
+          type="danger"
+        />
       </div>
     );
   }
