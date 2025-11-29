@@ -4,12 +4,14 @@ import FormCard from "@components/forms/FormCard";
 import { authApi } from "@services/auth.api";
 import type { ResetPasswordDto } from "@interfaces/auth";
 import EmailCard from "@components/forms/EmailCard";
+import ConfirmationModal from "@components/ui/ConfirmationModal";
 
 const ResetPasswordContainer = () => {
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [error, setError] = useState<{
     email?: string;
     otp?: string;
@@ -52,7 +54,7 @@ const ResetPasswordContainer = () => {
         const payload: ResetPasswordDto = { email, otp, password };
         const response = await authApi.resetPassword(payload);
         if (response.message) {
-          Navigate("/auth/login");
+          setShowSuccessModal(true);
         }
       } catch (err: unknown) {
         if (err instanceof Error) {
@@ -64,50 +66,69 @@ const ResetPasswordContainer = () => {
     }
   };
 
+  const handleSuccessClose = () => {
+    setShowSuccessModal(false);
+    Navigate("/auth/login");
+  };
+
   return (
-    <FormCard
-      title="Reset Password"
-      className="p-6 shadow-lg flex flex-col gap-2"
-      fields={[
-        <EmailCard
-          label="reset-password"
-          value={email}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-            setEmail(e.target.value)
-          }
-          otpValue={otp}
-          onOtpChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-            setOtp(e.target.value)
-          }
-          emailError={error.email}
-          otpError={error.otp}
-        />,
-        {
-          label: "Password",
-          type: "password",
-          value: password,
-          onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
-            setPassword(e.target.value),
-          isRequired: true,
-          error: error.password,
-        },
-        {
-          label: "Confirm Password",
-          type: "password",
-          value: confirmPassword,
-          onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
-            setConfirmPassword(e.target.value),
-          isRequired: true,
-          error: error.confirmPassword ? error.confirmPassword : error.general,
-        },
-      ]}
-      buttonProps={{
-        label: "RESET PASSWORD",
-        type: "submit",
-        variant: "primary",
-      }}
-      onSubmit={handleSubmit}
-    />
+    <>
+      <FormCard
+        title="Reset Password"
+        className="p-6 shadow-lg flex flex-col gap-2"
+        fields={[
+          <EmailCard
+            label="reset-password"
+            value={email}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+              setEmail(e.target.value)
+            }
+            otpValue={otp}
+            onOtpChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+              setOtp(e.target.value)
+            }
+            emailError={error.email}
+            otpError={error.otp}
+          />,
+          {
+            label: "Password",
+            type: "password",
+            value: password,
+            onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
+              setPassword(e.target.value),
+            isRequired: true,
+            error: error.password,
+          },
+          {
+            label: "Confirm Password",
+            type: "password",
+            value: confirmPassword,
+            onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
+              setConfirmPassword(e.target.value),
+            isRequired: true,
+            error: error.confirmPassword
+              ? error.confirmPassword
+              : error.general,
+          },
+        ]}
+        buttonProps={{
+          label: "RESET PASSWORD",
+          type: "submit",
+          variant: "primary",
+        }}
+        onSubmit={handleSubmit}
+      />
+      <ConfirmationModal
+        isOpen={showSuccessModal}
+        onClose={handleSuccessClose}
+        onConfirm={handleSuccessClose}
+        title="Success"
+        message="Your password has been changed successfully!"
+        confirmText="Login Now"
+        cancelText="Close"
+        type="success"
+      />
+    </>
   );
 };
 

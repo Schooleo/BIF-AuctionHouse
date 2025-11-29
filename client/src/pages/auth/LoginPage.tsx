@@ -1,4 +1,4 @@
-import LoginContainer from "@containers/LoginContainer";
+import LoginContainer from "@containers/auth/LoginContainer";
 import { Link } from "react-router-dom";
 import LoginPageImage from "@img/LoginPage.png";
 import BIFLogo from "@img/BIF-logo.png";

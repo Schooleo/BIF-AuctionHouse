@@ -11,6 +11,10 @@ export interface Product {
   _id: string;
   name: string;
   description: string;
+  descriptionHistory?: {
+    content: string;
+    updatedAt: string;
+  }[];
 
   mainImage?: string;
   subImages?: string[];
@@ -113,4 +117,18 @@ export interface FetchProductsDto extends PaginatedFetchDto {
 
 export interface FetchProductDetailsDto {
   id: string;
+}
+
+export interface CreateProductDto {
+  name: string;
+  category: string;
+  mainImage: string;
+  subImages: string[];
+  description: string;
+  endTime: string;
+  startingPrice: number;
+  stepPrice: number;
+  buyNowPrice?: number;
+  autoExtends?: boolean;
+  allowUnratedBidders?: boolean;
 }

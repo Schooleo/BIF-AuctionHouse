@@ -1,5 +1,7 @@
-import { Link } from "react-router-dom";
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuthStore } from "@stores/useAuthStore";
+import ConfirmationModal from "@components/ui/ConfirmationModal";
 
 interface Props {
   closeMenu: () => void;
@@ -7,6 +9,14 @@ interface Props {
 
 export default function NavbarMobileMenu({ closeMenu }: Props) {
   const { user, logout } = useAuthStore();
+  const navigate = useNavigate();
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+
+  const handleLogout = () => {
+    logout();
+    closeMenu();
+    navigate("/");
+  };
 
   return (
     <div className="md:hidden absolute top-full left-0 w-full bg-primary-blue shadow-lg py-4 z-50 animate-slide-down">
@@ -58,14 +68,20 @@ export default function NavbarMobileMenu({ closeMenu }: Props) {
               {user.name}
             </Link>
             <button
-              onClick={() => {
-                logout();
-                closeMenu();
-              }}
+              onClick={() => setShowLogoutModal(true)}
               className="hover:text-red-500 hover:font-semibold transition-all duration-200"
             >
               Logout
             </button>
+            <ConfirmationModal
+              isOpen={showLogoutModal}
+              onClose={() => setShowLogoutModal(false)}
+              onConfirm={handleLogout}
+              title="Confirm Logout"
+              message="Are you sure you want to log out?"
+              confirmText="Logout"
+              type="danger"
+            />
           </>
         ) : (
           <>

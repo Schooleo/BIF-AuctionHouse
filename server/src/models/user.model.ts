@@ -1,14 +1,14 @@
 import mongoose, { Document, Schema } from "mongoose";
-import bcrypt from "bcrypt";
+import * as bcrypt from "bcrypt";
 
 export interface IUser extends Document {
   name: string;
   email: string;
   password: string;
   address: string;
-  role: "bidder" | "seller" | "admin"; 
+  role: "bidder" | "seller" | "admin";
 
-  positiveRatings: number; // Yêu cầu 2.2 
+  positiveRatings: number; // Yêu cầu 2.2
   negativeRatings: number; // Yêu cầu 2.2
 
   // Thuộc tính ảo
@@ -23,13 +23,17 @@ const userSchema = new Schema<IUser>(
     name: { type: String, required: true },
     email: { type: String, required: true, unique: true },
     // 'select: false' để không tự động trả về mật khẩu khi truy vấn
-    password: { type: String, required: true, select: false }, 
+    password: { type: String, required: true, select: false },
     address: { type: String },
-    role: { type: String, enum: ["bidder", "seller", "admin"], default: "bidder" },
+    role: {
+      type: String,
+      enum: ["bidder", "seller", "admin"],
+      default: "bidder",
+    },
     positiveRatings: { type: Number, default: 0 },
     negativeRatings: { type: Number, default: 0 },
   },
-  { 
+  {
     timestamps: true,
     // Đảm bảo các thuộc tính ảo được bao gồm khi xuất ra JSON
     toJSON: { virtuals: true },
@@ -61,7 +65,7 @@ userSchema.virtual("reputationScore").get(function (this: IUser) {
   const totalRatings = this.positiveRatings + this.negativeRatings;
   if (totalRatings === 0) {
     // Trường hợp chưa được đánh giá
-    return 1.0; 
+    return 1.0;
   }
   return this.positiveRatings / totalRatings;
 });

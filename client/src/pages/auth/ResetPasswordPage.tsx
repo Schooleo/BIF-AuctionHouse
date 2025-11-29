@@ -1,4 +1,4 @@
-import ResetPasswordContainer from "@containers/ResetPasswordContainer";
+import ResetPasswordContainer from "@containers/auth/ResetPasswordContainer";
 import { Link } from "react-router-dom";
 import ResetPasswordImage from "@img/LoginPage.png";
 import BIFLogo from "@img/BIF-logo.png";

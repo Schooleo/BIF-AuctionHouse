@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import type { Product } from "@interfaces/product";
 import {
   formatPostedTime,
@@ -14,6 +14,30 @@ interface ProductInfoCardProps {
   isGuest: boolean;
 }
 
+const ExpandableText = ({
+  text,
+  limit = 300,
+}: {
+  text: string;
+  limit?: number;
+}) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  if (text.length <= limit) return <>{text}</>;
+
+  return (
+    <>
+      {isExpanded ? text : `${text.slice(0, limit)}...`}
+      <button
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="text-primary-blue hover:underline ml-2 font-medium"
+      >
+        {isExpanded ? "See less" : "See more"}
+      </button>
+    </>
+  );
+};
+
 const ProductInfoCard: React.FC<ProductInfoCardProps> = ({
   product,
   isGuest,
@@ -21,15 +45,12 @@ const ProductInfoCard: React.FC<ProductInfoCardProps> = ({
   return (
     <div className="flex flex-col gap-4 max-w-xl">
       <h1 className="text-3xl font-bold">{product.name}</h1>
-
       <p className="text-gray-500">
         Posted Time: {formatPostedTime(product.startTime)}
       </p>
-
       <p className="text-red-600 font-semibold">
         Time Remaining: {timeRemaining(product.endTime)}
       </p>
-
       <p className="text-xl font-semibold">
         Current Price: {formatPrice(product.currentPrice)}
       </p>
@@ -38,7 +59,6 @@ const ProductInfoCard: React.FC<ProductInfoCardProps> = ({
           Buy Now Price: {formatPrice(product.buyNowPrice)}
         </p>
       )}
-
       <p className="text-gray-700">
         Seller - {product.seller?.name || "Seller"} •{" "}
         <span className="text-yellow-500">
@@ -46,16 +66,20 @@ const ProductInfoCard: React.FC<ProductInfoCardProps> = ({
           {product.seller?.rating?.toFixed(1) || "N/A"}
         </span>
       </p>
-
       <p className="text-gray-700">
         Current Highest Bidder -{" "}
-        {maskName(product.highestBidder.name || "Anonymous")} •{" "}
-        <span className="text-yellow-500">
-          {`★`.repeat(Math.round(product.highestBidder.rating))}{" "}
-          {product.highestBidder.rating.toFixed(1)}
-        </span>
+        {product.bidCount > 0 ? (
+          <>
+            {maskName(product.highestBidder.name || "Anonymous")} •{" "}
+            <span className="text-yellow-500">
+              {`★`.repeat(Math.round(product.highestBidder.rating))}{" "}
+              {product.highestBidder.rating.toFixed(1)}
+            </span>
+          </>
+        ) : (
+          <span className="text-gray-500 italic">No bids yet</span>
+        )}
       </p>
-
       {/* Button Area */}
       <div className="flex flex-col gap-4 mt-6 max-w-sm">
         {/* Bid History & Watchlist (Logged in) */}
@@ -99,12 +123,35 @@ const ProductInfoCard: React.FC<ProductInfoCardProps> = ({
           </button>
         )}
       </div>
-
       {/* Product Description - Move down to appear after all primary info/actions */}
       <div className="mt-6">
         <h2 className="text-2xl font-semibold mb-2">Description</h2>
-        <p>{product.description}</p>
+        <div className="text-gray-700 whitespace-pre-line wrap-break-word">
+          <ExpandableText text={product.description} />
+        </div>
       </div>
+      {product.descriptionHistory && product.descriptionHistory.length > 0 && (
+        <div className="mt-4 space-y-3">
+          <h3 className="text-lg font-semibold text-primary-blue">Updates</h3>
+          {product.descriptionHistory.map((hist, index) => (
+            <div
+              key={index}
+              className="bg-gray-50 p-3 rounded-lg border border-gray-200"
+            >
+              <p className="text-xs text-gray-500 mb-1 font-medium">
+                {new Date(hist.updatedAt).toLocaleString()}
+              </p>
+              <div className="text-gray-700 whitespace-pre-line text-sm wrap-break-word">
+                {hist.content.length > 200 ? (
+                  <ExpandableText text={hist.content} limit={200} />
+                ) : (
+                  hist.content
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

@@ -199,6 +199,39 @@ export const ProductService = {
           let: { pid: "$_id" },
           pipeline: [
             { $match: { $expr: { $eq: ["$product", "$$pid"] } } },
+            { $sort: { price: -1, createdAt: 1 } },
+            { $limit: 1 },
+            {
+              $lookup: {
+                from: "users",
+                localField: "bidder",
+                foreignField: "_id",
+                as: "bidderInfo",
+              },
+            },
+            {
+              $unwind: {
+                path: "$bidderInfo",
+                preserveNullAndEmptyArrays: true,
+              },
+            },
+            { $project: { price: 1, bidder: "$bidderInfo", createdAt: 1 } },
+          ],
+          as: "topBid",
+        },
+      },
+      {
+        $addFields: {
+          highestBid: { $arrayElemAt: ["$topBid.price", 0] },
+          highestBidder: { $arrayElemAt: ["$topBid.bidder", 0] },
+        },
+      },
+      {
+        $lookup: {
+          from: "bids",
+          let: { pid: "$_id" },
+          pipeline: [
+            { $match: { $expr: { $eq: ["$product", "$$pid"] } } },
             { $count: "count" },
           ],
           as: "bidCounts",
@@ -424,6 +457,10 @@ export const ProductService = {
         _id: productDoc.id,
         name: productDoc.name,
         description: productDoc.description,
+        descriptionHistory: productDoc.descriptionHistory?.map((h) => ({
+          content: h.content,
+          updatedAt: h.updatedAt.toISOString(),
+        })),
         mainImage: productDoc.mainImage,
         subImages: productDoc.subImages,
         startingPrice: productDoc.startingPrice,

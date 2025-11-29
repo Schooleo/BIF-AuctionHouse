@@ -1,37 +1,27 @@
-# ---- Stage 1: Build ----
-FROM node:20-alpine AS builder
+# ---- Stage 1: Base ----
+FROM node:20-alpine AS base
 WORKDIR /app
-
-# Copy package files and install deps
 COPY package*.json ./
 RUN npm install
-
-# Copy all source files
 COPY . .
 
-# Clean old build (important!)
-RUN rm -rf dist
+# ---- Stage 2: Development ----
+FROM base AS development
+EXPOSE 3001
+CMD ["npm", "run", "dev"]
 
-# Build fresh
+# ---- Stage 3: Build ----
+FROM base AS builder
+RUN rm -rf dist
 RUN npm run build
 
-# ---- Stage 2: Production ----
-FROM node:20-alpine
+# ---- Stage 4: Production ----
+FROM node:20-alpine AS production
 WORKDIR /app
-
-# Copy only necessary files
 COPY package*.json ./
 RUN npm install --omit=dev
-
-# Copy compiled JS from builder
 COPY --from=builder /app/dist ./dist
-
-# Copy environment variables
 COPY .env .env
-
-# Copy any other runtime config if needed
 COPY --from=builder /app/src/config ./config
-
 EXPOSE 3001
-
 CMD ["node", "dist/server.js"]

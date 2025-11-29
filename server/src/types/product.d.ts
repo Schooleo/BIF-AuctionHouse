@@ -24,6 +24,10 @@ export interface Product {
   _id: string;
   name: string;
   description: string;
+  descriptionHistory?: {
+    content: string;
+    updatedAt: string;
+  }[];
   mainImage?: string;
   subImages?: string[];
   startingPrice: number;

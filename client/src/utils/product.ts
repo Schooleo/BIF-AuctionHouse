@@ -72,3 +72,25 @@ export const maskName = (name: string) => {
   if (name.length <= 2) return name[0] + "*";
   return name[0] + "*".repeat(name.length - 2) + name[name.length - 1];
 };
+
+export const checkRecentlyAdded = (startStr: string) => {
+  const start = new Date(startStr).getTime();
+  const now = Date.now();
+  const diff = now - start;
+  const oneDayMs = 24 * 60 * 60 * 1000;
+  return diff <= oneDayMs;
+};
+
+export const getShortRemainingTime = (endStr: string) => {
+  const end = new Date(endStr).getTime();
+  const now = Date.now();
+  const diff = end - now;
+
+  if (diff <= 0) return "Ended";
+
+  const totalSeconds = Math.floor(diff / 1000);
+  const days = Math.floor(totalSeconds / (60 * 60 * 24));
+  const hours = Math.floor((totalSeconds % (60 * 60 * 24)) / (60 * 60));
+  const minutes = Math.floor((totalSeconds % (60 * 60)) / 60);
+  return `${days}d ${hours}h ${minutes}m`;
+};

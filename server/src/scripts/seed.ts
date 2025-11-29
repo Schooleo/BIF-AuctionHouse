@@ -1,5 +1,4 @@
 import mongoose from "mongoose";
-import bcrypt from "bcrypt";
 import dotenv from "dotenv";
 import { User } from "../models/user.model";
 import { Category } from "../models/category.model";
@@ -22,132 +21,155 @@ const NUM_BIDDERS = 5;
 const TECH_SUB_IMAGES = [
   "https://images.unsplash.com/photo-1550009158-9ebf69173e03?w=800&q=80",
   "https://images.unsplash.com/photo-1690204731110-38e219fb093d?w=800&q=80",
-  "https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=800&q=80"
+  "https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=800&q=80",
 ];
 
 const FASHION_SUB_IMAGES = [
   "https://images.unsplash.com/photo-1445205170230-053b83016050?w=800&q=80",
   "https://images.unsplash.com/photo-1515955656352-a1fa3ffcd111?w=800&q=80",
-  "https://images.unsplash.com/photo-1556905055-8f358a7a47b2?w=800&q=80"
+  "https://images.unsplash.com/photo-1556905055-8f358a7a47b2?w=800&q=80",
 ];
+
 // Danh sách sản phẩm mẫu theo Category
 const PRODUCT_CATALOG: Record<string, any[]> = {
-  "Phones": [
-    { 
-      name: "iPhone 15 Pro Max Titanium", 
-      price: 25000000, 
-      img: "https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=800&q=80" 
+  Phones: [
+    {
+      name: "iPhone 15 Pro Max Titanium",
+      price: 25000000,
+      img: "https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=800&q=80",
     },
-    { 
-      name: "Samsung Galaxy S24 Ultra", 
-      price: 23000000, 
-      img: "https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=800&q=80" 
+    {
+      name: "Samsung Galaxy S24 Ultra",
+      price: 23000000,
+      img: "https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=800&q=80",
     },
-    { 
-      name: "Google Pixel 8 Pro", 
-      price: 18000000, 
-      img: "https://images.unsplash.com/photo-1732386650203-d8db284edeb7?w=800&q=80" 
+    {
+      name: "Google Pixel 8 Pro",
+      price: 18000000,
+      img: "https://images.unsplash.com/photo-1732386650203-d8db284edeb7?w=800&q=80",
     },
-    { 
-      name: "Xiaomi 14 Ultra", 
-      price: 16000000, 
-      img: "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=800&q=80" 
-    }
+    {
+      name: "Xiaomi 14 Ultra",
+      price: 16000000,
+      img: "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=800&q=80",
+    },
   ],
-  "Laptops": [
-    { 
-      name: "MacBook Air M2 13-inch", 
-      price: 19000000, 
-      img: "https://images.unsplash.com/photo-1593642634315-48f5414c3ad9?w=800&q=80" 
+  Laptops: [
+    {
+      name: "MacBook Air M2 13-inch",
+      price: 19000000,
+      img: "https://images.unsplash.com/photo-1593642634315-48f5414c3ad9?w=800&q=80",
     },
-    { 
-      name: "Dell XPS 13 Plus", 
-      price: 22000000, 
-      img: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=800&q=80" 
+    {
+      name: "Dell XPS 13 Plus",
+      price: 22000000,
+      img: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=800&q=80",
     },
-    { 
-      name: "Asus ROG Zephyrus G14", 
-      price: 28000000, 
-      img: "https://images.unsplash.com/photo-1630794180018-433d915c34ac?w=800&q=80" 
+    {
+      name: "Asus ROG Zephyrus G14",
+      price: 28000000,
+      img: "https://images.unsplash.com/photo-1630794180018-433d915c34ac?w=800&q=80",
     },
-    { 
-      name: "Lenovo ThinkPad X1 Carbon", 
-      price: 24000000, 
-      img: "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=800&q=80" 
-    }
+    {
+      name: "Lenovo ThinkPad X1 Carbon",
+      price: 24000000,
+      img: "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=800&q=80",
+    },
   ],
-  "Shoes": [
-    { 
-      name: "Nike Air Jordan 1 High", 
-      price: 4000000, 
-      img: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=800&q=80" 
+  Shoes: [
+    {
+      name: "Nike Air Jordan 1 High",
+      price: 4000000,
+      img: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=800&q=80",
     },
-    { 
-      name: "Adidas Yeezy Boost 350", 
-      price: 5500000, 
-      img: "https://images.unsplash.com/photo-1549298916-b41d501d3772?w=800&q=80" 
+    {
+      name: "Adidas Yeezy Boost 350",
+      price: 5500000,
+      img: "https://images.unsplash.com/photo-1549298916-b41d501d3772?w=800&q=80",
     },
-    { 
-      name: "Converse Chuck 70 High", 
-      price: 1200000, 
-      img: "https://images.unsplash.com/photo-1607522370275-f14206abe5d3?w=800&q=80" 
+    {
+      name: "Converse Chuck 70 High",
+      price: 1200000,
+      img: "https://images.unsplash.com/photo-1607522370275-f14206abe5d3?w=800&q=80",
     },
-    { 
-      name: "New Balance 550 White", 
-      price: 2500000, 
-      img: "https://images.unsplash.com/photo-1551107696-a4b0c5a0d9a2?w=800&q=80" 
-    }
+    {
+      name: "New Balance 550 White",
+      price: 2500000,
+      img: "https://images.unsplash.com/photo-1551107696-a4b0c5a0d9a2?w=800&q=80",
+    },
   ],
-  "Watches": [
-    { 
-      name: "Rolex Submariner Date", 
-      price: 250000000, 
-      img: "https://images.unsplash.com/photo-1523170335258-f5ed11844a49?w=800&q=80" 
+  Watches: [
+    {
+      name: "Rolex Submariner Date",
+      price: 250000000,
+      img: "https://images.unsplash.com/photo-1523170335258-f5ed11844a49?w=800&q=80",
     },
-    { 
-      name: "Casio G-Shock GA-2100", 
-      price: 3000000, 
-      img: "https://images.unsplash.com/photo-1524592094714-0f0654e20314?w=800&q=80" 
+    {
+      name: "Casio G-Shock GA-2100",
+      price: 3000000,
+      img: "https://images.unsplash.com/photo-1524592094714-0f0654e20314?w=800&q=80",
     },
-    { 
-      name: "Apple Watch Ultra 2", 
-      price: 18000000, 
-      img: "https://images.unsplash.com/photo-1546868871-7041f2a55e12?w=800&q=80" 
+    {
+      name: "Apple Watch Ultra 2",
+      price: 18000000,
+      img: "https://images.unsplash.com/photo-1546868871-7041f2a55e12?w=800&q=80",
     },
-    { 
-      name: "Seiko 5 Sports Automatic", 
-      price: 6000000, 
-      img: "https://images.unsplash.com/photo-1614164185128-e4ec99c436d7?w=800&q=80" 
-    }
+    {
+      name: "Seiko 5 Sports Automatic",
+      price: 6000000,
+      img: "https://images.unsplash.com/photo-1614164185128-e4ec99c436d7?w=800&q=80",
+    },
   ],
-  "Furniture": [
-    { 
-      name: "Herman Miller Aeron Chair", 
-      price: 20000000, 
-      img: "https://images.unsplash.com/photo-1505843490538-5133c6c7d0e1?w=800&q=80" 
+  Furniture: [
+    {
+      name: "Herman Miller Aeron Chair",
+      price: 20000000,
+      img: "https://images.unsplash.com/photo-1505843490538-5133c6c7d0e1?w=800&q=80",
     },
-    { 
-      name: "IKEA Sofa Landskrona", 
-      price: 12000000, 
-      img: "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=800&q=80" 
+    {
+      name: "IKEA Sofa Landskrona",
+      price: 12000000,
+      img: "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=800&q=80",
     },
-    { 
-      name: "Minimalist Oak Desk", 
-      price: 5000000, 
-      img: "https://images.unsplash.com/photo-1518455027359-f3f8164ba6bd?w=800&q=80" 
+    {
+      name: "Minimalist Oak Desk",
+      price: 5000000,
+      img: "https://images.unsplash.com/photo-1518455027359-f3f8164ba6bd?w=800&q=80",
     },
-    { 
-      name: "Vintage Standing Lamp", 
-      price: 1500000, 
-      img: "https://images.unsplash.com/photo-1555488205-d5e67846cf40?w=800&q=80" 
-    }
-  ]
+    {
+      name: "Vintage Standing Lamp",
+      price: 1500000,
+      img: "https://images.unsplash.com/photo-1555488205-d5e67846cf40?w=800&q=80",
+    },
+  ],
 };
 
 // --- HELPER FUNCTIONS ---
 
-const randomInt = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min;
-const randomDate = (start: Date, end: Date) => new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime()));
+const generateDescription = (name: string, category: string) => {
+  return `
+${name}
+
+Experience the ultimate in ${category} with the ${name}. Designed for performance and style, this item is a must-have for enthusiasts.
+
+Key Features:
+- Premium Build: Crafted with high-quality materials for durability and elegance.
+- High Performance: Optimized for the best user experience in its class.
+- Modern Design: Sleek and contemporary look that fits any setting.
+- Warranty: Comes with a standard 1-year manufacturer warranty.
+
+Condition:
+This item is in Like New condition. It has been inspected and tested to ensure full functionality. Original packaging and accessories are included.
+
+Shipping & Returns:
+Fast shipping available worldwide. 30-day return policy if the item does not match the description.
+  `;
+};
+
+const randomInt = (min: number, max: number) =>
+  Math.floor(Math.random() * (max - min + 1)) + min;
+const randomDate = (start: Date, end: Date) =>
+  new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime()));
 
 const connectDB = async () => {
   try {
@@ -170,34 +192,34 @@ const seed = async () => {
   await Rating.deleteMany({});
 
   console.log("👤 Creating Users...");
-  const hashedPassword = await bcrypt.hash("123456", 10);
-  
+  const commonPassword = "12345678";
+
   const admin = await User.create({
     name: "System Admin",
     email: "admin@gmail.com",
-    password: hashedPassword,
+    password: commonPassword,
     role: "admin",
-    address: "Admin HQ"
+    address: "Admin HQ",
   });
 
   const seller1 = await User.create({
     name: "Tech World Seller",
     email: "seller1@gmail.com",
-    password: hashedPassword,
+    password: commonPassword,
     role: "seller",
     address: "Hanoi, Vietnam",
     positiveRatings: 10,
-    negativeRatings: 1
+    negativeRatings: 1,
   });
 
   const seller2 = await User.create({
     name: "Fashion Boutique",
     email: "seller2@gmail.com",
-    password: hashedPassword,
+    password: commonPassword,
     role: "seller",
     address: "HCMC, Vietnam",
     positiveRatings: 50,
-    negativeRatings: 0
+    negativeRatings: 0,
   });
 
   // Create Bidders
@@ -206,11 +228,11 @@ const seed = async () => {
     const bidder = await User.create({
       name: `Bidder ${String.fromCharCode(64 + i)}`, // Bidder A, B, C...
       email: `bidder${i}@gmail.com`,
-      password: hashedPassword,
+      password: commonPassword,
       role: "bidder",
       address: `Street ${i}, City`,
       positiveRatings: randomInt(0, 5),
-      negativeRatings: randomInt(0, 1)
+      negativeRatings: randomInt(0, 1),
     });
     bidders.push(bidder);
   }
@@ -223,19 +245,31 @@ const seed = async () => {
   const sports = await Category.create({ name: "Sports" }); // Empty cat to test empty state
 
   // Level 2
-  const phones = await Category.create({ name: "Mobile Phones", parent: electronics._id });
-  const laptops = await Category.create({ name: "Laptops", parent: electronics._id });
+  const phones = await Category.create({
+    name: "Mobile Phones",
+    parent: electronics._id,
+  });
+  const laptops = await Category.create({
+    name: "Laptops",
+    parent: electronics._id,
+  });
   const shoes = await Category.create({ name: "Shoes", parent: fashion._id });
-  const watches = await Category.create({ name: "Watches", parent: fashion._id });
-  const furniture = await Category.create({ name: "Furniture", parent: home._id });
+  const watches = await Category.create({
+    name: "Watches",
+    parent: fashion._id,
+  });
+  const furniture = await Category.create({
+    name: "Furniture",
+    parent: home._id,
+  });
 
   // Map category names to IDs for easy lookup
   const catMap: Record<string, any> = {
-    "Phones": phones._id,
-    "Laptops": laptops._id,
-    "Shoes": shoes._id,
-    "Watches": watches._id,
-    "Furniture": furniture._id
+    Phones: phones._id,
+    Laptops: laptops._id,
+    Shoes: shoes._id,
+    Watches: watches._id,
+    Furniture: furniture._id,
   };
 
   console.log("📦 Creating Products & Bids...");
@@ -257,14 +291,18 @@ const seed = async () => {
       // Some started days ago.
       const now = new Date();
       const isEndingSoon = Math.random() > 0.7; // 30% chance ending soon
-      
-      const startTime = new Date(now.getTime() - randomInt(1, 5) * 24 * 60 * 60 * 1000); // Started 1-5 days ago
-      
+
+      const startTime = new Date(
+        now.getTime() - randomInt(1, 5) * 24 * 60 * 60 * 1000
+      ); // Started 1-5 days ago
+
       let endTime;
       if (isEndingSoon) {
-         endTime = new Date(now.getTime() + randomInt(10, 180) * 60 * 1000); // Ends in 10-180 mins
+        endTime = new Date(now.getTime() + randomInt(10, 180) * 60 * 1000); // Ends in 10-180 mins
       } else {
-         endTime = new Date(now.getTime() + randomInt(1, 7) * 24 * 60 * 60 * 1000); // Ends in 1-7 days
+        endTime = new Date(
+          now.getTime() + randomInt(1, 7) * 24 * 60 * 60 * 1000
+        ); // Ends in 1-7 days
       }
 
       // Step price logic (e.g., 5-10% of starting price rounded)
@@ -277,7 +315,7 @@ const seed = async () => {
         seller: sellerId,
         mainImage: item.img, // Use reliable placeholder with text
         subImages: subImages,
-        description: `This is a genuine ${item.name}. Condition: Like New. Full warranty included.\n\nLorem ipsum dolor sit amet, consectetur adipiscing elit.`,
+        description: generateDescription(item.name, catKey),
         startTime: startTime,
         endTime: endTime,
         startingPrice: item.price,
@@ -285,7 +323,7 @@ const seed = async () => {
         buyNowPrice: item.price * 1.5, // Optional buy now
         autoExtends: true,
         currentPrice: item.price, // Will be updated by bids
-        bidCount: 0
+        bidCount: 0,
       });
 
       await product.save();
@@ -301,13 +339,15 @@ const seed = async () => {
       for (let k = 0; k < bidCount; k++) {
         // Pick random bidder
         const bidder = bidders[randomInt(0, bidders.length - 1)]!;
-        
+
         // Increase price by step + random small amount
-        const increment = stepPrice + (randomInt(0, 5) * 10000); 
+        const increment = stepPrice + randomInt(0, 5) * 10000;
         currentPrice += increment;
 
         // Ensure bid time is ascending but before now
-        const nextTime = new Date(lastBidTime.getTime() + randomInt(10, 60) * 60 * 1000);
+        const nextTime = new Date(
+          lastBidTime.getTime() + randomInt(10, 60) * 60 * 1000
+        );
         if (nextTime > now) break; // Don't bid in the future
         lastBidTime = nextTime;
 
@@ -315,7 +355,7 @@ const seed = async () => {
           product: product._id,
           bidder: bidder._id,
           price: currentPrice,
-          createdAt: lastBidTime
+          createdAt: lastBidTime,
         });
 
         lastBidder = bidder;
@@ -326,7 +366,7 @@ const seed = async () => {
       product.currentPrice = currentPrice;
       product.currentBidder = (lastBidder ? lastBidder._id : undefined) as any;
       product.bidCount = bidCount;
-      
+
       // Randomly add questions to some products
       if (Math.random() > 0.5) {
         product.questions.push({
@@ -334,7 +374,7 @@ const seed = async () => {
           questioner: bidders[0]!._id,
           askedAt: new Date(startTime.getTime() + 100000),
           answer: "Yes, 100% authentic with receipt.",
-          answeredAt: new Date(startTime.getTime() + 200000)
+          answeredAt: new Date(startTime.getTime() + 200000),
         } as any);
       }
 
