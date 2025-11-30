@@ -72,6 +72,19 @@ const ProductDetailsContainer: React.FC<ProductDetailsContainerProps> = ({
     allImages.push(...product.subImages);
   }
 
+  const handleUpdateProduct = (updatedData: any) => {
+    setProduct((prev) => {
+      if (!prev) return prev;
+
+      return {
+        ...prev,
+        currentPrice: updatedData.currentPrice,
+        bidCount: updatedData.bidCount,
+        highestBidder: updatedData.currentBidder,
+      };
+    });
+  };
+
   return (
     <div className="py-6">
       <div className="product-details-container max-w-6xl mx-auto flex flex-col md:flex-row justify-center items-start gap-20 mb-8">
@@ -83,7 +96,11 @@ const ProductDetailsContainer: React.FC<ProductDetailsContainerProps> = ({
         </div>
 
         <div className="md:w-5/12 px-4 md:px-0">
-          <ProductInfoCard product={product} isGuest={isGuest} />
+          <ProductInfoCard
+            product={product}
+            isGuest={isGuest}
+            onUpdateProduct={handleUpdateProduct}
+          />
         </div>
       </div>
 

@@ -8,10 +8,13 @@ import {
 } from "@utils/product";
 import { Link } from "react-router-dom";
 import { Heart } from "lucide-react";
+import BidModal from "./BidModal";
+
 
 interface ProductInfoCardProps {
   product: Product;
   isGuest: boolean;
+  onUpdateProduct?: (updatedProduct: Product) => void; 
 }
 
 const ExpandableText = ({
@@ -41,7 +44,10 @@ const ExpandableText = ({
 const ProductInfoCard: React.FC<ProductInfoCardProps> = ({
   product,
   isGuest,
+  onUpdateProduct,
 }) => {
+  const [isBidModalOpen, setIsBidModalOpen] = useState(false);
+
   return (
     <div className="flex flex-col gap-4 max-w-xl">
       <h1 className="text-3xl font-bold">{product.name}</h1>
@@ -117,12 +123,22 @@ const ProductInfoCard: React.FC<ProductInfoCardProps> = ({
           </Link>
         ) : (
           <button
+            onClick={() => setIsBidModalOpen(true)}
             className={`text-xl font-semibold w-full px-6 py-3 rounded-2xl shadow-md bg-primary-blue text-white hover:scale-105 transition-transform duration-200`}
           >
             Place a bid
           </button>
         )}
       </div>
+
+      <BidModal
+        isOpen={isBidModalOpen}
+        onClose={() => setIsBidModalOpen(false)}
+        productId={product._id}
+        productName={product.name}
+        onUpdateProduct={onUpdateProduct}
+      />
+
       {/* Product Description - Move down to appear after all primary info/actions */}
       <div className="mt-6">
         <h2 className="text-2xl font-semibold mb-2">Description</h2>

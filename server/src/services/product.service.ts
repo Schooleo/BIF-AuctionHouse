@@ -333,7 +333,12 @@ export const ProductService = {
         ],
       })
       .lean<
-        IProduct & { seller: any; currentBidder?: any; questions: any[] }
+        IProduct & {
+          _id: Types.ObjectId;
+          seller: any;
+          currentBidder?: any;
+          questions: any[];
+        }
       >();
 
     if (!productDoc) return null;
@@ -454,7 +459,7 @@ export const ProductService = {
     // 9. Return normalized ProductDetails
     return {
       product: {
-        _id: productDoc.id,
+        _id: productDoc._id.toString(),
         name: productDoc.name,
         description: productDoc.description,
         descriptionHistory: productDoc.descriptionHistory?.map((h) => ({
