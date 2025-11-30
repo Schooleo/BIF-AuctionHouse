@@ -30,6 +30,17 @@ interface PlaceBidResponse {
   };
 }
 
+interface AddToWatchlistResponse {
+  message: string;
+  data: {
+    _id: string;
+    user: string;
+    product: string;
+    createdAt: string;
+    updatedAt: string;
+  };
+}
+
 export const bidderApi = {
   getSuggestedPrice: async (
     productId: string,
@@ -69,4 +80,22 @@ export const bidderApi = {
 
     return handleResponse(res);
   },
-};
+
+  addToWatchlist: async (
+    productId: string,
+    token: string
+  ): Promise<AddToWatchlistResponse> => {
+    const url = `${API_BASE}/api/bidder/watchlist`;
+
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ productId }),
+    });
+
+    return handleResponse(res);
+  },
+}

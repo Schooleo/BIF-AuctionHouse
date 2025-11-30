@@ -7,14 +7,16 @@ import {
   maskName,
 } from "@utils/product";
 import { Link } from "react-router-dom";
-import { Heart } from "lucide-react";
+import { Heart, CheckIcon } from "lucide-react";
+import Spinner from "@components/ui/Spinner";
 import BidModal from "./BidModal";
-
+import { bidderApi } from "@services/bidder.api";
+import { useAuthStore } from "@stores/useAuthStore";
 
 interface ProductInfoCardProps {
   product: Product;
   isGuest: boolean;
-  onUpdateProduct?: (updatedProduct: Product) => void; 
+  onUpdateProduct?: (updatedProduct: Product) => void;
 }
 
 const ExpandableText = ({
@@ -47,7 +49,21 @@ const ProductInfoCard: React.FC<ProductInfoCardProps> = ({
   onUpdateProduct,
 }) => {
   const [isBidModalOpen, setIsBidModalOpen] = useState(false);
+  const [isInWatchlist, setIsInWatchlist] = useState(false);
+  const [isAddingToWatchlist, setIsAddingToWatchlist] = useState(false);
 
+  const handleAddToWatchlist = async () => {
+
+    setIsAddingToWatchlist(true);
+    try {
+      await bidderApi.addToWatchlist(product._id, useAuthStore.getState().token || "");
+      setIsInWatchlist(true);
+    } catch (error) {
+      console.error("Error adding to watchlist:", error);
+    } finally {
+      setIsAddingToWatchlist(false);
+    }
+  };
   return (
     <div className="flex flex-col gap-4 max-w-xl">
       <h1 className="text-3xl font-bold">{product.name}</h1>
@@ -103,13 +119,29 @@ const ProductInfoCard: React.FC<ProductInfoCardProps> = ({
             <span className="h-4 w-px bg-gray-300"></span>
 
             {/* Add to Watchlist Link (Xử lý API) */}
-            <Link
-              to={`/user/watchlist`}
-              className="bg-red-500 rounded-2xl hover:scale-105 transition-transform duration-150 px-4 py-2"
+            <button
+              type="button"
+              onClick={handleAddToWatchlist}
+              disabled={isInWatchlist || isAddingToWatchlist}
+              className={`${isInWatchlist ? "bg-gray-400 cursor-not-allowed" : "bg-red-500"} rounded-2xl hover:scale-105 transition-transform duration-150 px-4 py-3 flex items-center gap-2 hover:cursor-pointer`}
             >
-              <Heart className="inline-block mr-2" size={16} />
-              Add to Watchlist
-            </Link>
+              {isAddingToWatchlist ? (
+                <>
+                  <Spinner />
+                  <span>Adding...</span>
+                </>
+              ) : isInWatchlist ? (
+                <>
+                  <CheckIcon className="w-4 h-4" />
+                  <span>In Watchlist</span>
+                </>
+              ) : (
+                <>
+                  <Heart className="w-4 h-4" />
+                  <span>Add to Watchlist</span>
+                </>
+              )}
+            </button>
           </div>
         )}
 
