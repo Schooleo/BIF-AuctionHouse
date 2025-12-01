@@ -1,8 +1,8 @@
-import { Request, Response } from 'express';
-import { bidderService } from '../services/bidder.service';
-import { WatchlistMessages } from '../constants/messages';
-import { Bid } from '../models/bid.model';
-import { BidMessages } from '../constants/messages';
+import { Request, Response } from "express";
+import { bidderService } from "../services/bidder.service";
+import { WatchlistMessages } from "../constants/messages";
+import { Bid } from "../models/bid.model";
+import { BidMessages } from "../constants/messages";
 import { ProductMessages } from '../constants/messages';
 // Thêm các kiểu dữ liệu cho Request và Response nếu có sử dụng trong src/types/bidder.ts
 // Thêm các biến constants cho messages nếu có sử dụng trong src/constants/messages.ts
@@ -20,7 +20,7 @@ export const addToWatchlist = async (req: Request, res: Response) => {
       message: WatchlistMessages.ADDED_SUCCESS,
       data: watchlistItem,
     });
-  } catch (error: any) {
+  } catch (error : any) {
     if (error.message === WatchlistMessages.ALREADY_EXISTS) {
       return res.status(400).json({ message: error.message });
     }
@@ -42,11 +42,12 @@ export const getSuggestedPrice = async (req: Request, res: Response) => {
     const result = await bidderService.getSuggestedPrice(userId, productId!);
 
     res.status(200).json(result);
-  } catch (error: any) {
+  } catch (error : any) {
     if (error.message === BidMessages.PRODUCT_NOT_FOUND) {
       return res.status(404).json({ message: error.message });
     }
-    if (error.message === BidMessages.UNRATED_NOT_ALLOWED || error.message === BidMessages.REPUTATION_TOO_LOW) {
+    if (error.message === BidMessages.UNRATED_NOT_ALLOWED ||
+        error.message === BidMessages.REPUTATION_TOO_LOW) {
       return res.status(403).json({ message: error.message });
     }
     res.status(500).json({ message: error.message });
@@ -68,7 +69,10 @@ export const placeBid = async (req: Request, res: Response) => {
     if (error.message === BidMessages.PRODUCT_NOT_FOUND) {
       return res.status(404).json({ message: error.message });
     }
-    if (error.message === BidMessages.UNRATED_NOT_ALLOWED || error.message === BidMessages.REPUTATION_TOO_LOW) {
+    if (
+      error.message === BidMessages.UNRATED_NOT_ALLOWED ||
+      error.message === BidMessages.REPUTATION_TOO_LOW
+    ) {
       return res.status(403).json({ message: error.message });
     }
     if (error.message === BidMessages.BID_TOO_LOW) {
@@ -88,7 +92,7 @@ export const viewBidHistory = async (req: Request, res: Response) => {
     const result = await bidderService.getBidHistory(productId!, page, limit);
 
     res.status(200).json(result);
-  } catch (error: any) {
+  } catch (error : any) {
     if (error.message === BidMessages.PRODUCT_NOT_FOUND) {
       return res.status(404).json({ message: error.message });
     }
@@ -321,8 +325,7 @@ export const requestSellerUpgrade = async (req: Request, res: Response) => {
       return res.status(401).json({ message: 'Unauthorized' });
     }
 
-    const { reason } = req.body;
-    const request = await bidderService.requestSellerUpgrade(bidderId, reason);
+    const request = await bidderService.requestSellerUpgrade(bidderId);
     res.status(201).json({ request });
   } catch (error: any) {
     if (error.message.includes('đã là seller')) {
