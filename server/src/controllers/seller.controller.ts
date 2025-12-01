@@ -1,9 +1,6 @@
 import { Request, Response } from "express";
 import { SellerService } from "../services/seller.service";
-import {
-  createProductSchema,
-  appendDescriptionSchema,
-} from "../schemas/seller.schema";
+// Schemas are used in routes/seller.routes.ts via validate middleware
 import { SellerMessages } from "../constants/messages";
 
 // Add types for Request and Response if used in src/types/seller.ts
@@ -11,24 +8,12 @@ import { SellerMessages } from "../constants/messages";
 
 export const createAuctionProduct = async (req: Request, res: Response) => {
   try {
-    const validationResult = createProductSchema.safeParse(req.body);
-
-    if (!validationResult.success) {
-      return res.status(400).json({
-        message: SellerMessages.MISSING_REQUIRED_FIELDS,
-        errors: validationResult.error.issues,
-      });
-    }
-
     const userId = (req.user as any)?._id;
     if (!userId) {
       return res.status(401).json({ message: "Unauthorized" });
     }
 
-    const product = await SellerService.createProduct(
-      String(userId),
-      validationResult.data
-    );
+    const product = await SellerService.createProduct(String(userId), req.body);
 
     res.status(201).json(product);
   } catch (error) {
@@ -40,14 +25,6 @@ export const createAuctionProduct = async (req: Request, res: Response) => {
 export const appendProductDescription = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const validationResult = appendDescriptionSchema.safeParse(req.body);
-
-    if (!validationResult.success) {
-      return res.status(400).json({
-        message: SellerMessages.DESCRIPTION_REQUIRED,
-        errors: validationResult.error.issues,
-      });
-    }
 
     const userId = (req.user as any)?._id;
     if (!userId) {
@@ -57,7 +34,7 @@ export const appendProductDescription = async (req: Request, res: Response) => {
     const product = await SellerService.appendDescription(
       String(userId),
       String(id),
-      validationResult.data.description
+      req.body.description
     );
 
     res.status(200).json(product);
@@ -92,16 +69,8 @@ export const viewSellerProducts = async (req: Request, res: Response) => {
       return res.status(401).json({ message: "Unauthorized" });
     }
 
-    const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.limit as string) || 12;
-    const search = (req.query.search as string) || "";
-    const sortBy = (req.query.sortBy as string) || "createdAt";
-    const sortOrder =
-      (req.query.sortOrder as string) === "asc" ? "asc" : "desc";
-    const status = ((req.query.status as string) || "all") as
-      | "all"
-      | "ongoing"
-      | "ended";
+    // Query params are validated and coerced by middleware
+    const { page, limit, search, sortBy, sortOrder, status } = req.query as any;
 
     const result = await SellerService.getSellerProducts(String(userId), {
       page,

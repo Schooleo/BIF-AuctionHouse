@@ -37,3 +37,12 @@ export const createProductSchema = z
 export const appendDescriptionSchema = z.object({
   description: z.string().min(1, "Description content is required"),
 });
+
+export const viewSellerProductsSchema = z.object({
+  page: z.coerce.number().min(1).optional().default(1),
+  limit: z.coerce.number().min(1).optional().default(12),
+  search: z.string().optional().default(""),
+  sortBy: z.string().optional().default("createdAt"),
+  sortOrder: z.enum(["asc", "desc"]).optional().default("desc"),
+  status: z.enum(["all", "ongoing", "ended"]).optional().default("all"),
+});
