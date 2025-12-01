@@ -1,5 +1,6 @@
 import { handleResponse } from "@utils/handleResponse";
 import type { BidHistoryItem } from "@interfaces/product";
+import type { GetWatchlistResponse } from "@interfaces/watchlist";
 
 const API_BASE = import.meta.env.VITE_APP_API_URL || "";
 
@@ -155,6 +156,24 @@ export const bidderApi = {
         Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({ question }),
+    });
+
+    return handleResponse(res);
+  },
+
+  getWatchlist: async (
+    token: string,
+    page: number = 1,
+    limit: number = 10
+  ): Promise<GetWatchlistResponse> => {
+    const url = `${API_BASE}/api/bidder/watchlist?page=${page}&limit=${limit}`;
+
+    const res = await fetch(url, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
     });
 
     return handleResponse(res);

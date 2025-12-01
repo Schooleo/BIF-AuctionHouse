@@ -24,6 +24,7 @@ import { useEffect } from "react";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import UnauthorizedPage from "./pages/shared/UnauthorizedPage";
 import AlertContainer from "@containers/ui/AlertContainer";
+import WatchListPage from "@pages/user/WatchListPage";
 
 const RoleBasedRedirect = ({ children }: { children: React.ReactNode }) => {
   const user = useAuthStore((state) => state.user);
@@ -66,7 +67,8 @@ const App = () => {
                 <Route index element={<HomePage />} />
                 <Route path="products" element={<ProductsPage />} />
                 <Route path="product/:id" element={<ProductDetailsPage />} />
-
+                <Route path="watchlist" element={<WatchListPage />} />
+                
                 <Route path="*" element={<NotFoundPage />} />
               </Route>
 
