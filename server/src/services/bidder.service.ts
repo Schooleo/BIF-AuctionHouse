@@ -80,7 +80,10 @@ export const bidderService = {
   },
 
   async placeBid(bidderId: string, productId: string, price: number) {
-    const product = await Product.findById(productId);
+    const product = await Product.findById(productId).populate(
+      "seller",
+      "email name"
+    );
     if (!product) {
       throw new Error(BidMessages.PRODUCT_NOT_FOUND);
     }
@@ -189,7 +192,8 @@ export const bidderService = {
           name: bidder.name,
           rating:
             (bidder.positiveRatings /
-              (bidder.positiveRatings + bidder.negativeRatings)) * 5 || 0,
+              (bidder.positiveRatings + bidder.negativeRatings)) *
+              5 || 0,
         },
         bidCount: product.bidCount,
       },

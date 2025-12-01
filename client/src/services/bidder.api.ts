@@ -52,6 +52,19 @@ interface BidHistoryResponse {
   };
 }
 
+interface AskQuestionResponse {
+  message: string;
+  question: {
+    _id: string;
+    question: string;
+    questioner: {
+      _id: string;
+      name: string;
+    };
+    askedAt: string;
+  };
+}
+
 export const bidderApi = {
   getSuggestedPrice: async (
     productId: string,
@@ -127,4 +140,23 @@ export const bidderApi = {
 
     return handleResponse(res);
   },
-}
+
+  askQuestion: async (
+    productId: string,
+    question: string,
+    token: string
+  ): Promise<AskQuestionResponse> => {
+    const url = `${API_BASE}/api/bidder/ask-seller/${productId}`;
+
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ question }),
+    });
+
+    return handleResponse(res);
+  },
+};
