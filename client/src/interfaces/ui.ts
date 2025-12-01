@@ -63,3 +63,5 @@ export interface LogoProps {
   spanText?: string;
   className?: string;
 }
+
+export type AlertType = "success" | "error" | "warning" | "info";

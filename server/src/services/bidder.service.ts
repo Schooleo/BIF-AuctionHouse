@@ -5,11 +5,10 @@ import { Bid } from "../models/bid.model";
 import { Rating } from "../models/rating.model";
 import { UpgradeRequest } from "../models/upgradeRequest.model";
 import {
-  BidMessages,
+  BidderMessages,
   WatchlistMessages,
   AuthMessages,
-  BidderMessages,
-  ProductMessages,
+  ProductMessages
 } from "../constants/messages";
 import {
   sendQuestionEmail,
@@ -79,7 +78,10 @@ export const bidderService = {
   },
 
   async placeBid(bidderId: string, productId: string, price: number) {
-    const product = await Product.findById(productId);
+    const product = await Product.findById(productId).populate(
+      "seller",
+      "email name"
+    );
     if (!product) {
       throw new Error(BidMessages.PRODUCT_NOT_FOUND);
     }
@@ -207,7 +209,14 @@ export const bidderService = {
       bid: bid,
       product: {
         currentPrice: product.currentPrice,
-        currentBidder: product.currentBidder,
+        currentBidder: {
+          _id: (bidder._id as Types.ObjectId).toString(),
+          name: bidder.name,
+          rating:
+            (bidder.positiveRatings /
+              (bidder.positiveRatings + bidder.negativeRatings)) *
+              5 || 0,
+        },
         bidCount: product.bidCount,
       },
     };

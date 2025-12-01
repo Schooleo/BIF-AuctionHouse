@@ -8,9 +8,11 @@ import {
 } from "react-router-dom";
 import { useAuthStore } from "./stores/useAuthStore";
 import MainLayout from "./layouts/MainLayout";
+import UserLayout from "./layouts/UserLayout";
 import HomePage from "./pages/user/HomePage";
 import ProductsPage from "./pages/user/ProductsPage";
 import ProductDetailsPage from "./pages/user/ProductDetailsPage";
+import ProfilePage from "./pages/user/ProfilePage";
 import NotFoundPage from "./pages/shared/NotFoundPage";
 
 import AuthLayout from "./layouts/AuthLayout";
@@ -24,6 +26,8 @@ import SellerLayout from "./layouts/SellerLayout";
 import { useEffect } from "react";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import UnauthorizedPage from "./pages/shared/UnauthorizedPage";
+import AlertContainer from "@containers/ui/AlertContainer";
+import WatchListPage from "@pages/user/WatchlistPage";
 
 const RoleBasedRedirect = ({ children }: { children: React.ReactNode }) => {
   const user = useAuthStore((state) => state.user);
@@ -50,24 +54,30 @@ const App = () => {
   }, [refreshUser]);
 
   return (
-    <RouterProvider
-      router={createBrowserRouter(
-        createRoutesFromElements(
-          <>
-            <Route
-              path="/"
-              element={
-                <RoleBasedRedirect>
-                  <MainLayout />
-                </RoleBasedRedirect>
-              }
-            >
-              <Route index element={<HomePage />} />
-              <Route path="products" element={<ProductsPage />} />
-              <Route path="product/:id" element={<ProductDetailsPage />} />
+    <>
+      <RouterProvider
+        router={createBrowserRouter(
+          createRoutesFromElements(
+            <>
+              <Route
+                path="/"
+                element={
+                  <RoleBasedRedirect>
+                    <MainLayout />
+                  </RoleBasedRedirect>
+                }
+              >
+                <Route index element={<HomePage />} />
+                <Route path="products" element={<ProductsPage />} />
+                <Route path="product/:id" element={<ProductDetailsPage />} />
+                <Route path="watchlist" element={<WatchListPage />} />
 
-              <Route path="*" element={<NotFoundPage />} />
-            </Route>
+                <Route path="*" element={<NotFoundPage />} />
+              </Route>
+
+              <Route path="/" element={<UserLayout />}>
+                <Route path="profile" element={<ProfilePage />} />
+              </Route>
 
             <Route path="auth" element={<AuthLayout />}>
               <Route path="login" element={<LoginPage />} />
@@ -76,19 +86,24 @@ const App = () => {
               <Route path="logout" element={<LogoutPage />} />
             </Route>
 
-            <Route element={<ProtectedRoute allowedRoles={["seller"]} />}>
-              <Route path="seller" element={<SellerLayout />}>
-                <Route path="products" element={<SellerProductsPage />} />
-                <Route path="ended-products" element={<SellerProductsPage />} />
-                <Route path="add-product" element={<AddProductPage />} />
+              <Route element={<ProtectedRoute allowedRoles={["seller"]} />}>
+                <Route path="seller" element={<SellerLayout />}>
+                  <Route path="products" element={<SellerProductsPage />} />
+                  <Route
+                    path="ended-products"
+                    element={<SellerProductsPage />}
+                  />
+                  <Route path="add-product" element={<AddProductPage />} />
+                </Route>
               </Route>
-            </Route>
 
-            <Route path="/unauthorized" element={<UnauthorizedPage />} />
-          </>
-        )
-      )}
-    />
+              <Route path="/unauthorized" element={<UnauthorizedPage />} />
+            </>
+          )
+        )}
+      />
+      <AlertContainer />
+    </>
   );
 };
 
