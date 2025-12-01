@@ -5,6 +5,7 @@ import { Category } from "../models/category.model";
 import { Product } from "../models/product.model";
 import { Bid } from "../models/bid.model";
 import { Rating } from "../models/rating.model";
+import { SystemConfig } from "../models/systemConfig.model";
 
 dotenv.config();
 
@@ -190,6 +191,13 @@ const seed = async () => {
   await Product.deleteMany({});
   await Bid.deleteMany({});
   await Rating.deleteMany({});
+  await SystemConfig.deleteMany({});
+
+  console.log("⚙️ Creating System Config...");
+  await SystemConfig.create({
+    auctionExtensionWindow: 5,
+    auctionExtensionTime: 10,
+  });
 
   console.log("👤 Creating Users...");
   const commonPassword = "12345678";

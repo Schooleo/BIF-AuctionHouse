@@ -29,7 +29,7 @@ export class SellerService {
     product.descriptionHistory.push({
       content: description,
       updatedAt: new Date(),
-    } as any); // Cast to any to avoid Mongoose subdocument type issues
+    } as any);
 
     await product.save();
     return product;

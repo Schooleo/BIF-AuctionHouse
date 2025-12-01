@@ -17,6 +17,7 @@ import AuthLayout from "./layouts/AuthLayout";
 import LoginPage from "./pages/auth/LoginPage";
 import RegisterPage from "./pages/auth/RegisterPage";
 import ResetPasswordPage from "./pages/auth/ResetPasswordPage";
+import LogoutPage from "./pages/auth/LogoutPage";
 import SellerProductsPage from "./pages/seller/SellerProductsPage";
 import AddProductPage from "./pages/seller/AddProductPage";
 import SellerLayout from "./layouts/SellerLayout";
@@ -72,6 +73,7 @@ const App = () => {
               <Route path="login" element={<LoginPage />} />
               <Route path="register" element={<RegisterPage />} />
               <Route path="reset-password" element={<ResetPasswordPage />} />
+              <Route path="logout" element={<LogoutPage />} />
             </Route>
 
             <Route element={<ProtectedRoute allowedRoles={["seller"]} />}>

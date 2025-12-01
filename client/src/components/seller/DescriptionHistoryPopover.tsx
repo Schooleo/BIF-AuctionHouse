@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import { X } from "lucide-react";
+import DOMPurify from "dompurify";
 
 interface DescriptionHistoryPopoverProps {
   description: string;
@@ -51,9 +52,12 @@ const DescriptionHistoryPopover: React.FC<DescriptionHistoryPopoverProps> = ({
       <div className="space-y-3">
         <div>
           <p className="text-xs font-semibold text-gray-700 mb-1">Original:</p>
-          <p className="text-xs text-gray-600 whitespace-pre-line">
-            {description}
-          </p>
+          <div
+            className="text-xs text-gray-600 p-0 prose prose-sm max-w-none wrap-break-word overflow-hidden"
+            dangerouslySetInnerHTML={{
+              __html: DOMPurify.sanitize(description),
+            }}
+          />
         </div>
         {descriptionHistory && descriptionHistory.length > 0 && (
           <div>
@@ -69,9 +73,12 @@ const DescriptionHistoryPopover: React.FC<DescriptionHistoryPopoverProps> = ({
                   <p className="text-[10px] text-gray-500 mb-1">
                     {new Date(hist.updatedAt).toLocaleString()}
                   </p>
-                  <p className="text-xs text-gray-600 whitespace-pre-line">
-                    {hist.content}
-                  </p>
+                  <div
+                    className="text-xs text-gray-600 p-0 prose prose-sm max-w-none wrap-break-word overflow-hidden"
+                    dangerouslySetInnerHTML={{
+                      __html: DOMPurify.sanitize(hist.content),
+                    }}
+                  />
                 </div>
               ))}
             </div>
