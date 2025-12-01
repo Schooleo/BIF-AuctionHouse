@@ -13,6 +13,7 @@ import BidModal from "./BidModal";
 import { bidderApi } from "@services/bidder.api";
 import { useAuthStore } from "@stores/useAuthStore";
 import BidHistoryModal from "./BidHistoryModal";
+import { useAlertStore } from "@stores/useAlertStore";
 
 interface ProductInfoCardProps {
   product: Product;
@@ -53,6 +54,7 @@ const ProductInfoCard: React.FC<ProductInfoCardProps> = ({
   const [isInWatchlist, setIsInWatchlist] = useState(false);
   const [isAddingToWatchlist, setIsAddingToWatchlist] = useState(false);
   const [isBidHistoryOpen, setIsBidHistoryOpen] = useState(false);
+  const addAlert = useAlertStore((state) => state.addAlert);
 
   const handleAddToWatchlist = async () => {
     setIsAddingToWatchlist(true);
@@ -62,8 +64,16 @@ const ProductInfoCard: React.FC<ProductInfoCardProps> = ({
         useAuthStore.getState().token || ""
       );
       setIsInWatchlist(true);
-    } catch (error) {
-      console.error("Error adding to watchlist:", error);
+      addAlert("success", "Added to watchlist successfully!");
+    } catch (error: any) {
+      const message = error.message || "";
+
+      if (message.includes("already") || message.includes("exists")) {
+        addAlert("warning", "Product is already in your watchlist.");
+        setIsInWatchlist(true);
+      } else {
+        addAlert("error", message || "Failed to add to watchlist.");
+      }
     } finally {
       setIsAddingToWatchlist(false);
     }

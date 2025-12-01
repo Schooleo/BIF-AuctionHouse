@@ -5,6 +5,7 @@ import { useAuthStore } from "@stores/useAuthStore";
 import { formatPrice } from "@utils/product";
 import ErrorMessage from "@components/message/ErrorMessage";
 import Spinner from "@components/ui/Spinner";
+import { useAlertStore } from "@stores/useAlertStore";
 
 interface BidModalProps {
   isOpen: boolean;
@@ -29,6 +30,7 @@ const BidModal: React.FC<BidModalProps> = ({
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isFetching, setIsFetching] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
+  const addAlert = useAlertStore((state) => state.addAlert);
 
   const format = (value: number) =>
     new Intl.NumberFormat("vi-VN").format(value);
@@ -90,10 +92,14 @@ const BidModal: React.FC<BidModalProps> = ({
         amount,
         useAuthStore.getState().token || ""
       );
+
+      addAlert("success", "Your bid has been placed successfully!");
+
       return response;
     } catch (err: any) {
       console.error("Error placing bid:", err);
       setError(err?.message || "Failed to place bid. Please try again.");
+      addAlert("error", err?.message || "Failed to place bid. Please try again.");
       throw err;
     } finally {
       setIsLoading(false);

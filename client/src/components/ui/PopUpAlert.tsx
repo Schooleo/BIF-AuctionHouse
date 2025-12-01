@@ -1,7 +1,6 @@
 import { useEffect } from "react";
 import { X, CheckCircle, XCircle, AlertTriangle, Info } from "lucide-react";
-
-export type AlertType = "success" | "error" | "warning" | "info";
+import type { AlertType } from "@interfaces/ui";
 
 export interface AlertProps {
   id: string;
