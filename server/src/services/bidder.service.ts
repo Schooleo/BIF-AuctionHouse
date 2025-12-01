@@ -7,11 +7,7 @@ import { Types } from 'mongoose';
 import { Rating } from '../models/rating.model';
 import { UpgradeRequest } from '../models/upgradeRequest.model';
 import { BidderMessages } from '../constants/messages';
-import { sendQuestionEmail,
-    sendBidNotificationToSeller,
-    sendBidConfirmationToBidder,
-    sendOutbidNotificationToBidders
-} from '../utils/email.util';
+import { sendQuestionEmail } from '../utils/email.util';
 import { ProductMessages } from '../constants/messages';
 
 export const bidderService = {
@@ -112,65 +108,6 @@ export const bidderService = {
     product.currentBidder = bidderId as any;
     product.bidCount += 1;
     await product.save();
-
-    try {
-    // 1. Lấy danh sách bidders đã tham gia (loại trừ bidder hiện tại)
-    const participatingBidderIds = await Bid.find({
-      product: productId,
-      bidder: { $ne: bidderId },
-    }).distinct('bidder');
-
-    const participatingBidders = await User.find({
-      _id: { $in: participatingBidderIds },
-    }).select('email name');
-
-    // 2. Chuẩn bị dữ liệu email
-    const seller = product.seller as any;
-    const nextMinPrice = price + product.stepPrice;
-    const maskedBidderName = maskBidderName(bidder.name);
-
-    // 3. Gửi emails song song (không chờ, không block response)
-    Promise.allSettled([
-      // Email cho seller
-      sendBidNotificationToSeller(
-        seller.email,
-        seller.name,
-        product.name,
-        productId,
-        maskedBidderName,
-        price,
-        price // currentHighestPrice = price vừa bid
-      ),
-
-      // Email xác nhận cho bidder hiện tại
-      sendBidConfirmationToBidder(
-        bidder.email,
-        bidder.name,
-        product.name,
-        productId,
-        price,
-        nextMinPrice,
-        product.endTime
-      ),
-
-      // Email cho các bidder khác (nếu có)
-      participatingBidders.length > 0
-        ? sendOutbidNotificationToBidders(
-            participatingBidders.map((b) => ({ email: b.email, name: b.name })),
-            product.name,
-            productId,
-            price,
-            nextMinPrice
-          )
-        : Promise.resolve(), // Không làm gì nếu không có bidder khác
-    ]).catch((err) => {
-      // Log error nhưng không throw (để không ảnh hưởng response)
-      console.error('Error sending bid notification emails:', err);
-    });
-  } catch (emailError) {
-    // Log lỗi nhưng không throw (email fail không nên fail toàn bộ bid)
-    console.error('Failed to send bid notification emails:', emailError);
-  }
 
     return {
       bid: bid,
@@ -510,7 +447,7 @@ export const bidderService = {
 
   //Gửi yêu cầu nâng cấp lên Seller
 
-  async requestSellerUpgrade(bidderId: string) {
+  async requestSellerUpgrade(bidderId: string, reason?: string) {
     // Kiểm tra bidder tồn tại
     const bidder = await User.findById(bidderId);
     if (!bidder) {
@@ -563,6 +500,7 @@ export const bidderService = {
       user: bidderId,
       status: 'pending',
       expiresAt,
+      reason: reason || '',
     });
 
     return upgradeRequest;
