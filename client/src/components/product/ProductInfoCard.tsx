@@ -7,11 +7,18 @@ import {
   maskName,
 } from "@utils/product";
 import { Link } from "react-router-dom";
-import { Heart } from "lucide-react";
+import { Heart, CheckIcon } from "lucide-react";
+import Spinner from "@components/ui/Spinner";
+import BidModal from "./BidModal";
+import { bidderApi } from "@services/bidder.api";
+import { useAuthStore } from "@stores/useAuthStore";
+import BidHistoryModal from "./BidHistoryModal";
+import { useAlertStore } from "@stores/useAlertStore";
 
 interface ProductInfoCardProps {
   product: Product;
   isGuest: boolean;
+  onUpdateProduct?: (updatedProduct: Product) => void;
 }
 
 const ExpandableText = ({
@@ -41,7 +48,36 @@ const ExpandableText = ({
 const ProductInfoCard: React.FC<ProductInfoCardProps> = ({
   product,
   isGuest,
+  onUpdateProduct,
 }) => {
+  const [isBidModalOpen, setIsBidModalOpen] = useState(false);
+  const [isInWatchlist, setIsInWatchlist] = useState(false);
+  const [isAddingToWatchlist, setIsAddingToWatchlist] = useState(false);
+  const [isBidHistoryOpen, setIsBidHistoryOpen] = useState(false);
+  const addAlert = useAlertStore((state) => state.addAlert);
+
+  const handleAddToWatchlist = async () => {
+    setIsAddingToWatchlist(true);
+    try {
+      await bidderApi.addToWatchlist(
+        product._id,
+        useAuthStore.getState().token || ""
+      );
+      setIsInWatchlist(true);
+      addAlert("success", "Added to watchlist successfully!");
+    } catch (error: any) {
+      const message = error.message || "";
+
+      if (message.includes("already") || message.includes("exists")) {
+        addAlert("warning", "Product is already in your watchlist.");
+        setIsInWatchlist(true);
+      } else {
+        addAlert("error", message || "Failed to add to watchlist.");
+      }
+    } finally {
+      setIsAddingToWatchlist(false);
+    }
+  };
   return (
     <div className="flex flex-col gap-4 max-w-xl">
       <h1 className="text-3xl font-bold">{product.name}</h1>
@@ -86,24 +122,41 @@ const ProductInfoCard: React.FC<ProductInfoCardProps> = ({
         {!isGuest && (
           <div className="flex justify-center items-center gap-4 text-white mb-2">
             {/* Bid History Link */}
-            <Link
-              to={`/product/${product._id}/bids`}
-              className="bg-primary-blue rounded-2xl hover:scale-105 transition-transform duration-150 px-4 py-2"
+            <button
+              type="button"
+              onClick={() => setIsBidHistoryOpen(true)}
+              className="bg-primary-blue rounded-2xl hover:scale-105 transition-transform duration-150 px-4 py-2 hover:cursor-pointer"
             >
               View Bid History
-            </Link>
+            </button>
 
             {/* Gạch giữa */}
             <span className="h-4 w-px bg-gray-300"></span>
 
             {/* Add to Watchlist Link (Xử lý API) */}
-            <Link
-              to={`/user/watchlist`}
-              className="bg-red-500 rounded-2xl hover:scale-105 transition-transform duration-150 px-4 py-2"
+            <button
+              type="button"
+              onClick={handleAddToWatchlist}
+              disabled={isInWatchlist || isAddingToWatchlist}
+              className={`${isInWatchlist ? "bg-gray-400 cursor-not-allowed" : "bg-red-500"} rounded-2xl hover:scale-105 transition-transform duration-150 px-4 py-3 flex items-center gap-2 hover:cursor-pointer`}
             >
-              <Heart className="inline-block mr-2" size={16} />
-              Add to Watchlist
-            </Link>
+              {isAddingToWatchlist ? (
+                <>
+                  <Spinner />
+                  <span>Adding...</span>
+                </>
+              ) : isInWatchlist ? (
+                <>
+                  <CheckIcon className="w-4 h-4" />
+                  <span>In Watchlist</span>
+                </>
+              ) : (
+                <>
+                  <Heart className="w-4 h-4" />
+                  <span>Add to Watchlist</span>
+                </>
+              )}
+            </button>
           </div>
         )}
 
@@ -111,18 +164,35 @@ const ProductInfoCard: React.FC<ProductInfoCardProps> = ({
         {isGuest ? (
           <Link
             to="/auth/login"
-            className={`text-xl font-semibold w-full px-6 py-4 rounded-2xl shadow-md bg-primary-blue text-white hover:scale-105 transition-transform duration-200 text-center block`}
+            className={`text-xl font-semibold w-full px-6 py-4 rounded-2xl shadow-md bg-primary-blue text-white hover:scale-105 transition-transform duration-200 text-center block cursor-pointer`}
           >
             Sign In to Start Bidding
           </Link>
         ) : (
           <button
-            className={`text-xl font-semibold w-full px-6 py-3 rounded-2xl shadow-md bg-primary-blue text-white hover:scale-105 transition-transform duration-200`}
+            onClick={() => setIsBidModalOpen(true)}
+            className={`text-xl font-semibold w-full px-6 py-3 rounded-2xl shadow-md bg-primary-blue text-white hover:scale-105 transition-transform duration-200 cursor-pointer`}
           >
             Place a bid
           </button>
         )}
       </div>
+
+      <BidModal
+        isOpen={isBidModalOpen}
+        onClose={() => setIsBidModalOpen(false)}
+        productId={product._id}
+        productName={product.name}
+        onUpdateProduct={onUpdateProduct}
+      />
+
+      <BidHistoryModal
+        isOpen={isBidHistoryOpen}
+        onClose={() => setIsBidHistoryOpen(false)}
+        productId={product._id}
+        productName={product.name}
+      />
+
       {/* Product Description - Move down to appear after all primary info/actions */}
       <div className="mt-6">
         <h2 className="text-2xl font-semibold mb-2">Description</h2>
