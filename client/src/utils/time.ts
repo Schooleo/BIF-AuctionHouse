@@ -34,3 +34,25 @@ export const formatDateTime = (date: Date | string): string => {
     })
   );
 };
+
+// Format time: "2 minutes ago" hoặc "Dec 1, 2025 10:30 AM"
+export const formatBidTime = (isoTime: string): string => {
+  const date = new Date(isoTime);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  
+  if (diffMins < 1) return 'Just now';
+  if (diffMins < 60) return `${diffMins} min${diffMins > 1 ? 's' : ''} ago`;
+  if (diffMins < 1440) {
+    const hours = Math.floor(diffMins / 60);
+    return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+  }
+  return date.toLocaleString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true
+  });
+};

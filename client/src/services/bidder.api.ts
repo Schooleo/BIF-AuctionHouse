@@ -1,4 +1,5 @@
 import { handleResponse } from "@utils/handleResponse";
+import type { BidHistoryItem } from "@interfaces/product";
 
 const API_BASE = import.meta.env.VITE_APP_API_URL || "";
 
@@ -38,6 +39,16 @@ interface AddToWatchlistResponse {
     product: string;
     createdAt: string;
     updatedAt: string;
+  };
+}
+
+interface BidHistoryResponse {
+  bidHistory: BidHistoryItem[];
+  pagination: {
+    currentPage: number;
+    totalPages: number;
+    totalBids: number;
+    limit: number;
   };
 }
 
@@ -94,6 +105,24 @@ export const bidderApi = {
         Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({ productId }),
+    });
+
+    return handleResponse(res);
+  },
+
+  getBidHistory: async (
+    productId: string,
+    token: string,
+    page: number = 1,
+    limit: number = 10
+  ): Promise<BidHistoryResponse> => {
+    const url = `${API_BASE}/api/bidder/bid-history/${productId}?page=${page}&limit=${limit}`;
+    const res = await fetch(url, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
     });
 
     return handleResponse(res);

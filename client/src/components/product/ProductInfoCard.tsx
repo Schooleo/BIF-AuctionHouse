@@ -12,6 +12,7 @@ import Spinner from "@components/ui/Spinner";
 import BidModal from "./BidModal";
 import { bidderApi } from "@services/bidder.api";
 import { useAuthStore } from "@stores/useAuthStore";
+import BidHistoryModal from "./BidHistoryModal";
 
 interface ProductInfoCardProps {
   product: Product;
@@ -51,12 +52,15 @@ const ProductInfoCard: React.FC<ProductInfoCardProps> = ({
   const [isBidModalOpen, setIsBidModalOpen] = useState(false);
   const [isInWatchlist, setIsInWatchlist] = useState(false);
   const [isAddingToWatchlist, setIsAddingToWatchlist] = useState(false);
+  const [isBidHistoryOpen, setIsBidHistoryOpen] = useState(false);
 
   const handleAddToWatchlist = async () => {
-
     setIsAddingToWatchlist(true);
     try {
-      await bidderApi.addToWatchlist(product._id, useAuthStore.getState().token || "");
+      await bidderApi.addToWatchlist(
+        product._id,
+        useAuthStore.getState().token || ""
+      );
       setIsInWatchlist(true);
     } catch (error) {
       console.error("Error adding to watchlist:", error);
@@ -108,12 +112,13 @@ const ProductInfoCard: React.FC<ProductInfoCardProps> = ({
         {!isGuest && (
           <div className="flex justify-center items-center gap-4 text-white mb-2">
             {/* Bid History Link */}
-            <Link
-              to={`/product/${product._id}/bids`}
-              className="bg-primary-blue rounded-2xl hover:scale-105 transition-transform duration-150 px-4 py-2"
+            <button
+              type="button"
+              onClick={() => setIsBidHistoryOpen(true)}
+              className="bg-primary-blue rounded-2xl hover:scale-105 transition-transform duration-150 px-4 py-2 hover:cursor-pointer"
             >
               View Bid History
-            </Link>
+            </button>
 
             {/* Gạch giữa */}
             <span className="h-4 w-px bg-gray-300"></span>
@@ -149,14 +154,14 @@ const ProductInfoCard: React.FC<ProductInfoCardProps> = ({
         {isGuest ? (
           <Link
             to="/auth/login"
-            className={`text-xl font-semibold w-full px-6 py-4 rounded-2xl shadow-md bg-primary-blue text-white hover:scale-105 transition-transform duration-200 text-center block`}
+            className={`text-xl font-semibold w-full px-6 py-4 rounded-2xl shadow-md bg-primary-blue text-white hover:scale-105 transition-transform duration-200 text-center block cursor-pointer`}
           >
             Sign In to Start Bidding
           </Link>
         ) : (
           <button
             onClick={() => setIsBidModalOpen(true)}
-            className={`text-xl font-semibold w-full px-6 py-3 rounded-2xl shadow-md bg-primary-blue text-white hover:scale-105 transition-transform duration-200`}
+            className={`text-xl font-semibold w-full px-6 py-3 rounded-2xl shadow-md bg-primary-blue text-white hover:scale-105 transition-transform duration-200 cursor-pointer`}
           >
             Place a bid
           </button>
@@ -169,6 +174,13 @@ const ProductInfoCard: React.FC<ProductInfoCardProps> = ({
         productId={product._id}
         productName={product.name}
         onUpdateProduct={onUpdateProduct}
+      />
+
+      <BidHistoryModal
+        isOpen={isBidHistoryOpen}
+        onClose={() => setIsBidHistoryOpen(false)}
+        productId={product._id}
+        productName={product.name}
       />
 
       {/* Product Description - Move down to appear after all primary info/actions */}

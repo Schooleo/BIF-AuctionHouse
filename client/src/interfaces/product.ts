@@ -132,3 +132,9 @@ export interface CreateProductDto {
   autoExtends?: boolean;
   allowUnratedBidders?: boolean;
 }
+
+export interface BidHistoryItem {
+  bidder: string;
+  price: number;
+  time: string;      
+}
