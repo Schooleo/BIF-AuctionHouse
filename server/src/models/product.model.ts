@@ -88,7 +88,7 @@ const productSchema = new Schema<IProduct>(
     allowUnratedBidders: { type: Boolean, default: false },
 
     // Dữ liệu đáu giá trực tiếp cho truy vấn
-    currentPrice: { type: Number }, // No longer required here, set in `pre` hook
+    currentPrice: { type: Number },
     currentBidder: { type: Schema.Types.ObjectId, ref: "User" },
     bidCount: { type: Number, default: 0 },
 

@@ -6,6 +6,7 @@ import ProductImage from "../product/ProductImage";
 import { sellerApi } from "@services/seller.api";
 import DescriptionHistoryPopover from "./DescriptionHistoryPopover";
 import { checkRecentlyAdded, getShortRemainingTime } from "@utils/product";
+import RichTextEditor from "@components/shared/RichTextEditor";
 
 interface SellerProductCardProps {
   product: Product;
@@ -145,12 +146,11 @@ const SellerProductCard: React.FC<SellerProductCardProps> = ({
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   New Information
                 </label>
-                <textarea
+                <RichTextEditor
                   value={newDescription}
-                  onChange={(e) => setNewDescription(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-h-[100px] resize-y"
+                  onChange={setNewDescription}
+                  limit={80}
                   placeholder="Enter additional details about the product..."
-                  required
                 />
               </div>
               <div className="flex justify-end gap-3 pt-2">

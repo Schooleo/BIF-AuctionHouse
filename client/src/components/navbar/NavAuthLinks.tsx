@@ -4,13 +4,12 @@ import { useAuthStore } from '@stores/useAuthStore';
 import ConfirmationModal from '@components/ui/ConfirmationModal';
 
 export default function NavbarAuthLinks() {
-  const { user, logout } = useAuthStore();
+  const { user } = useAuthStore();
   const navigate = useNavigate();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   const handleLogout = () => {
-    logout();
-    navigate('/');
+    navigate("/auth/logout");
   };
 
   if (user) {

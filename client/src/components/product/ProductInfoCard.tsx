@@ -21,27 +21,51 @@ interface ProductInfoCardProps {
   onUpdateProduct?: (updatedProduct: Product) => void;
 }
 
+import DOMPurify from "dompurify";
+
 const ExpandableText = ({
-  text,
-  limit = 300,
+  content,
+  maxHeight = 200,
 }: {
-  text: string;
-  limit?: number;
+  content: string;
+  maxHeight?: number;
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [shouldShowButton, setShouldShowButton] = useState(false);
+  const contentRef = React.useRef<HTMLDivElement>(null);
 
-  if (text.length <= limit) return <>{text}</>;
+  React.useEffect(() => {
+    if (contentRef.current) {
+      setShouldShowButton(contentRef.current.scrollHeight > maxHeight);
+    }
+  }, [content, maxHeight]);
+
+  const sanitizedContent = DOMPurify.sanitize(content);
 
   return (
-    <>
-      {isExpanded ? text : `${text.slice(0, limit)}...`}
-      <button
-        onClick={() => setIsExpanded(!isExpanded)}
-        className="text-primary-blue hover:underline ml-2 font-medium"
-      >
-        {isExpanded ? "See less" : "See more"}
-      </button>
-    </>
+    <div className="relative">
+      <div
+        ref={contentRef}
+        className={`overflow-hidden transition-all duration-300 ease-in-out ${
+          isExpanded ? "max-h-full" : ""
+        }`}
+        style={{ maxHeight: isExpanded ? "none" : `${maxHeight}px` }}
+        dangerouslySetInnerHTML={{ __html: sanitizedContent }}
+      />
+
+      {!isExpanded && shouldShowButton && (
+        <div className="absolute bottom-0 left-0 w-full h-12 bg-linear-gradient-to-t from-white to-transparent pointer-events-none" />
+      )}
+
+      {shouldShowButton && (
+        <button
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="text-primary-blue hover:underline mt-2 font-medium block"
+        >
+          {isExpanded ? "See less" : "See more"}
+        </button>
+      )}
+    </div>
   );
 };
 
@@ -196,8 +220,8 @@ const ProductInfoCard: React.FC<ProductInfoCardProps> = ({
       {/* Product Description - Move down to appear after all primary info/actions */}
       <div className="mt-6">
         <h2 className="text-2xl font-semibold mb-2">Description</h2>
-        <div className="text-gray-700 whitespace-pre-line wrap-break-word">
-          <ExpandableText text={product.description} />
+        <div className="text-gray-700 p-0 prose prose-sm max-w-none wrap-break-word overflow-hidden">
+          <ExpandableText content={product.description} />
         </div>
       </div>
       {product.descriptionHistory && product.descriptionHistory.length > 0 && (
@@ -211,12 +235,8 @@ const ProductInfoCard: React.FC<ProductInfoCardProps> = ({
               <p className="text-xs text-gray-500 mb-1 font-medium">
                 {new Date(hist.updatedAt).toLocaleString()}
               </p>
-              <div className="text-gray-700 whitespace-pre-line text-sm wrap-break-word">
-                {hist.content.length > 200 ? (
-                  <ExpandableText text={hist.content} limit={200} />
-                ) : (
-                  hist.content
-                )}
+              <div className="text-gray-700 text-sm p-0 prose prose-sm max-w-none wrap-break-word overflow-hidden">
+                <ExpandableText content={hist.content} maxHeight={100} />
               </div>
             </div>
           ))}

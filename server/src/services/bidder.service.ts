@@ -1,23 +1,21 @@
 import { Watchlist } from "../models/watchlist.model";
 import { Product } from "../models/product.model";
-import {
-  BidMessages,
-  WatchlistMessages,
-  AuthMessages,
-} from "../constants/messages";
-import { User } from "../models/index.model";
+import { User, SystemConfig } from "../models/index.model";
 import { Bid } from "../models/bid.model";
-import { Types } from "mongoose";
 import { Rating } from "../models/rating.model";
 import { UpgradeRequest } from "../models/upgradeRequest.model";
-import { BidderMessages } from "../constants/messages";
+import {
+  BidderMessages,
+  WatchlistMessages,
+  AuthMessages,
+  ProductMessages
+} from "../constants/messages";
 import {
   sendQuestionEmail,
   sendBidNotificationToSeller,
   sendBidConfirmationToBidder,
   sendOutbidNotificationToBidders,
 } from "../utils/email.util";
-import { ProductMessages } from "../constants/messages";
 
 export const bidderService = {
   async addToWatchlist(bidderId: string, productId: string) {
@@ -119,6 +117,30 @@ export const bidderService = {
     product.currentPrice = price;
     product.currentBidder = bidderId as any;
     product.bidCount += 1;
+
+    // --- AUTO EXTENSION LOGIC ---
+    if (product.autoExtends) {
+      const systemConfig = await SystemConfig.findOne();
+      if (systemConfig) {
+        const now = new Date();
+        const endTime = new Date(product.endTime);
+        const timeRemainingMinutes =
+          (endTime.getTime() - now.getTime()) / 1000 / 60;
+
+        if (timeRemainingMinutes <= systemConfig.auctionExtensionWindow) {
+          // Thêm thời gian extension vào thời gian kết thúc
+          const newEndTime = new Date(
+            endTime.getTime() + systemConfig.auctionExtensionTime * 60 * 1000
+          );
+          product.endTime = newEndTime;
+          console.log(
+            `Auction ${product._id} extended by ${systemConfig.auctionExtensionTime} minutes. New end time: ${newEndTime}`
+          );
+        }
+      }
+    }
+    // -----------------------------
+
     await product.save();
 
     try {
