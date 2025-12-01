@@ -26,7 +26,7 @@ const ParticipatingAuctionsTab: React.FC = () => {
       setAuctions(response.data || []);
       setTotalPages(response.pagination.totalPages);
     } catch (err: any) {
-      setError(err.message || 'Không thể tải danh sách đấu giá');
+      setError(err.message || 'Unable to load auction list');
     } finally {
       setLoading(false);
     }
@@ -45,7 +45,7 @@ const ParticipatingAuctionsTab: React.FC = () => {
       <div className='text-center py-12'>
         <p className='text-red-600'>{error}</p>
         <button onClick={() => fetchAuctions()} className='mt-4 text-blue-600 hover:underline'>
-          Thử lại
+          Try Again
         </button>
       </div>
     );
@@ -54,12 +54,12 @@ const ParticipatingAuctionsTab: React.FC = () => {
   if (auctions.length === 0) {
     return (
       <div className='text-center py-12 text-gray-500'>
-        <p className='text-lg mb-4'>Bạn chưa tham gia đấu giá nào</p>
+        <p className='text-lg mb-4'>You haven't participated in any auctions yet</p>
         <button
           onClick={() => navigate('/products')}
           className='px-6 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition'
         >
-          Tham gia đấu giá ngay
+          Join Auctions Now
         </button>
       </div>
     );
@@ -69,8 +69,8 @@ const ParticipatingAuctionsTab: React.FC = () => {
     <div className='space-y-6'>
       <div className='bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6'>
         <p className='text-blue-800'>
-          <span className='font-semibold'>💡 Lưu ý:</span> Đây là danh sách các sản phẩm mà bạn đã đặt giá và đang trong
-          thời gian đấu giá.
+          <span className='font-semibold'>💡 Note:</span> This is a list of products you have bid on and are currently
+          in the auction period.
         </p>
       </div>
 
@@ -88,17 +88,17 @@ const ParticipatingAuctionsTab: React.FC = () => {
             disabled={page === 1}
             className='px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed'
           >
-            Trước
+            Previous
           </button>
           <span className='px-4 py-2'>
-            Trang {page} / {totalPages}
+            Page {page} / {totalPages}
           </span>
           <button
             onClick={() => setPage(Math.min(totalPages, page + 1))}
             disabled={page === totalPages}
             className='px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed'
           >
-            Sau
+            Next
           </button>
         </div>
       )}

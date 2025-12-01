@@ -8,6 +8,7 @@ import {
 } from 'react-router-dom';
 import { useAuthStore } from './stores/useAuthStore';
 import MainLayout from './layouts/MainLayout';
+import UserLayout from './layouts/UserLayout';
 import HomePage from './pages/user/HomePage';
 import ProductsPage from './pages/user/ProductsPage';
 import ProductDetailsPage from './pages/user/ProductDetailsPage';
@@ -65,9 +66,12 @@ const App = () => {
               <Route index element={<HomePage />} />
               <Route path='products' element={<ProductsPage />} />
               <Route path='product/:id' element={<ProductDetailsPage />} />
-              <Route path='profile' element={<ProfilePage />} />
 
               <Route path='*' element={<NotFoundPage />} />
+            </Route>
+
+            <Route path='/' element={<UserLayout />}>
+              <Route path='profile' element={<ProfilePage />} />
             </Route>
 
             <Route path='auth' element={<AuthLayout />}>

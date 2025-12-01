@@ -42,24 +42,24 @@ const RateSellerModal: React.FC<RateSellerModalProps> = ({
     setError(null);
 
     if (score === null) {
-      setError('Vui lòng chọn đánh giá +1 hoặc -1');
+      setError('Please select a rating of +1 or -1');
       return;
     }
 
     if (!comment.trim()) {
-      setError('Vui lòng nhập nhận xét');
+      setError('Please enter a comment');
       return;
     }
 
     if (comment.trim().length < 10) {
-      setError('Nhận xét phải có ít nhất 10 ký tự');
+      setError('Comment must be at least 10 characters');
       return;
     }
 
     try {
       await onSubmit({ score, comment: comment.trim() });
     } catch (err: any) {
-      setError(err.message || 'Có lỗi xảy ra');
+      setError(err.message || 'An error occurred');
     }
   };
 
@@ -77,12 +77,12 @@ const RateSellerModal: React.FC<RateSellerModalProps> = ({
       onClick={handleBackdropClick}
     >
       <div className='bg-white rounded-lg shadow-xl max-w-md w-full p-6'>
-        <h2 className='text-2xl font-bold mb-4'>{mode === 'create' ? 'Đánh giá người bán' : 'Sửa đánh giá'}</h2>
+        <h2 className='text-2xl font-bold mb-4'>{mode === 'create' ? 'Rate Seller' : 'Edit Rating'}</h2>
 
         <div className='mb-4 p-3 bg-gray-50 rounded-md'>
-          <p className='text-sm text-gray-600'>Người bán:</p>
+          <p className='text-sm text-gray-600'>Seller:</p>
           <p className='font-semibold'>{sellerName}</p>
-          <p className='text-sm text-gray-600 mt-2'>Sản phẩm:</p>
+          <p className='text-sm text-gray-600 mt-2'>Product:</p>
           <p className='font-semibold'>{productName}</p>
         </div>
 
@@ -90,7 +90,7 @@ const RateSellerModal: React.FC<RateSellerModalProps> = ({
           {/* Score Selection */}
           <div>
             <label className='block text-sm font-medium text-gray-700 mb-2'>
-              Đánh giá <span className='text-red-500'>*</span>
+              Rating <span className='text-red-500'>*</span>
             </label>
             <div className='flex gap-4'>
               <button
@@ -101,7 +101,7 @@ const RateSellerModal: React.FC<RateSellerModalProps> = ({
                 }`}
               >
                 <span className='text-2xl'>👍</span>
-                <div className='font-semibold mt-1'>Tích cực (+1)</div>
+                <div className='font-semibold mt-1'>Positive (+1)</div>
               </button>
               <button
                 type='button'
@@ -111,7 +111,7 @@ const RateSellerModal: React.FC<RateSellerModalProps> = ({
                 }`}
               >
                 <span className='text-2xl'>👎</span>
-                <div className='font-semibold mt-1'>Tiêu cực (-1)</div>
+                <div className='font-semibold mt-1'>Negative (-1)</div>
               </button>
             </div>
           </div>
@@ -119,7 +119,7 @@ const RateSellerModal: React.FC<RateSellerModalProps> = ({
           {/* Comment */}
           <div>
             <label htmlFor='comment' className='block text-sm font-medium text-gray-700 mb-2'>
-              Nhận xét <span className='text-red-500'>*</span>
+              Comment <span className='text-red-500'>*</span>
             </label>
             <textarea
               id='comment'
@@ -127,10 +127,10 @@ const RateSellerModal: React.FC<RateSellerModalProps> = ({
               onChange={(e) => setComment(e.target.value)}
               rows={4}
               className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
-              placeholder='Chia sẻ trải nghiệm của bạn với người bán...'
+              placeholder='Share your experience with the seller...'
               disabled={loading}
             />
-            <p className='text-xs text-gray-500 mt-1'>Tối thiểu 10 ký tự</p>
+            <p className='text-xs text-gray-500 mt-1'>Minimum 10 characters</p>
           </div>
 
           {/* Error Message */}
@@ -148,14 +148,14 @@ const RateSellerModal: React.FC<RateSellerModalProps> = ({
               disabled={loading}
               className='flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition'
             >
-              Hủy
+              Cancel
             </button>
             <button
               type='submit'
               disabled={loading}
               className='flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition'
             >
-              {loading ? 'Đang xử lý...' : mode === 'create' ? 'Gửi đánh giá' : 'Cập nhật'}
+              {loading ? 'Processing...' : mode === 'create' ? 'Submit Rating' : 'Update'}
             </button>
           </div>
         </form>

@@ -16,7 +16,7 @@ const SellerUpgradeModal: React.FC<SellerUpgradeModalProps> = ({ isOpen, onClose
     setError(null);
 
     if (!reason.trim()) {
-      setError('Vui lòng nhập lý do muốn trở thành seller');
+      setError('Please enter your reason for wanting to become a seller');
       return;
     }
 
@@ -24,7 +24,7 @@ const SellerUpgradeModal: React.FC<SellerUpgradeModalProps> = ({ isOpen, onClose
       await onSubmit(reason.trim());
       setReason('');
     } catch (err: any) {
-      setError(err.message || 'Có lỗi xảy ra');
+      setError(err.message || 'An error occurred');
     }
   };
 
@@ -50,19 +50,19 @@ const SellerUpgradeModal: React.FC<SellerUpgradeModalProps> = ({ isOpen, onClose
       onClick={handleBackdropClick}
     >
       <div className='bg-white rounded-lg shadow-xl max-w-lg w-full p-6'>
-        <h2 className='text-2xl font-bold mb-4'>Yêu cầu trở thành Seller</h2>
+        <h2 className='text-2xl font-bold mb-4'>Request to Become a Seller</h2>
 
         <div className='mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md'>
           <p className='text-sm text-blue-800'>
-            <span className='font-semibold'>ℹ️ Lưu ý:</span> Sau khi gửi yêu cầu, admin sẽ xem xét và phản hồi trong
-            vòng 7 ngày. Nếu bị từ chối, bạn cần đợi 7 ngày trước khi gửi yêu cầu mới.
+            <span className='font-semibold'>ℹ️ Note:</span> After submitting your request, admin will review and respond
+            within 7 days. If rejected, you need to wait 7 days before submitting a new request.
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className='space-y-4'>
           <div>
             <label htmlFor='reason' className='block text-sm font-medium text-gray-700 mb-2'>
-              Lý do muốn trở thành Seller <span className='text-red-500'>*</span>
+              Reason for Wanting to Become a Seller <span className='text-red-500'>*</span>
             </label>
             <textarea
               id='reason'
@@ -70,10 +70,10 @@ const SellerUpgradeModal: React.FC<SellerUpgradeModalProps> = ({ isOpen, onClose
               onChange={(e) => setReason(e.target.value)}
               rows={5}
               className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
-              placeholder='Hãy cho chúng tôi biết tại sao bạn muốn trở thành seller trên nền tảng của chúng tôi...'
+              placeholder='Tell us why you want to become a seller on our platform...'
               disabled={loading}
             />
-            <p className='text-xs text-gray-500 mt-1'>Tối thiểu 20 ký tự</p>
+            <p className='text-xs text-gray-500 mt-1'>Minimum 20 characters</p>
           </div>
 
           {error && (
@@ -89,14 +89,14 @@ const SellerUpgradeModal: React.FC<SellerUpgradeModalProps> = ({ isOpen, onClose
               disabled={loading}
               className='flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition'
             >
-              Hủy
+              Cancel
             </button>
             <button
               type='submit'
               disabled={loading}
               className='flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition'
             >
-              {loading ? 'Đang gửi...' : 'Gửi yêu cầu'}
+              {loading ? 'Sending...' : 'Submit Request'}
             </button>
           </div>
         </form>

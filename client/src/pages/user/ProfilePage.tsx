@@ -1,17 +1,16 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { User, Lock, Star, Trophy, ThumbsUp, ThumbsDown } from 'lucide-react';
 import { useAuthStore } from '@stores/useAuthStore';
 import { bidderApi } from '@services/bidder.api';
 import type { UpdateProfileDto, ChangePasswordDto, UpgradeRequestStatus } from '@interfaces/bidder';
 import ProfileInfoForm from '@components/forms/ProfileInfoForm';
 import ProfilePasswordForm from '@components/forms/ProfilePasswordForm';
 import RatingsReceivedList from '@components/user/RatingsReceivedList';
-import WatchlistTab from '@components/user/WatchlistTab';
-import ParticipatingAuctionsTab from '@components/user/ParticipatingAuctionsTab';
 import WonAuctionsTab from '@components/user/WonAuctionsTab';
 import SellerUpgradeModal from '@components/user/SellerUpgradeModal';
 
-type TabType = 'info' | 'password' | 'ratings' | 'watchlist' | 'participating' | 'won';
+type TabType = 'info' | 'ratings' | 'won';
 
 const ProfilePage: React.FC = () => {
   const { user, setUser, logout } = useAuthStore();
@@ -51,10 +50,10 @@ const ProfilePage: React.FC = () => {
       setLoading(true);
       const response = await bidderApi.updateProfile(data);
       setUser({ ...response.profile, id: response.profile._id });
-      setSuccessMessage('Cập nhật thông tin thành công!');
+      setSuccessMessage('Profile updated successfully!');
       setTimeout(() => setSuccessMessage(null), 5000);
     } catch (err: any) {
-      throw new Error(err.message || 'Không thể cập nhật thông tin');
+      throw new Error(err.message || 'Unable to update profile');
     } finally {
       setLoading(false);
     }
@@ -64,7 +63,7 @@ const ProfilePage: React.FC = () => {
     try {
       setLoading(true);
       await bidderApi.changePassword(data);
-      setSuccessMessage('Đổi mật khẩu thành công! Đang chuyển đến trang đăng nhập...');
+      setSuccessMessage('Password changed successfully! Redirecting to login page...');
 
       // Logout and redirect to login after 2 seconds
       setTimeout(() => {
@@ -72,7 +71,7 @@ const ProfilePage: React.FC = () => {
         navigate('/auth/login');
       }, 2000);
     } catch (err: any) {
-      throw new Error(err.message || 'Không thể đổi mật khẩu');
+      throw new Error(err.message || 'Unable to change password');
     } finally {
       setLoading(false);
     }
@@ -82,12 +81,12 @@ const ProfilePage: React.FC = () => {
     try {
       setUpgradeLoading(true);
       await bidderApi.requestSellerUpgrade(reason);
-      setSuccessMessage('Gửi yêu cầu thành công! Admin sẽ xem xét trong vòng 7 ngày.');
+      setSuccessMessage('Request sent successfully! Admin will review within 7 days.');
       setIsUpgradeModalOpen(false);
       await fetchUpgradeStatus();
       setTimeout(() => setSuccessMessage(null), 5000);
     } catch (err: any) {
-      throw new Error(err.message || 'Không thể gửi yêu cầu');
+      throw new Error(err.message || 'Unable to send request');
     } finally {
       setUpgradeLoading(false);
     }
@@ -102,15 +101,15 @@ const ProfilePage: React.FC = () => {
 
   const getUpgradeButtonText = () => {
     if (!upgradeRequest) return 'Want to be a seller?';
-    if (upgradeRequest.status === 'pending') return 'Yêu cầu đang chờ xử lý';
-    if (upgradeRequest.status === 'approved') return 'Đã là Seller';
-    return 'Gửi lại yêu cầu';
+    if (upgradeRequest.status === 'pending') return 'Request Pending';
+    if (upgradeRequest.status === 'approved') return 'Already a Seller';
+    return 'Resubmit Request';
   };
 
   if (!user) {
     return (
       <div className='flex justify-center items-center min-h-screen'>
-        <div className='text-gray-500'>Đang tải...</div>
+        <div className='text-gray-500'>Loading...</div>
       </div>
     );
   }
@@ -120,18 +119,36 @@ const ProfilePage: React.FC = () => {
       ? Math.round((user.positiveRatings / (user.positiveRatings + user.negativeRatings)) * 100)
       : 0;
 
-  const tabs: { id: TabType; label: string; icon: string }[] = [
-    { id: 'info', label: 'Thông tin cá nhân', icon: '👤' },
-    { id: 'password', label: 'Đổi mật khẩu', icon: '🔒' },
-    { id: 'ratings', label: 'Đánh giá nhận được', icon: '⭐' },
-    { id: 'watchlist', label: 'Danh sách yêu thích', icon: '❤️' },
-    { id: 'participating', label: 'Đấu giá tham gia', icon: '🏷️' },
-    { id: 'won', label: 'Đấu giá đã thắng', icon: '🏆' },
+  const tabs: { id: TabType; label: string; icon: React.ReactNode }[] = [
+    { id: 'info', label: 'Personal Info', icon: <User size={18} /> },
+    { id: 'ratings', label: 'Ratings Received', icon: <Star size={18} /> },
+    { id: 'won', label: 'Won Auctions', icon: <Trophy size={18} /> },
   ];
 
   return (
-    <div className='min-h-screen bg-gray-50 py-8'>
-      <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
+    <div className='flex gap-6 py-8'>
+      {/* Sidebar Navigation */}
+      <aside className='w-64 shrink-0'>
+        <div className='bg-white rounded-lg shadow-md overflow-hidden sticky top-8'>
+          <nav className='flex flex-col'>
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`px-4 py-3 text-sm font-medium transition flex items-center gap-3 border-b border-gray-100 last:border-b-0 ${
+                  activeTab === tab.id ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                {tab.icon}
+                <span>{tab.label}</span>
+              </button>
+            ))}
+          </nav>
+        </div>
+      </aside>
+
+      {/* Main Content */}
+      <div className='flex-1 min-w-0'>
         {/* Header Section */}
         <div className='bg-white rounded-lg shadow-md p-6 mb-6'>
           <div className='flex items-center gap-4'>
@@ -143,13 +160,17 @@ const ProfilePage: React.FC = () => {
               <p className='text-gray-600'>{user.email}</p>
               <div className='flex items-center gap-4 mt-2'>
                 <div className='flex items-center gap-2'>
-                  <span className='text-sm text-gray-600'>Uy tín:</span>
+                  <span className='text-sm text-gray-600'>Reputation:</span>
                   <span className='font-semibold text-blue-600'>{reputationPercentage}%</span>
                 </div>
                 <div className='flex items-center gap-2 text-sm'>
-                  <span className='text-green-600 font-semibold'>👍 {user.positiveRatings}</span>
+                  <span className='text-green-600 font-semibold flex items-center gap-1'>
+                    <ThumbsUp size={16} /> {user.positiveRatings}
+                  </span>
                   <span className='text-gray-400'>|</span>
-                  <span className='text-red-600 font-semibold'>👎 {user.negativeRatings}</span>
+                  <span className='text-red-600 font-semibold flex items-center gap-1'>
+                    <ThumbsDown size={16} /> {user.negativeRatings}
+                  </span>
                 </div>
               </div>
             </div>
@@ -163,29 +184,11 @@ const ProfilePage: React.FC = () => {
           </div>
         )}
 
-        {/* Tabs Navigation */}
-        <div className='bg-white rounded-lg shadow-md overflow-hidden mb-6'>
-          <div className='flex overflow-x-auto'>
-            {tabs.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex-1 min-w-fit px-4 py-3 text-sm font-medium transition whitespace-nowrap ${
-                  activeTab === tab.id ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'
-                }`}
-              >
-                <span className='mr-2'>{tab.icon}</span>
-                {tab.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
         {/* Tab Content */}
         <div className='bg-white rounded-lg shadow-md p-6'>
           {activeTab === 'info' && (
             <div>
-              <h2 className='text-xl font-bold mb-6'>Thông tin cá nhân</h2>
+              <h2 className='text-xl font-bold mb-6'>Personal Info</h2>
               <ProfileInfoForm
                 initialData={{
                   name: user.name,
@@ -196,17 +199,32 @@ const ProfilePage: React.FC = () => {
                 loading={loading}
               />
 
+              {/* Change Password Section */}
+              <div className='mt-8 pt-6 border-t border-gray-200'>
+                <h3 className='text-lg font-semibold mb-4 flex items-center gap-2'>
+                  <Lock size={20} />
+                  Change Password
+                </h3>
+                <div className='mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg'>
+                  <p className='text-yellow-800 text-sm'>
+                    <span className='font-semibold'>⚠️ Note:</span> After changing your password, you will need to log
+                    in again with your new password.
+                  </p>
+                </div>
+                <ProfilePasswordForm onSubmit={handleChangePassword} loading={loading} />
+              </div>
+
               {/* Upgrade to Seller Button */}
               {user.role === 'bidder' && (
                 <div className='mt-8 pt-6 border-t border-gray-200'>
-                  <h3 className='text-lg font-semibold mb-3'>Nâng cấp tài khoản</h3>
+                  <h3 className='text-lg font-semibold mb-3'>Account Upgrade</h3>
                   <p className='text-sm text-gray-600 mb-4'>
-                    Trở thành seller để đăng bán sản phẩm và tạo đấu giá trên nền tảng của chúng tôi.
+                    Become a seller to post products and create auctions on our platform.
                   </p>
                   {upgradeRequest?.status === 'rejected' && upgradeRequest.rejectionReason && (
                     <div className='mb-4 p-3 bg-red-50 border border-red-200 rounded-md'>
                       <p className='text-sm text-red-800'>
-                        <span className='font-semibold'>Lý do từ chối:</span> {upgradeRequest.rejectionReason}
+                        <span className='font-semibold'>Rejection reason:</span> {upgradeRequest.rejectionReason}
                       </p>
                     </div>
                   )}
@@ -222,43 +240,16 @@ const ProfilePage: React.FC = () => {
             </div>
           )}
 
-          {activeTab === 'password' && (
-            <div>
-              <h2 className='text-xl font-bold mb-4'>Đổi mật khẩu</h2>
-              <div className='mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg'>
-                <p className='text-yellow-800 text-sm'>
-                  <span className='font-semibold'>⚠️ Lưu ý:</span> Sau khi đổi mật khẩu, bạn sẽ cần đăng nhập lại với
-                  mật khẩu mới.
-                </p>
-              </div>
-              <ProfilePasswordForm onSubmit={handleChangePassword} loading={loading} />
-            </div>
-          )}
-
           {activeTab === 'ratings' && (
             <div>
-              <h2 className='text-xl font-bold mb-6'>Đánh giá nhận được</h2>
+              <h2 className='text-xl font-bold mb-6'>Ratings Received</h2>
               <RatingsReceivedList />
-            </div>
-          )}
-
-          {activeTab === 'watchlist' && (
-            <div>
-              <h2 className='text-xl font-bold mb-6'>Danh sách yêu thích</h2>
-              <WatchlistTab />
-            </div>
-          )}
-
-          {activeTab === 'participating' && (
-            <div>
-              <h2 className='text-xl font-bold mb-6'>Đấu giá đang tham gia</h2>
-              <ParticipatingAuctionsTab />
             </div>
           )}
 
           {activeTab === 'won' && (
             <div>
-              <h2 className='text-xl font-bold mb-6'>Đấu giá đã thắng</h2>
+              <h2 className='text-xl font-bold mb-6'>Won Auctions</h2>
               <WonAuctionsTab />
             </div>
           )}

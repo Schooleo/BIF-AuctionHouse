@@ -22,23 +22,23 @@ const ProfilePasswordForm: React.FC<ProfilePasswordFormProps> = ({ onSubmit, loa
     const newErrors: Record<string, string> = {};
 
     if (!formData.currentPassword) {
-      newErrors.currentPassword = 'Vui lòng nhập mật khẩu hiện tại';
+      newErrors.currentPassword = 'Please enter your current password';
     }
 
     if (!formData.newPassword) {
-      newErrors.newPassword = 'Vui lòng nhập mật khẩu mới';
+      newErrors.newPassword = 'Please enter a new password';
     } else if (formData.newPassword.length < 8) {
-      newErrors.newPassword = 'Mật khẩu mới phải có ít nhất 8 ký tự';
+      newErrors.newPassword = 'New password must be at least 8 characters';
     }
 
     if (!formData.confirmPassword) {
-      newErrors.confirmPassword = 'Vui lòng xác nhận mật khẩu mới';
+      newErrors.confirmPassword = 'Please confirm your new password';
     } else if (formData.newPassword !== formData.confirmPassword) {
-      newErrors.confirmPassword = 'Mật khẩu xác nhận không khớp';
+      newErrors.confirmPassword = 'Passwords do not match';
     }
 
     if (formData.currentPassword === formData.newPassword) {
-      newErrors.newPassword = 'Mật khẩu mới phải khác mật khẩu hiện tại';
+      newErrors.newPassword = 'New password must be different from current password';
     }
 
     setErrors(newErrors);
@@ -70,7 +70,7 @@ const ProfilePasswordForm: React.FC<ProfilePasswordFormProps> = ({ onSubmit, loa
       // Auto hide success message after 5 seconds
       setTimeout(() => setSuccess(false), 5000);
     } catch (error: any) {
-      setErrors({ submit: error.message || 'Có lỗi xảy ra' });
+      setErrors({ submit: error.message || 'An error occurred' });
     } finally {
       setSubmitting(false);
     }
@@ -80,43 +80,43 @@ const ProfilePasswordForm: React.FC<ProfilePasswordFormProps> = ({ onSubmit, loa
     <form onSubmit={handleSubmit} className='space-y-4'>
       <div>
         <label className='block text-sm font-medium text-gray-700 mb-1'>
-          Mật khẩu hiện tại <span className='text-red-500'>*</span>
+          Current Password <span className='text-red-500'>*</span>
         </label>
         <PasswordField
-          label='Mật khẩu hiện tại'
+          label='Current Password'
           value={formData.currentPassword}
           onChange={(e) => setFormData({ ...formData, currentPassword: e.target.value })}
           error={errors.currentPassword}
           disabled={loading || submitting}
-          placeholder='Nhập mật khẩu hiện tại'
+          placeholder='Enter your current password'
         />
       </div>
 
       <div>
         <label className='block text-sm font-medium text-gray-700 mb-1'>
-          Mật khẩu mới <span className='text-red-500'>*</span>
+          New Password <span className='text-red-500'>*</span>
         </label>
         <PasswordField
-          label='Mật khẩu mới'
+          label='New Password'
           value={formData.newPassword}
           onChange={(e) => setFormData({ ...formData, newPassword: e.target.value })}
           error={errors.newPassword}
           disabled={loading || submitting}
-          placeholder='Nhập mật khẩu mới (tối thiểu 8 ký tự)'
+          placeholder='Enter new password (minimum 8 characters)'
         />
       </div>
 
       <div>
         <label className='block text-sm font-medium text-gray-700 mb-1'>
-          Xác nhận mật khẩu mới <span className='text-red-500'>*</span>
+          Confirm New Password <span className='text-red-500'>*</span>
         </label>
         <PasswordField
-          label='Xác nhận mật khẩu'
+          label='Confirm Password'
           value={formData.confirmPassword}
           onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
           error={errors.confirmPassword}
           disabled={loading || submitting}
-          placeholder='Nhập lại mật khẩu mới'
+          placeholder='Re-enter new password'
         />
       </div>
 
@@ -126,13 +126,13 @@ const ProfilePasswordForm: React.FC<ProfilePasswordFormProps> = ({ onSubmit, loa
 
       {success && (
         <div className='p-3 bg-green-50 border border-green-200 rounded-md text-sm text-green-600'>
-          Đổi mật khẩu thành công! Vui lòng đăng nhập lại.
+          Password changed successfully! Please log in again.
         </div>
       )}
 
       <Button
         type='submit'
-        label={submitting ? 'Đang cập nhật...' : 'Đổi mật khẩu'}
+        label={submitting ? 'Updating...' : 'Change Password'}
         disabled={loading || submitting}
         className='w-full'
       />
