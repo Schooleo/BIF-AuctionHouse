@@ -9,14 +9,28 @@ import {
   rateWinnerOrCancelTransaction,
 } from "../controllers/seller.controller";
 import { protect } from "../middleware/auth.middleware";
+import { validate } from "../middleware/validate";
+import {
+  createProductSchema,
+  appendDescriptionSchema,
+  viewSellerProductsSchema,
+} from "../schemas/seller.schema";
 
 const router = Router();
 
 // Bảo vệ tất cả các route bên dưới cho role "seller"
 router.use(protect(["seller"]));
 
-router.post("/products", createAuctionProduct);
-router.patch("/products/:id/description", appendProductDescription);
+router.post(
+  "/products",
+  validate(createProductSchema, "body"),
+  createAuctionProduct
+);
+router.patch(
+  "/products/:id/description",
+  validate(appendDescriptionSchema, "body"),
+  appendProductDescription
+);
 router.post("/products/:productId/reject-bidder/:bidderId", rejectBidder);
 router.post(
   "/products/:productId/answer-question/:questionId",
@@ -24,7 +38,11 @@ router.post(
 );
 
 router.get("/profile", viewSellerProfile);
-router.get("/products", viewSellerProducts);
+router.get(
+  "/products",
+  validate(viewSellerProductsSchema, "query"),
+  viewSellerProducts
+);
 
 router.post("/rate-or-cancel/:auctionId", rateWinnerOrCancelTransaction);
 

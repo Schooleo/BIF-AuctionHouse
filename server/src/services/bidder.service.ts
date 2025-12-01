@@ -5,10 +5,11 @@ import { Bid } from "../models/bid.model";
 import { Rating } from "../models/rating.model";
 import { UpgradeRequest } from "../models/upgradeRequest.model";
 import {
+  BidMessages,
   BidderMessages,
   WatchlistMessages,
   AuthMessages,
-  ProductMessages
+  ProductMessages,
 } from "../constants/messages";
 import {
   sendQuestionEmail,
@@ -210,7 +211,7 @@ export const bidderService = {
       product: {
         currentPrice: product.currentPrice,
         currentBidder: {
-          _id: (bidder._id as Types.ObjectId).toString(),
+          _id: bidder._id,
           name: bidder.name,
           rating:
             (bidder.positiveRatings /

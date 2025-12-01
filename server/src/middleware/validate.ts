@@ -12,7 +12,7 @@ interface CustomRequest extends Request {
 type Location = "body" | "query" | "params";
 
 export const validate =
-  (schema: ZodObject<any>, location: Location) =>
+  (schema: z.ZodType<any, any>, location: Location) =>
   async (req: CustomRequest, res: Response, next: NextFunction) => {
     try {
       const parsedData = schema.parse(req[location]);
