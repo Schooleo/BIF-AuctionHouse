@@ -8,9 +8,11 @@ import {
 } from "react-router-dom";
 import { useAuthStore } from "./stores/useAuthStore";
 import MainLayout from "./layouts/MainLayout";
+import UserLayout from "./layouts/UserLayout";
 import HomePage from "./pages/user/HomePage";
 import ProductsPage from "./pages/user/ProductsPage";
 import ProductDetailsPage from "./pages/user/ProductDetailsPage";
+import ProfilePage from "./pages/user/ProfilePage";
 import NotFoundPage from "./pages/shared/NotFoundPage";
 
 import AuthLayout from "./layouts/AuthLayout";
@@ -24,7 +26,7 @@ import { useEffect } from "react";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import UnauthorizedPage from "./pages/shared/UnauthorizedPage";
 import AlertContainer from "@containers/ui/AlertContainer";
-import WatchListPage from "@pages/user/WatchListPage";
+import WatchListPage from "@pages/user/WatchlistPage";
 
 const RoleBasedRedirect = ({ children }: { children: React.ReactNode }) => {
   const user = useAuthStore((state) => state.user);
@@ -68,8 +70,12 @@ const App = () => {
                 <Route path="products" element={<ProductsPage />} />
                 <Route path="product/:id" element={<ProductDetailsPage />} />
                 <Route path="watchlist" element={<WatchListPage />} />
-                
+
                 <Route path="*" element={<NotFoundPage />} />
+              </Route>
+
+              <Route path="/" element={<UserLayout />}>
+                <Route path="profile" element={<ProfilePage />} />
               </Route>
 
               <Route path="auth" element={<AuthLayout />}>
