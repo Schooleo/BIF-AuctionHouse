@@ -1,3 +1,14 @@
+import { Watchlist } from '../models/watchlist.model';
+import { Product } from '../models/product.model';
+import { BidMessages, WatchlistMessages, AuthMessages } from '../constants/messages';
+import { User } from '../models/index.model';
+import { Bid } from '../models/bid.model';
+import { Types } from 'mongoose';
+import { Rating } from '../models/rating.model';
+import { UpgradeRequest } from '../models/upgradeRequest.model';
+import { BidderMessages } from '../constants/messages';
+import { sendQuestionEmail } from '../utils/email.util';
+import { ProductMessages } from '../constants/messages';
 import { Watchlist } from "../models/watchlist.model";
 import { Product } from "../models/product.model";
 import {
@@ -564,7 +575,7 @@ export const bidderService = {
 
   //Gửi yêu cầu nâng cấp lên Seller
 
-  async requestSellerUpgrade(bidderId: string) {
+  async requestSellerUpgrade(bidderId: string, reason?: string) {
     // Kiểm tra bidder tồn tại
     const bidder = await User.findById(bidderId);
     if (!bidder) {
@@ -623,6 +634,7 @@ export const bidderService = {
       user: bidderId,
       status: "pending",
       expiresAt,
+      reason: reason || '',
     });
 
     return upgradeRequest;

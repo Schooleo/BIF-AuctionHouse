@@ -3,6 +3,7 @@ import mongoose, { Document, Schema, Types } from 'mongoose';
 export interface IUpgradeRequest extends Document {
   user: Types.ObjectId;
   status: 'pending' | 'approved' | 'rejected';
+  reason?: string; // Lý do muốn trở thành seller
 
   expiresAt?: Date; // Request hết hạn sau 7 ngày
   rejectedAt?: Date; // Thời điểm bị reject
@@ -20,6 +21,7 @@ const upgradeRequestSchema = new Schema<IUpgradeRequest>(
       enum: ['pending', 'approved', 'rejected'],
       default: 'pending',
     },
+    reason: { type: String }, // Lý do muốn trở thành seller
 
     expiresAt: { type: Date }, // Request hết hạn sau 7 ngày
     rejectedAt: { type: Date }, // Thời điểm bị reject

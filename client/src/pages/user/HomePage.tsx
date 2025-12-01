@@ -20,7 +20,7 @@ const HomePage: React.FC = () => {
         setLoading(true);
 
         const data = await productApi.fetchHomeData();
-
+        console.log("Fetched top products data:", data);
         setTopEndingSoon(data.endingSoon);
         setTopMostBidOn(data.mostBids);
         setTopHighestPriced(data.highestPrice);
