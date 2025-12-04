@@ -5,6 +5,7 @@ export interface QuestionAnswer {
   askedAt: string;
   answer?: string;
   answeredAt?: string;
+  answerer?: UserSummary;
 }
 
 export interface Product {
@@ -21,6 +22,7 @@ export interface Product {
 
   startingPrice: number;
   currentPrice: number;
+  stepPrice: number;
   buyNowPrice?: number;
 
   category: Category | string;
@@ -46,6 +48,11 @@ export interface Product {
 
   questions?: QuestionAnswer[];
   related?: Product[];
+
+  autoExtends?: boolean;
+  allowUnratedBidders?: boolean;
+  rejectedBidders?: string[];
+  winnerConfirmed?: boolean;
 }
 
 export interface BidHistoryEntry {
