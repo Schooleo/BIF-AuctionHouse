@@ -34,6 +34,36 @@ export const addToWatchlist = async (req: Request, res: Response) => {
   }
 };
 
+export const removeFromWatchlist = async (req: Request, res: Response) => {
+  try {
+    const { productId } = req.params;
+    const userId = req.user!.id;
+
+    const result = await bidderService.removeFromWatchlist(userId, productId!);
+    res.status(200).json(result);
+  } catch (error : any) {
+    if (error.message === WatchlistMessages.NOT_IN_WATCHLIST) {
+      return res.status(404).json({ message: error.message });
+    }
+    if (error.message === WatchlistMessages.PRODUCT_NOT_FOUND) {
+      return res.status(404).json({ message: error.message });
+    }
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const checkInWatchlist = async (req: Request, res: Response) => {
+  try {
+    const { productId } = req.params;
+    const userId = req.user!.id;
+
+    const result = await bidderService.checkInWatchlist(userId, productId!);
+    res.status(200).json(result);
+  } catch (error : any) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 export const getSuggestedPrice = async (req: Request, res: Response) => {
   try {
     const { productId } = req.params;

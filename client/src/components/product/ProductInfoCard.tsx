@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import type { Product } from "@interfaces/product";
 import {
   formatPostedTime,
@@ -80,9 +80,39 @@ const ProductInfoCard: React.FC<ProductInfoCardProps> = ({
   const [isBidHistoryOpen, setIsBidHistoryOpen] = useState(false);
   const addAlert = useAlertStore((state) => state.addAlert);
 
+  const { token } = useAuthStore();
+
+  useEffect(() => {
+    const checkWatchlistStatus = async () => {
+      // Skip nếu là guest hoặc không có token
+      if (isGuest || !token) {
+        setIsInWatchlist(false);
+        return;
+      }
+
+      try{
+        const result = await bidderApi.checkInWatchlist(
+          product._id,
+          token
+        );
+        setIsInWatchlist(result.inWatchlist);
+      } catch (error) {
+        console.error("Failed to check watchlist status:", error);
+        setIsInWatchlist(false);
+      }
+    };
+
+    checkWatchlistStatus();
+  }, [product._id, isGuest, token]);
+
   const handleAddToWatchlist = async () => {
     setIsAddingToWatchlist(true);
     try {
+      if (!token) {
+        addAlert("error", "You must be logged in to add to watchlist.");
+        return;
+      }
+
       await bidderApi.addToWatchlist(
         product._id,
         useAuthStore.getState().token || ""
@@ -102,6 +132,28 @@ const ProductInfoCard: React.FC<ProductInfoCardProps> = ({
       setIsAddingToWatchlist(false);
     }
   };
+
+    const handleRemoveFromWatchlist = async () => {
+      setIsAddingToWatchlist(true);
+      try {
+        if (!token) {
+          addAlert("error", "You must be logged in to remove from watchlist.");
+          return;
+        }
+
+        await bidderApi.removeFromWatchlist(product._id, token);
+
+        setIsInWatchlist(false);
+
+        addAlert("success", "Removed from watchlist successfully!");
+      } catch (error: any) {
+        const message = error.message || "Failed to remove from watchlist.";
+        addAlert("error", message);
+      } finally {
+        setIsAddingToWatchlist(false);
+      }
+  };
+
   return (
     <div className="flex flex-col gap-4 max-w-xl">
       <h1 className="text-3xl font-bold">{product.name}</h1>
@@ -160,9 +212,8 @@ const ProductInfoCard: React.FC<ProductInfoCardProps> = ({
             {/* Add to Watchlist Link (Xử lý API) */}
             <button
               type="button"
-              onClick={handleAddToWatchlist}
-              disabled={isInWatchlist || isAddingToWatchlist}
-              className={`${isInWatchlist ? "bg-gray-400 cursor-not-allowed" : "bg-red-500"} rounded-2xl hover:scale-105 transition-transform duration-150 px-4 py-3 flex items-center gap-2 hover:cursor-pointer`}
+              onClick={isInWatchlist ? handleRemoveFromWatchlist : handleAddToWatchlist}
+              className={`bg-red-500 rounded-2xl hover:scale-105 transition-transform duration-150 px-4 py-3 flex items-center gap-2 hover:cursor-pointer`}
             >
               {isAddingToWatchlist ? (
                 <>
@@ -171,8 +222,8 @@ const ProductInfoCard: React.FC<ProductInfoCardProps> = ({
                 </>
               ) : isInWatchlist ? (
                 <>
-                  <CheckIcon className="w-4 h-4" />
-                  <span>In Watchlist</span>
+                  <Heart className="w-4 h-4" />
+                  <span>Remove from Watchlist</span>
                 </>
               ) : (
                 <>

@@ -19,6 +19,8 @@ export const WatchlistMessages = {
   ADDED_SUCCESS: 'Product added to watchlist successfully',
   PRODUCT_NOT_FOUND: 'Product not found',
   ALREADY_EXISTS: 'Product already exists in watchlist',
+  REMOVE_SUCCESS: 'Product removed from watchlist successfully',
+  NOT_IN_WATCHLIST: 'Product is not in your watchlist',
 };
 
 export const BidMessages = {

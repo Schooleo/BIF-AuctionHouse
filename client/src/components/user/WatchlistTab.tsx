@@ -4,8 +4,10 @@ import { bidderApi } from '@services/bidder.api';
 import type { WatchlistItem } from '@interfaces/bidder';
 import ProductCard from '@components/product/ProductCard';
 import Spinner from '@components/ui/Spinner';
+import { useAuthStore } from '@stores/useAuthStore';
 
 const WatchlistTab: React.FC = () => {
+  const { token } = useAuthStore();
   const [watchlist, setWatchlist] = useState<WatchlistItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -15,15 +17,34 @@ const WatchlistTab: React.FC = () => {
   const limit = 12;
 
   useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        fetchWatchlist();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, []);
+
+  useEffect(() => {
     fetchWatchlist();
   }, [page]);
 
   const fetchWatchlist = async () => {
     try {
+      if (!token) {
+        navigate('/login');
+        return;
+      }
+
       setLoading(true);
       setError(null);
-      const response = await bidderApi.getWatchlist(page, limit);
-      setWatchlist(response.data || []);
+      const response = await bidderApi.getWatchlist(token, page, limit);
+      setWatchlist(response.watchlist || []);
       setTotalPages(response.pagination.totalPages);
     } catch (err: any) {
       setError(err.message || 'Unable to load watchlist');

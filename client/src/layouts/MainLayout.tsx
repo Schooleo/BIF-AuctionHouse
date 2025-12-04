@@ -12,7 +12,8 @@ import { productApi } from "@services/product.api";
 const MainLayout: React.FC = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const location = useLocation();
-  const hideSidebar = location.pathname.startsWith("/product/");
+  const hideSidebar = location.pathname.startsWith("/product/") ||
+    location.pathname === "/watchlist";
 
   useEffect(() => {
     productApi.fetchCategories().then(setCategories);
