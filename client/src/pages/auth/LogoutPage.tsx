@@ -1,15 +1,17 @@
 import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuthStore } from "@stores/useAuthStore";
 
 const LogoutPage = () => {
   const logout = useAuthStore((state) => state.logout);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   useEffect(() => {
+    const next = searchParams.get("next") || "/";
     logout();
-    navigate("/", { replace: true });
-  }, [logout, navigate]);
+    navigate(next, { replace: true });
+  }, [logout, navigate, searchParams]);
 
   return (
     <div className="flex justify-center items-center h-screen">

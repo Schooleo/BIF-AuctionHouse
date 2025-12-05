@@ -7,6 +7,7 @@ import { sellerApi } from "@services/seller.api";
 import DescriptionHistoryPopover from "./DescriptionHistoryPopover";
 import { checkRecentlyAdded, getShortRemainingTime } from "@utils/product";
 import RichTextEditor from "@components/shared/RichTextEditor";
+import { useAlertStore } from "@stores/useAlertStore";
 
 interface SellerProductCardProps {
   product: Product;
@@ -21,6 +22,7 @@ const SellerProductCard: React.FC<SellerProductCardProps> = ({
   const [newDescription, setNewDescription] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showDescriptionPopover, setShowDescriptionPopover] = useState(false);
+  const addAlert = useAlertStore((state) => state.addAlert);
 
   const {
     _id,
@@ -49,9 +51,10 @@ const SellerProductCard: React.FC<SellerProductCardProps> = ({
       onUpdate(updatedProduct);
       setNewDescription("");
       setIsModalOpen(false);
+      addAlert("success", "Description appended successfully.");
     } catch (error) {
       console.error("Failed to append description", error);
-      alert("Failed to append description");
+      addAlert("error", "Failed to append description");
     } finally {
       setIsLoading(false);
     }

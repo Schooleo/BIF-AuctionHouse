@@ -4,6 +4,7 @@ import { sellerApi } from "@services/seller.api";
 import { productApi } from "@services/product.api";
 import type { Category } from "@interfaces/product";
 import { Plus, X } from "lucide-react";
+import { useAlertStore } from "@stores/useAlertStore";
 import RichTextEditor from "@components/shared/RichTextEditor";
 import ImageUpload from "@components/shared/ImageUpload";
 import { z } from "zod";
@@ -99,6 +100,7 @@ const AddProductForm: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [errors, setErrors] = useState<ProductFormErrors>({});
+  const addAlert = useAlertStore((state) => state.addAlert);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -229,9 +231,12 @@ const AddProductForm: React.FC = () => {
       };
 
       await sellerApi.createProduct(payload);
+      addAlert("success", "Product created successfully!");
       navigate("/seller/products");
     } catch (error) {
-      setSubmitError((error as Error).message || "Failed to create product");
+      const message = (error as Error).message || "Failed to create product";
+      setSubmitError(message);
+      addAlert("error", message);
     } finally {
       setIsLoading(false);
     }

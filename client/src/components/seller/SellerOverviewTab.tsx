@@ -97,7 +97,7 @@ const SellerOverviewTab: React.FC<SellerOverviewTabProps> = ({ stats }) => {
               )}
               <div className="p-4 flex-1 min-w-0 flex flex-col">
                 <Link
-                  to={`/product/${stats.mostSuccessfulProduct._id}`}
+                  to={`/seller/products/${stats.mostSuccessfulProduct._id}`}
                   className="font-bold text-gray-900 line-clamp-1 text-lg mb-1 hover:text-primary-blue transition-colors"
                   title={stats.mostSuccessfulProduct.name}
                 >
@@ -153,7 +153,7 @@ const SellerOverviewTab: React.FC<SellerOverviewTabProps> = ({ stats }) => {
               )}
               <div className="p-4 flex-1 min-w-0 flex flex-col">
                 <Link
-                  to={`/product/${stats.leastSuccessfulProduct._id}`}
+                  to={`/seller/products/${stats.leastSuccessfulProduct._id}`}
                   className="font-bold text-gray-900 line-clamp-1 text-lg mb-1 hover:text-primary-blue transition-colors"
                   title={stats.leastSuccessfulProduct.name}
                 >

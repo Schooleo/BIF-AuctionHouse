@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Lock } from "lucide-react";
 import { useAuthStore } from "@stores/useAuthStore";
+import { useAlertStore } from "@stores/useAlertStore";
 import { sellerApi } from "@services/seller.api";
 
 import ProfileInfoForm from "@components/forms/ProfileInfoForm";
@@ -17,14 +18,13 @@ import SellerOverviewTab from "@components/seller/SellerOverviewTab";
 type TabType = "overview" | "info" | "ratings";
 
 const SellerProfilePage: React.FC = () => {
-  const { user, setUser, logout, token } = useAuthStore();
+  const { user, setUser, token } = useAuthStore();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const activeTab = (searchParams.get("tab") as TabType) || "overview";
+  const addAlert = useAlertStore((state) => state.addAlert);
 
   const [loading, setLoading] = useState(false);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
-
   const [stats, setStats] = useState<SellerStats | null>(null);
 
   const fetchProfile = useCallback(async () => {
@@ -51,18 +51,17 @@ const SellerProfilePage: React.FC = () => {
   const handleUpdateProfile = async (data: UpdateSellerProfileDto) => {
     try {
       setLoading(true);
-      setLoading(true);
       const response = await sellerApi.updateProfile(data);
 
       setUser({
         ...response.profile,
         id: response.profile.id,
       });
-      setSuccessMessage("Profile updated successfully!");
-      setTimeout(() => setSuccessMessage(null), 5000);
+      addAlert("success", "Profile updated successfully!");
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "Unable to update profile";
+      addAlert("error", message);
       throw new Error(message);
     } finally {
       setLoading(false);
@@ -72,18 +71,18 @@ const SellerProfilePage: React.FC = () => {
   const handleChangePassword = async (data: ChangeSellerPasswordDto) => {
     try {
       setLoading(true);
-      setLoading(true);
       await sellerApi.changePassword(data);
-      setSuccessMessage(
+      addAlert(
+        "success",
         "Password changed successfully! Redirecting to login page..."
       );
       setTimeout(() => {
-        logout();
-        navigate("/auth/login");
+        navigate("/auth/logout?next=/auth/login");
       }, 2000);
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "Unable to change password";
+      addAlert("error", message);
       throw new Error(message);
     } finally {
       setLoading(false);
@@ -102,12 +101,6 @@ const SellerProfilePage: React.FC = () => {
           </h1>
           <p className="text-gray-500">{user.email}</p>
         </div>
-
-        {successMessage && (
-          <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
-            <p className="text-green-800 font-medium">{successMessage}</p>
-          </div>
-        )}
 
         <div className="bg-white rounded-lg shadow-md p-6">
           {activeTab === "overview" && <SellerOverviewTab stats={stats} />}
