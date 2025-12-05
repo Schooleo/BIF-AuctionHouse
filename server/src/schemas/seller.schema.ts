@@ -48,6 +48,15 @@ export const viewSellerProductsSchema = z.object({
   status: z.enum(["all", "ongoing", "ended"]).optional().default("all"),
 });
 
+export const updateSellerProfileSchema = z.object({
+  name: z.string().min(1).optional(),
+  address: z.string().min(1).optional(),
+});
+
+export const changeSellerPasswordSchema = z.object({
+  currentPassword: z.string().min(1),
+  newPassword: z.string().min(8),
+});
 export const rejectBidderParamsSchema = z.object({
   productId: z.string().length(24, "Invalid product ID"),
   bidderId: z.string().length(24, "Invalid bidder ID"),

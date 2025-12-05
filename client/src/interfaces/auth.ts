@@ -6,6 +6,8 @@ export interface User {
   address?: string;
   createdAt: string;
   updatedAt: string;
+  positiveRatings?: number;
+  negativeRatings?: number;
 }
 
 export interface AuthStore {

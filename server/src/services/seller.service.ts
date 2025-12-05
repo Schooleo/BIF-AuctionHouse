@@ -82,8 +82,7 @@ export class SellerService {
     product.bidCount = remainingBidCount;
 
     const removedCurrentWinner =
-      product.currentBidder &&
-      product.currentBidder.toString() === bidderId;
+      product.currentBidder && product.currentBidder.toString() === bidderId;
 
     if (removedCurrentWinner) {
       const nextHighestBid = await Bid.findOne({
@@ -228,6 +227,56 @@ export class SellerService {
     };
   }
 
+  static async getSellerProfile(userId: string) {
+    const [User] = await Promise.all([import("../models/user.model")]);
+    const user = await User.User.findById(userId).select("-password");
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    // Statistics
+    const totalProducts = await Product.countDocuments({ seller: userId });
+    const successfulAuctions = await Product.countDocuments({
+      seller: userId,
+      endTime: { $lte: new Date() },
+      bidCount: { $gt: 0 },
+    });
+
+    // Find most successful product (highest updated price aka currentBid)
+    const mostSuccessfulProduct = await Product.findOne({
+      seller: userId,
+      endTime: { $lte: new Date() },
+      bidCount: { $gt: 0 },
+    })
+      .sort({ currentPrice: -1 })
+      .select("name currentPrice mainImage bidCount currentBidder")
+      .populate("currentBidder", "name");
+
+    // Find least successful product (lowest updated price, ended, with bids)
+    const leastSuccessfulProduct = await Product.findOne({
+      seller: userId,
+      endTime: { $lte: new Date() },
+      bidCount: { $gt: 0 },
+    })
+      .sort({ currentPrice: 1 })
+      .select("name currentPrice mainImage bidCount currentBidder")
+      .populate("currentBidder", "name");
+
+    return {
+      profile: user,
+      stats: {
+        totalProducts,
+        successfulAuctions,
+        mostSuccessfulProduct,
+        leastSuccessfulProduct,
+        averageRating: user.reputationScore ? user.reputationScore * 5 : 0,
+        positiveRatings: user.positiveRatings || 0,
+        negativeRatings: user.negativeRatings || 0,
+      },
+    };
+  }
+
   static async getProductBidHistory(
     userId: string,
     productId: string,
@@ -283,6 +332,49 @@ export class SellerService {
     };
   }
 
+  static async updateProfile(
+    userId: string,
+    updates: { name?: string; address?: string }
+  ) {
+    const [User] = await Promise.all([import("../models/user.model")]);
+    const seller = await User.User.findByIdAndUpdate(
+      userId,
+      { $set: updates },
+      { new: true, runValidators: true }
+    );
+
+    if (!seller) {
+      throw new Error("User not found");
+    }
+
+    return seller;
+  }
+
+  static async changePassword(
+    userId: string,
+    currentPassword: string,
+    newPassword: string
+  ) {
+    const [User] = await Promise.all([import("../models/user.model")]);
+    // Get user with password field
+    const seller = await User.User.findById(userId).select("+password");
+    if (!seller) {
+      throw new Error("User not found");
+    }
+
+    // Verify current password
+    const isMatch = await seller.comparePassword(currentPassword);
+    if (!isMatch) {
+      throw new Error("Invalid current password");
+    }
+
+    // Update password
+    seller.password = newPassword;
+    await seller.save();
+
+    return { message: "Password changed successfully" };
+  }
+
   static async confirmWinner(userId: string, productId: string) {
     const product = await Product.findOne({
       _id: productId,
@@ -313,10 +405,7 @@ export class SellerService {
 
     const winningBid = await Bid.findOne(bidQuery)
       .sort({ price: -1, createdAt: 1 })
-      .populate(
-        "bidder",
-        "name email positiveRatings negativeRatings rating"
-      );
+      .populate("bidder", "name email positiveRatings negativeRatings rating");
 
     if (!winningBid) {
       throw new Error(SellerMessages.NO_ELIGIBLE_BIDDER);

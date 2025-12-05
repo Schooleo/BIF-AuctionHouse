@@ -50,7 +50,7 @@ const ProductImageCard: React.FC<ProductImageCardProps> = ({
         <img
           src={currentImage}
           alt="Main product"
-          className="w-full h-[400px] md:h-[500px] object-contain bg-primary-blue transition-transform duration-300 group-hover:scale-105"
+          className="w-full h-[400px] md:h-[500px] object-contain bg-white transition-transform duration-300 group-hover:scale-105"
         />
         {recentlyAdded && (
           <span className="absolute bottom-4 right-4 bg-linear-to-r from-indigo-500 via-purple-500 to-pink-500 text-white text-sm font-semibold italic px-3 py-1.5 rounded-md shadow-lg z-10">

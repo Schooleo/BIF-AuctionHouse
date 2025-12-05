@@ -156,8 +156,18 @@ export const confirmWinner = async (req: Request, res: Response) => {
 };
 
 export const viewSellerProfile = async (req: Request, res: Response) => {
-  // TODO: implement view seller profile logic
-  res.status(501).json({ message: "Not implemented" });
+  try {
+    const userId = (req.user as any)?._id;
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const result = await SellerService.getSellerProfile(String(userId));
+    res.status(200).json(result);
+  } catch (error: any) {
+    console.error("Error fetching seller profile:", error);
+    res.status(500).json({ message: error.message || "Internal server error" });
+  }
 };
 
 export const viewSellerProducts = async (req: Request, res: Response) => {
@@ -191,6 +201,45 @@ export const rateWinnerOrCancelTransaction = async (
 ) => {
   // TODO: implement rate winner or cancel transaction logic
   res.status(501).json({ message: "Not implemented" });
+};
+
+export const updateSellerProfile = async (req: Request, res: Response) => {
+  try {
+    const userId = (req.user as any)?._id;
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const seller = await SellerService.updateProfile(String(userId), req.body);
+    res.status(200).json({ profile: seller });
+  } catch (error: any) {
+    console.error("Error updating seller profile:", error);
+    res.status(500).json({ message: error.message || "Internal server error" });
+  }
+};
+
+export const changeSellerPassword = async (req: Request, res: Response) => {
+  try {
+    const userId = (req.user as any)?._id;
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const { currentPassword, newPassword } = req.body;
+    const result = await SellerService.changePassword(
+      String(userId),
+      currentPassword,
+      newPassword
+    );
+
+    res.status(200).json(result);
+  } catch (error: any) {
+    if (error.message === "Invalid current password") {
+      return res.status(400).json({ message: error.message });
+    }
+    console.error("Error changing seller password:", error);
+    res.status(500).json({ message: error.message || "Internal server error" });
+  }
 };
 
 export const viewSellerBidHistory = async (req: Request, res: Response) => {

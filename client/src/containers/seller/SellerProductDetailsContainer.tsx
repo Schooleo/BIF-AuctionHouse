@@ -70,9 +70,10 @@ const SellerProductDetailsContainer: React.FC<
         const data = await productApi.fetchProductDetails({ id });
         setDetails(data);
         setError(null);
-      } catch (err: any) {
+      } catch (err: unknown) {
         const message =
-          err?.message || "Failed to load product details. Please try again.";
+          (err as { message?: string })?.message ||
+          "Failed to load product details. Please try again.";
         setError(message);
         if (!withLoader) {
           addAlert("error", message);
@@ -140,9 +141,7 @@ const SellerProductDetailsContainer: React.FC<
         return aAnswered - bAnswered;
       }
 
-      return (
-        new Date(b.askedAt).getTime() - new Date(a.askedAt).getTime()
-      );
+      return new Date(b.askedAt).getTime() - new Date(a.askedAt).getTime();
     });
   }, [questions]);
 
@@ -194,9 +193,10 @@ const SellerProductDetailsContainer: React.FC<
 
       await fetchDetails(false);
       closeAnswerModal();
-    } catch (err: any) {
+    } catch (err: unknown) {
       const message =
-        err?.message || "Failed to submit answer. Please try again.";
+        (err as { message?: string })?.message ||
+        "Failed to submit answer. Please try again.";
       addAlert("error", message);
     } finally {
       setIsSubmittingAnswer(false);
@@ -216,9 +216,10 @@ const SellerProductDetailsContainer: React.FC<
       }
 
       await fetchDetails(false);
-    } catch (err: any) {
+    } catch (err: unknown) {
       const message =
-        err?.message || "Failed to reject bidder. Please try again.";
+        (err as { message?: string })?.message ||
+        "Failed to reject bidder. Please try again.";
       addAlert("error", message);
       throw err;
     } finally {
@@ -244,9 +245,10 @@ const SellerProductDetailsContainer: React.FC<
 
       await fetchDetails(false);
       setIsConfirmWinnerOpen(false);
-    } catch (err: any) {
+    } catch (err: unknown) {
       const message =
-        err?.message || "Failed to confirm winner. Please try again.";
+        (err as { message?: string })?.message ||
+        "Failed to confirm winner. Please try again.";
       addAlert("error", message);
     } finally {
       setConfirmingWinner(false);
@@ -288,9 +290,10 @@ const SellerProductDetailsContainer: React.FC<
 
       setAppendDescription("");
       setIsAppendModalOpen(false);
-    } catch (err: any) {
+    } catch (err: unknown) {
       const message =
-        err?.message || "Failed to append description. Please try again.";
+        (err as { message?: string })?.message ||
+        "Failed to append description. Please try again.";
       addAlert("error", message);
       setAppendError(message);
     } finally {
@@ -364,7 +367,9 @@ const SellerProductDetailsContainer: React.FC<
 
         <div className="mt-8 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
-            <p className="text-sm text-gray-500 font-semibold">Starting Price</p>
+            <p className="text-sm text-gray-500 font-semibold">
+              Starting Price
+            </p>
             <p className="text-xl font-semibold text-gray-900">
               {formatPrice(product.startingPrice)}
             </p>
@@ -396,24 +401,36 @@ const SellerProductDetailsContainer: React.FC<
             </p>
           </div>
           <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
-            <p className="text-sm text-gray-500 font-semibold">Rejected Bidders</p>
+            <p className="text-sm text-gray-500 font-semibold">
+              Rejected Bidders
+            </p>
             <p className="text-xl font-semibold text-gray-900">
               {product.rejectedBidders?.length}
             </p>
           </div>
           <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
-            <p className="text-sm text-gray-500 font-semibold">Allow Unrated Bidders</p>
-            <p className={ product.allowUnratedBidders ?
-              "text-xl font-semibold text-green-700" 
-              : "text-xl font-semibold text-red-700"}>
+            <p className="text-sm text-gray-500 font-semibold">
+              Allow Unrated Bidders
+            </p>
+            <p
+              className={
+                product.allowUnratedBidders
+                  ? "text-xl font-semibold text-green-700"
+                  : "text-xl font-semibold text-red-700"
+              }
+            >
               {product.allowUnratedBidders ? "Allowed" : "Not allowed"}
             </p>
           </div>
           <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
             <p className="text-sm text-gray-500 font-semibold">Auto-Extend</p>
-            <p className={ product.autoExtends ?
-              "text-xl font-semibold text-green-700" 
-              : "text-xl font-semibold text-red-700"}>
+            <p
+              className={
+                product.autoExtends
+                  ? "text-xl font-semibold text-green-700"
+                  : "text-xl font-semibold text-red-700"
+              }
+            >
               {product.autoExtends ? "Enabled" : "Disabled"}
             </p>
           </div>
@@ -436,7 +453,7 @@ const SellerProductDetailsContainer: React.FC<
             </button>
           </div>
           <div
-            className="prose prose-sm max-w-none text-gray-700"
+            className="prose prose-sm max-w-none text-gray-700 break-all"
             dangerouslySetInnerHTML={{ __html: sanitizedDescription }}
           />
         </div>
@@ -456,7 +473,7 @@ const SellerProductDetailsContainer: React.FC<
                     Updated {formatBidTime(entry.updatedAt)}
                   </p>
                   <div
-                    className="text-gray-700 prose prose-sm max-w-none"
+                    className="text-gray-700 prose prose-sm max-w-none break-all"
                     dangerouslySetInnerHTML={{
                       __html: DOMPurify.sanitize(entry.content),
                     }}
@@ -468,60 +485,60 @@ const SellerProductDetailsContainer: React.FC<
         )}
 
         {isAppendModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
-            <div className="flex justify-between items-center p-4 border-b border-gray-100">
-              <h3 className="text-lg font-bold text-gray-900">
-                Append Description
-              </h3>
-              <button
-                onClick={() => setIsAppendModalOpen(false)}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <form
-              onSubmit={handleAppendDescription}
-              className="p-4 space-y-4"
-            >
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  New Information
-                </label>
-                <RichTextEditor
-                  value={appendDescription}
-                  onChange={(value) => {
-                    setAppendDescription(value);
-                    setAppendError(null);
-                  }}
-                  limit={80}
-                  placeholder="Enter additional details about the product..."
-                />
-              </div>
-              {appendError && (
-                <p className="text-sm text-red-500">{appendError}</p>
-              )}
-              <div className="flex justify-end gap-3 pt-2">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+            <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
+              <div className="flex justify-between items-center p-4 border-b border-gray-100">
+                <h3 className="text-lg font-bold text-gray-900">
+                  Append Description
+                </h3>
                 <button
-                  type="button"
                   onClick={() => setIsAppendModalOpen(false)}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
                 >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={isAppendingDescription}
-                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isAppendingDescription ? "Appending..." : "Append"}
+                  <X className="w-5 h-5" />
                 </button>
               </div>
-            </form>
+              <form
+                onSubmit={handleAppendDescription}
+                className="p-4 space-y-4"
+              >
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    New Information
+                  </label>
+                  <RichTextEditor
+                    value={appendDescription}
+                    onChange={(value) => {
+                      setAppendDescription(value);
+                      setAppendError(null);
+                    }}
+                    limit={80}
+                    placeholder="Enter additional details about the product..."
+                  />
+                </div>
+                {appendError && (
+                  <p className="text-sm text-red-500">{appendError}</p>
+                )}
+                <div className="flex justify-end gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsAppendModalOpen(false)}
+                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isAppendingDescription}
+                    className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isAppendingDescription ? "Appending..." : "Append"}
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
         <div className="mt-10">
           <SellerQnaManager
@@ -599,7 +616,11 @@ const SellerProductDetailsContainer: React.FC<
         onClose={() => setIsConfirmWinnerOpen(false)}
         title="Confirm Auction Winner"
         submitText={
-          confirmDisabled ? "Close" : winnerConfirmed ? "Close" : "Confirm Winner"
+          confirmDisabled
+            ? "Close"
+            : winnerConfirmed
+              ? "Close"
+              : "Confirm Winner"
         }
         onSubmit={
           confirmDisabled || winnerConfirmed
@@ -620,10 +641,10 @@ const SellerProductDetailsContainer: React.FC<
             <span className="font-semibold">
               {formatPrice(highestBidAmount)}
             </span>
-          </p >
+          </p>
           {product.highestBidder?.rating !== undefined && (
             <p className="text-yellow-600 text-base">
-            Bidder rating: {product.highestBidder.rating.toFixed(2)} ★
+              Bidder rating: {product.highestBidder.rating.toFixed(2)} ★
             </p>
           )}
           {winnerConfirmed ? (
