@@ -11,7 +11,7 @@ import SellerQnaManager from "@components/seller/SellerQnaManager";
 import { productApi } from "@services/product.api";
 import { sellerApi } from "@services/seller.api";
 import { useAlertStore } from "@stores/useAlertStore";
-import { checkRecentlyAdded, formatPrice } from "@utils/product";
+import { checkRecentlyAdded, formatPrice, maskName } from "@utils/product";
 import { formatBidTime } from "@utils/time";
 import type {
   Product,
@@ -298,6 +298,10 @@ const SellerProductDetailsContainer: React.FC<
     }
   };
 
+  const handleManageTransaction = () => {
+    addAlert("info", "To be implemented: Manage Transaction flow.");
+  };
+
   if (loading) {
     return (
       <div className="py-24 flex justify-center">
@@ -353,58 +357,63 @@ const SellerProductDetailsContainer: React.FC<
               confirmDisabled={confirmDisabled}
               confirmLoading={confirmingWinner}
               winnerConfirmed={winnerConfirmed}
+              onManageTransaction={handleManageTransaction}
             />
           </div>
         </div>
 
         <div className="mt-8 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
-            <p className="text-sm text-gray-500">Starting Price</p>
+            <p className="text-sm text-gray-500 font-semibold">Starting Price</p>
             <p className="text-xl font-semibold text-gray-900">
               {formatPrice(product.startingPrice)}
             </p>
           </div>
           <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
-            <p className="text-sm text-gray-500">Current Price</p>
-            <p className="text-xl font-semibold text-primary-blue">
+            <p className="text-sm text-gray-500 font-semibold">Current Price</p>
+            <p className="text-xl font-semibold text-blue-700">
               {formatPrice(product.currentPrice)}
             </p>
           </div>
           <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
-            <p className="text-sm text-gray-500">Bid Increment</p>
-            <p className="text-xl font-semibold text-gray-900">
+            <p className="text-sm text-gray-500 font-semibold">Step Price</p>
+            <p className="text-xl font-semibold text-blue-900">
               {formatPrice(product.stepPrice)}
             </p>
           </div>
           <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
-            <p className="text-sm text-gray-500">Buy Now Price</p>
-            <p className="text-xl font-semibold text-gray-900">
+            <p className="text-sm text-gray-500 font-semibold">Buy Now Price</p>
+            <p className="text-xl font-semibold text-yellow-600">
               {product.buyNowPrice
                 ? formatPrice(product.buyNowPrice)
                 : "Not set"}
             </p>
           </div>
           <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
-            <p className="text-sm text-gray-500">Total Bids</p>
+            <p className="text-sm text-gray-500 font-semibold">Total Bids</p>
             <p className="text-xl font-semibold text-gray-900">
               {product.bidCount}
             </p>
           </div>
           <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
-            <p className="text-sm text-gray-500">Rejected Bidders</p>
+            <p className="text-sm text-gray-500 font-semibold">Rejected Bidders</p>
             <p className="text-xl font-semibold text-gray-900">
               {product.rejectedBidders?.length}
             </p>
           </div>
           <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
-            <p className="text-sm text-gray-500">Allow Unrated Bidders</p>
-            <p className="text-xl font-semibold text-gray-900">
+            <p className="text-sm text-gray-500 font-semibold">Allow Unrated Bidders</p>
+            <p className={ product.allowUnratedBidders ?
+              "text-xl font-semibold text-green-700" 
+              : "text-xl font-semibold text-red-700"}>
               {product.allowUnratedBidders ? "Allowed" : "Not allowed"}
             </p>
           </div>
           <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
-            <p className="text-sm text-gray-500">Auto-Extend</p>
-            <p className="text-xl font-semibold text-gray-900">
+            <p className="text-sm text-gray-500 font-semibold">Auto-Extend</p>
+            <p className={ product.autoExtends ?
+              "text-xl font-semibold text-green-700" 
+              : "text-xl font-semibold text-red-700"}>
               {product.autoExtends ? "Enabled" : "Disabled"}
             </p>
           </div>
@@ -534,6 +543,7 @@ const SellerProductDetailsContainer: React.FC<
         rejectedBidderIds={product.rejectedBidders ?? []}
         currentBidderId={product.highestBidder?._id}
         rejectingBidderId={rejectingBidderId}
+        winnerConfirmed={winnerConfirmed}
       />
 
       <PopUpWindow
@@ -599,20 +609,22 @@ const SellerProductDetailsContainer: React.FC<
         isLoading={confirmingWinner}
       >
         <div className="space-y-4 text-sm text-gray-700">
-          <p>
+          <p className="text-base">
             Current highest bidder:{" "}
             <span className="font-semibold">
-              {product.highestBidder?.name ?? "No bids placed"}
+              {maskName(product.highestBidder?.name ?? "")}
             </span>
           </p>
-          <p>
+          <p className="text-blue-600 text-base">
             Final bid amount:{" "}
-            <span className="font-semibold text-primary-blue">
+            <span className="font-semibold">
               {formatPrice(highestBidAmount)}
             </span>
-          </p>
+          </p >
           {product.highestBidder?.rating !== undefined && (
-            <p>Bidder rating: {product.highestBidder.rating.toFixed(2)} ★</p>
+            <p className="text-yellow-600 text-base">
+            Bidder rating: {product.highestBidder.rating.toFixed(2)} ★
+            </p>
           )}
           {winnerConfirmed ? (
             <p className="text-green-600 font-medium">
@@ -623,7 +635,7 @@ const SellerProductDetailsContainer: React.FC<
               You cannot confirm a winner until there is an active highest bid.
             </p>
           ) : (
-            <p className="text-gray-600">
+            <p className="text-red-700">
               Confirming the winner will finalize this auction. If you do not
               wish to award the product to the current highest bidder, reject
               them first from the bid history list to recalculate the winner.

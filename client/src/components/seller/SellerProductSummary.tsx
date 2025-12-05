@@ -1,6 +1,6 @@
 import React from "react";
 import type { Product } from "@interfaces/product";
-import { formatPrice, timeRemaining } from "@utils/product";
+import { formatPrice, timeRemaining, maskName } from "@utils/product";
 import { formatBidTime, formatDateTime } from "@utils/time";
 import {
   CalendarDays,
@@ -8,7 +8,9 @@ import {
   Gavel,
   Loader2,
   ShieldX,
-  Users,
+  User,
+  Star,
+  Wallet,
 } from "lucide-react";
 
 interface SellerProductSummaryProps {
@@ -20,6 +22,7 @@ interface SellerProductSummaryProps {
   confirmLoading: boolean;
   winnerConfirmed: boolean;
   categoryName?: string;
+  onManageTransaction?: () => void;
 }
 
 const SellerProductSummary: React.FC<SellerProductSummaryProps> = ({
@@ -31,14 +34,18 @@ const SellerProductSummary: React.FC<SellerProductSummaryProps> = ({
   confirmLoading,
   winnerConfirmed,
   categoryName,
+  onManageTransaction,
 }) => {
   const displayCategory =
     categoryName ??
     (typeof product.category === "string"
       ? product.category
       : product.category?.name ?? "Unknown Category");
-
-  const highestBidderName = product.highestBidder?.name ?? "No active bids";
+  
+  const bidderLabel = winnerConfirmed ? "Winner" : "Highest Bidder";
+  const highestBidderDisplay = product.highestBidder?.name
+    ? maskName(product.highestBidder.name)
+    : "No active bids";
   const highestBidderRating = product.highestBidder?.rating;
 
   const statusLabel = isEnded ? "Ended" : "Ongoing";
@@ -61,7 +68,7 @@ const SellerProductSummary: React.FC<SellerProductSummaryProps> = ({
           </p>
         </div>
         <span
-          className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${statusStyles}`}
+          className={`inline-flex items-center px-3 py-1 rounded-full text-m font-semibold ${statusStyles}`}
         >
           {statusLabel}
         </span>
@@ -82,11 +89,11 @@ const SellerProductSummary: React.FC<SellerProductSummaryProps> = ({
         </div>
         <div className="p-4 bg-gray-50 rounded-lg border border-gray-100">
           <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-            Auction Timing
+            Auction Timeline
           </p>
           <p className="text-sm text-gray-700 flex items-center gap-2 mt-1">
             <CalendarDays className="w-4 h-4 text-gray-400" />
-            Starts: {formatBidTime(product.startTime)}
+            Starts: {formatDateTime(product.startTime)}
           </p>
           <p className="text-sm text-gray-700 flex items-center gap-2 mt-1">
             <CalendarDays className="w-4 h-4 text-gray-400" />
@@ -101,17 +108,20 @@ const SellerProductSummary: React.FC<SellerProductSummaryProps> = ({
       </div>
 
       <div className="p-4 bg-gray-50 rounded-lg border border-gray-100">
-        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-          Highest Bidder
+        <p className={winnerConfirmed 
+          ? "text-base font-bold text-emerald-600 uppercase tracking-wide" 
+          : "text-sm font-bold text-indigo-500 uppercase tracking-wide"}>
+          {bidderLabel}
         </p>
         <div className="mt-2 flex flex-wrap items-baseline gap-3">
           <span className="flex items-center gap-2 text-gray-800 font-semibold">
-            <Users className="w-4 h-4 text-gray-400" />
-            {highestBidderName}
+            <User className="w-4 h-4 text-gray-400" />
+            {highestBidderDisplay}
           </span>
           {highestBidderRating !== undefined && (
-            <span className="text-xs text-yellow-600 font-medium">
-              {highestBidderRating.toFixed(2)} ★ rating
+            <span className="flex items-center gap-2 text-s text-yellow-600 font-medium">
+              <Star className="w-4 h-4 text-yellow-600" />
+              {highestBidderRating.toFixed(2)}
             </span>
           )}
           {/* <span className="text-xs text-gray-500">
@@ -160,6 +170,19 @@ const SellerProductSummary: React.FC<SellerProductSummaryProps> = ({
           </button>
         )}
       </div>
+
+      {isEnded && winnerConfirmed && (
+      <div className="flex flex-col sm:flex-row gap-3">
+            <button
+              type="button"
+              onClick={onManageTransaction}
+              className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold text-white rounded-lg transition bg-indigo-600 hover:bg-indigo-700"
+            >
+              <Wallet className="w-4 h-4" />
+              Manage Transaction
+            </button>
+      </div>
+      )}
     </div>
   );
 };

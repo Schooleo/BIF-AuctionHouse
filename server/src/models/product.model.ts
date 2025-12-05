@@ -100,6 +100,8 @@ const productSchema = new Schema<IProduct>(
 
     // Embedded Q&A
     questions: { type: [QuestionAnswerSchema], default: [] },
+
+    winnerConfirmed: { type: Boolean, default: false },
     
     rejectedBidders: {
       type: [

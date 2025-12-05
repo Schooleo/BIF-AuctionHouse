@@ -5,7 +5,7 @@ import ErrorMessage from "@components/message/ErrorMessage";
 import EmptyMessage from "@components/message/EmptyMessage";
 import { sellerApi } from "@services/seller.api";
 import { useAuthStore } from "@stores/useAuthStore";
-import { formatPrice } from "@utils/product";
+import { formatPrice, maskName } from "@utils/product";
 import { formatBidTime } from "@utils/time";
 import type { BidHistoryItem } from "@interfaces/product";
 import { Loader2, ShieldX } from "lucide-react";
@@ -18,6 +18,7 @@ interface SellerBidHistoryModalProps {
   rejectedBidderIds: string[];
   currentBidderId?: string | null;
   rejectingBidderId?: string | null;
+  winnerConfirmed?: boolean;
 }
 
 interface BidHistoryRow {
@@ -39,6 +40,7 @@ const SellerBidHistoryModal: React.FC<SellerBidHistoryModalProps> = ({
   rejectedBidderIds,
   currentBidderId,
   rejectingBidderId,
+  winnerConfirmed = false,
 }) => {
   const token = useAuthStore((state) => state.token) || "";
   const [rows, setRows] = useState<BidHistoryRow[]>([]);
@@ -52,12 +54,20 @@ const SellerBidHistoryModal: React.FC<SellerBidHistoryModalProps> = ({
     null
   );
   const [actionLoading, setActionLoading] = useState(false);
+  const [showOnlyRejected, setShowOnlyRejected] = useState(false);
 
   const isRejected = useCallback(
     (bidderId: string) =>
       rejectedBidderIds.some((id) => id.toString() === bidderId),
     [rejectedBidderIds]
   );
+
+  const visibleRows = useMemo(() => {
+    if (!showOnlyRejected) return rows;
+    return rows.filter(
+      (row) => row.bidderId && isRejected(row.bidderId)
+    );
+  }, [rows, showOnlyRejected, isRejected]);
 
   const mapBidHistory = useCallback(
     (
@@ -71,7 +81,7 @@ const SellerBidHistoryModal: React.FC<SellerBidHistoryModalProps> = ({
       return items.map((item) => ({
         entryId: item._id,
         bidderId: item.bidder?._id ?? "",
-        bidderName: item.bidder?.name ?? "Unknown bidder",
+        bidderName: maskName(item.bidder?.name ?? "Unknown bidder"),
         bidderRating: item.bidder?.rating,
         bidAmount: item.price,
         createdAt: item.createdAt,
@@ -112,6 +122,7 @@ const SellerBidHistoryModal: React.FC<SellerBidHistoryModalProps> = ({
       setPendingReject(null);
       setTableError(null);
       setPendingError(null);
+      setShowOnlyRejected(false);
     }
   }, [isOpen, fetchBidHistory]);
 
@@ -173,119 +184,155 @@ const SellerBidHistoryModal: React.FC<SellerBidHistoryModalProps> = ({
 
         {!loading && !tableError && rows.length > 0 && (
           <div className="space-y-4">
-            <div className="text-sm text-gray-500">
-              Total bids: <span className="font-semibold">{totalBids}</span>
-            </div>
-            <div className="overflow-x-auto border border-gray-200 rounded-lg">
-              <table className="w-full text-sm">
-                <thead className="bg-gray-100 text-gray-600 uppercase text-xs tracking-wide">
-                  <tr>
-                    <th className="px-4 py-3 text-left">#</th>
-                    <th className="px-4 py-3 text-left">Bidder</th>
-                    <th className="px-4 py-3 text-right">Bid Amount</th>
-                    <th className="px-4 py-3 text-left">Placed At</th>
-                    <th className="px-4 py-3 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {rows.map((row, idx) => {
-                    const globalIndex = (currentPage - 1) * PAGE_SIZE + idx + 1;
-                    const bidderRejected = isRejected(row.bidderId);
-                    const isCurrentWinner = row.bidderId === currentBidderId;
-
-                    return (
-                      <tr
-                        key={row.entryId}
-                        className={
-                          isCurrentWinner
-                            ? "bg-emerald-50"
-                            : bidderRejected
-                            ? "bg-red-50"
-                            : "bg-white"
-                        }
-                      >
-                        <td className="px-4 py-3 font-medium text-gray-700">
-                          {globalIndex}
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="flex flex-col">
-                            <span className="font-semibold text-gray-800">
-                              {row.bidderName}
-                            </span>
-                            {row.bidderRating !== undefined && (
-                              <span className="text-xs text-gray-500">
-                                Rating: {row.bidderRating.toFixed(2)} ★
-                              </span>
-                            )}
-                            {isCurrentWinner && (
-                              <span className="text-xs text-emerald-700 font-medium">
-                                Current highest bidder
-                              </span>
-                            )}
-                            {bidderRejected && (
-                              <span className="inline-flex items-center gap-1 text-xs text-red-600 font-medium mt-1">
-                                <ShieldX className="w-3 h-3" />
-                                Rejected
-                              </span>
-                            )}
-                          </div>
-                        </td>
-                        <td className="px-4 py-3 text-right font-semibold text-gray-900">
-                          {formatPrice(row.bidAmount)}
-                        </td>
-                        <td className="px-4 py-3 text-gray-600">
-                          {formatBidTime(row.createdAt)}
-                        </td>
-                        <td className="px-4 py-3 text-right">
-                          <button
-                            type="button"
-                            onClick={() => setPendingReject(row)}
-                            disabled={
-                              !row.bidderId ||
-                              bidderRejected ||
-                              rejectingBidderId === row.bidderId
-                            }
-                            className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-semibold rounded-lg border border-red-500 text-red-600 hover:bg-red-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                          >
-                            {rejectingBidderId === row.bidderId ? (
-                              <>
-                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                                Rejecting...
-                              </>
-                            ) : (
-                              "Reject Bidder"
-                            )}
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-
-            {totalPages > 1 && (
-              <div className="flex items-center justify-between text-sm">
-                <button
-                  type="button"
-                  onClick={() => handlePageChange("prev")}
-                  disabled={currentPage === 1}
-                  className="px-3 py-2 rounded-lg border border-gray-300 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Previous
-                </button>
-                <span className="text-gray-600">
-                  Page {currentPage} of {totalPages}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => handlePageChange("next")}
-                  disabled={currentPage === totalPages}
-                  className="px-3 py-2 rounded-lg border border-gray-300 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Next
-                </button>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between text-sm text-gray-500">
+              <div>
+                {showOnlyRejected
+                  ? `Rejected bidders on this product: ${visibleRows.length}`
+                  : `Total bids: ${totalBids}`}
               </div>
+              <button
+                type="button"
+                onClick={() => setShowOnlyRejected((prev) => !prev)}
+                className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-semibold rounded-lg border border-gray-300 hover:bg-gray-100 transition"
+              >
+                <ShieldX className="w-3.5 h-3.5" />
+                {showOnlyRejected ? "Show all bids" : "View rejected bidders"}
+              </button>
+            </div>
+
+            {showOnlyRejected && visibleRows.length === 0 && (
+              <EmptyMessage text="No rejected bidders found on this page." />
+            )}
+
+            {!(showOnlyRejected && visibleRows.length === 0) && (
+              <>
+                <div className="overflow-x-auto border border-gray-200 rounded-lg">
+                  <table className="w-full text-sm">
+                    <thead className="bg-gray-100 text-gray-600 uppercase text-xs tracking-wide">
+                      <tr>
+                        <th className="px-4 py-3 text-left">#</th>
+                        <th className="px-4 py-3 text-left">Bidder</th>
+                        <th className="px-4 py-3 text-center">Bid Amount</th>
+                        <th className="px-4 py-3 text-center">Placed At</th>
+                        {!winnerConfirmed && (
+                          <th className="px-4 py-3 text-center">Actions</th>
+                        )}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                      {visibleRows.map((row, idx) => {
+                        const baseIndex = showOnlyRejected
+                          ? idx
+                          : (currentPage - 1) * PAGE_SIZE + idx;
+                        const globalIndex = baseIndex + 1;
+                        const bidderRejected = isRejected(row.bidderId);
+                        const isCurrentWinner =
+                          row.bidderId === currentBidderId;
+
+                        return (
+                          <tr
+                            key={row.entryId}
+                            className={
+                              isCurrentWinner
+                                ? "bg-emerald-50"
+                                : bidderRejected
+                                ? "bg-red-50"
+                                : "bg-white"
+                            }
+                          >
+                            <td className="px-4 py-3 font-medium text-gray-700">
+                              {globalIndex}
+                            </td>
+                            <td className="px-4 py-3">
+                              <div className="flex flex-col">
+                                <span className="font-semibold text-gray-800">
+                                  {row.bidderName}
+                                </span>
+                                {row.bidderRating !== undefined && (
+                                  <span className="text-xs text-gray-500">
+                                    Rating: {row.bidderRating.toFixed(2)} ★
+                                  </span>
+                                )}
+                                {isCurrentWinner && (
+                                  <span
+                                    className={`text-xs font-medium ${
+                                      winnerConfirmed
+                                        ? "text-emerald-600"
+                                        : "text-indigo-700"
+                                    }`}
+                                  >
+                                    {winnerConfirmed
+                                      ? "Confirmed winner"
+                                      : "Highest bidder"}
+                                  </span>
+                                )}
+                                {bidderRejected && (
+                                  <span className="inline-flex items-center gap-1 text-xs text-red-600 font-medium mt-1">
+                                    <ShieldX className="w-3 h-3" />
+                                    Rejected
+                                  </span>
+                                )}
+                              </div>
+                            </td>
+                            <td className="px-4 py-3 text-center font-semibold text-gray-900">
+                              {formatPrice(row.bidAmount)}
+                            </td>
+                            <td className="px-4 py-3 text-gray-600">
+                              {formatBidTime(row.createdAt)}
+                            </td>
+                            {!winnerConfirmed && (
+                              <td className="px-4 py-3 text-right">
+                                <button
+                                  type="button"
+                                  onClick={() => setPendingReject(row)}
+                                  disabled={
+                                    !row.bidderId ||
+                                    bidderRejected ||
+                                    rejectingBidderId === row.bidderId
+                                  }
+                                  className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-semibold rounded-lg border border-red-500 text-red-600 hover:bg-red-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                  {rejectingBidderId === row.bidderId ? (
+                                    <>
+                                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                      Rejecting...
+                                    </>
+                                  ) : (
+                                    "Reject Bidder"
+                                  )}
+                                </button>
+                              </td>
+                            )}
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-between text-sm">
+                    <button
+                      type="button"
+                      onClick={() => handlePageChange("prev")}
+                      disabled={currentPage === 1}
+                      className="px-3 py-2 rounded-lg border border-gray-300 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Previous
+                    </button>
+                    <span className="text-gray-600">
+                      Page {currentPage} of {totalPages}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handlePageChange("next")}
+                      disabled={currentPage === totalPages}
+                      className="px-3 py-2 rounded-lg border border-gray-300 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Next
+                    </button>
+                  </div>
+                )}
+              </>
             )}
           </div>
         )}
@@ -306,20 +353,17 @@ const SellerBidHistoryModal: React.FC<SellerBidHistoryModalProps> = ({
       >
         {pendingReject && (
           <div className="space-y-3 text-sm text-gray-700">
-            <p>
+            <p className="text-yellow-600 font-medium">
               Are you sure you want to reject{" "}
               <span className="font-semibold">{pendingReject.bidderName}</span>{" "}
               from bidding on this product?
             </p>
             <p>
-              Their bid amount of{" "}
-              <span className="font-semibold text-red-600">
-                {formatPrice(pendingReject.bidAmount)}
-              </span>{" "}
-              will be removed from the auction history.
+              All their bids will be removed from the auction history 
+              and they will no longer be able to place new bids on this product.
             </p>
             {pendingReject.bidderId === currentBidderId && (
-              <p className="text-yellow-600 font-medium">
+              <p className="text-red-600 font-medium">
                 This bidder is currently the highest bidder. Rejecting them will
                 recalculate the auction winner using the next highest bid or
                 reset the price to the starting amount if no other bids exist.
