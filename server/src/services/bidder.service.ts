@@ -119,6 +119,13 @@ export const bidderService = {
       throw new Error(AuthMessages.USER_NOT_FOUND);
     }
 
+    if (
+      product.rejectedBidders &&
+      product.rejectedBidders.some((id: any) => id.toString() === bidderId)
+    ) {
+      throw new Error(BidMessages.BIDDER_REJECTED);
+    }
+
     const totalRatings = bidder.positiveRatings + bidder.negativeRatings;
     if (totalRatings === 0) {
       if (!product.allowUnratedBidders) {

@@ -2,6 +2,8 @@ import express from "express";
 import cors from "cors";
 import morgan from "morgan";
 import routes from "./routes/index.routes";
+import uploadRoutes from "./routes/upload.routes";
+import { errorHandler, notFound } from "./middleware/error.middleware";
 
 const app = express();
 
@@ -13,23 +15,12 @@ app.use(morgan("dev"));
 
 // Cài đặt routes
 app.use("/api", routes);
+app.use("/api/upload", uploadRoutes);
 
 // Global: xử lý route không tìm thấy
-app.use((req, res) => {
-  res.status(404).json({ message: "Route not found" });
-});
+app.use(notFound);
 
 // Global: xử lý lỗi
-app.use(
-  (
-    err: any,
-    req: express.Request,
-    res: express.Response,
-    next: express.NextFunction
-  ) => {
-    console.error(err.stack);
-    res.status(500).json({ message: "Internal server error" });
-  }
-);
+app.use(errorHandler);
 
 export default app;

@@ -23,11 +23,14 @@ import LogoutPage from "./pages/auth/LogoutPage";
 import SellerProductsPage from "./pages/seller/SellerProductsPage";
 import AddProductPage from "./pages/seller/AddProductPage";
 import SellerLayout from "./layouts/SellerLayout";
+import SellerProfilePage from "./pages/seller/SellerProfilePage";
 import { useEffect } from "react";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import UnauthorizedPage from "./pages/shared/UnauthorizedPage";
+import ForbiddenPage from "./pages/shared/ForbiddenPage";
 import AlertContainer from "@containers/ui/AlertContainer";
 import WatchListPage from "@pages/user/WatchlistPage";
+import SellerProductDetailsPage from "@pages/seller/SellerProductDetailsPage";
 
 const RoleBasedRedirect = ({ children }: { children: React.ReactNode }) => {
   const user = useAuthStore((state) => state.user);
@@ -70,34 +73,41 @@ const App = () => {
                 <Route index element={<HomePage />} />
                 <Route path="products" element={<ProductsPage />} />
                 <Route path="product/:id" element={<ProductDetailsPage />} />
-                <Route path="watchlist" element={<WatchListPage />} />
-
-                <Route path="*" element={<NotFoundPage />} />
               </Route>
 
-              <Route path="/" element={<UserLayout />}>
-                <Route path="profile" element={<ProfilePage />} />
+              <Route element={<ProtectedRoute allowedRoles={["bidder"]} />}>
+                <Route path="/" element={<UserLayout />}>
+                  <Route path="profile" element={<ProfilePage />} />
+                  <Route path="watchlist" element={<WatchListPage />} />
+                </Route>
               </Route>
 
-            <Route path="auth" element={<AuthLayout />}>
-              <Route path="login" element={<LoginPage />} />
-              <Route path="register" element={<RegisterPage />} />
-              <Route path="reset-password" element={<ResetPasswordPage />} />
-              <Route path="logout" element={<LogoutPage />} />
-            </Route>
+              <Route path="auth" element={<AuthLayout />}>
+                <Route path="login" element={<LoginPage />} />
+                <Route path="register" element={<RegisterPage />} />
+                <Route path="reset-password" element={<ResetPasswordPage />} />
+                <Route path="logout" element={<LogoutPage />} />
+              </Route>
 
               <Route element={<ProtectedRoute allowedRoles={["seller"]} />}>
                 <Route path="seller" element={<SellerLayout />}>
                   <Route path="products" element={<SellerProductsPage />} />
                   <Route
+                    path="products/:id"
+                    element={<SellerProductDetailsPage />}
+                  />
+                  <Route
                     path="ended-products"
                     element={<SellerProductsPage />}
                   />
                   <Route path="add-product" element={<AddProductPage />} />
+                  <Route path="profile" element={<SellerProfilePage />} />
                 </Route>
               </Route>
 
               <Route path="/unauthorized" element={<UnauthorizedPage />} />
+              <Route path="/forbidden" element={<ForbiddenPage />} />
+              <Route path="*" element={<NotFoundPage />} />
             </>
           )
         )}

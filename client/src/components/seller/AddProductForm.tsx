@@ -4,7 +4,9 @@ import { sellerApi } from "@services/seller.api";
 import { productApi } from "@services/product.api";
 import type { Category } from "@interfaces/product";
 import { Plus, X } from "lucide-react";
+import { useAlertStore } from "@stores/useAlertStore";
 import RichTextEditor from "@components/shared/RichTextEditor";
+import ImageUpload from "@components/shared/ImageUpload";
 import { z } from "zod";
 
 const productSchema = z
@@ -98,6 +100,7 @@ const AddProductForm: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [errors, setErrors] = useState<ProductFormErrors>({});
+  const addAlert = useAlertStore((state) => state.addAlert);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -112,6 +115,27 @@ const AddProductForm: React.FC = () => {
     autoExtends: true,
     allowUnratedBidders: false,
   });
+
+  const [selectedMainCategory, setSelectedMainCategory] = useState<string>("");
+
+  useEffect(() => {
+    // If formData.category is set (e.g. edit mode in future), try to determine main/sub
+    if (formData.category && categories.length > 0) {
+      // Check if it's a main category
+      const isMain = categories.find((c) => c._id === formData.category);
+      if (isMain) {
+        setSelectedMainCategory(isMain._id);
+      } else {
+        // Must be a sub, find parent
+        const parent = categories.find((c) =>
+          c.children?.some((child) => child._id === formData.category)
+        );
+        if (parent) {
+          setSelectedMainCategory(parent._id);
+        }
+      }
+    }
+  }, [formData.category, categories]);
 
   useEffect(() => {
     const loadCategories = async () => {
@@ -150,6 +174,19 @@ const AddProductForm: React.FC = () => {
       ...prev,
       [name]: newValue,
     }));
+  };
+
+  const handleMainCategoryChange = (
+    e: React.ChangeEvent<HTMLSelectElement>
+  ) => {
+    const mainCatId = e.target.value;
+    setSelectedMainCategory(mainCatId);
+    // Reset category to main, user must re-select sub if available
+    setFormData((prev) => ({ ...prev, category: mainCatId }));
+  };
+
+  const handleSubCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setFormData((prev) => ({ ...prev, category: e.target.value }));
   };
 
   const handleSubImageChange = (index: number, value: string) => {
@@ -194,9 +231,12 @@ const AddProductForm: React.FC = () => {
       };
 
       await sellerApi.createProduct(payload);
+      addAlert("success", "Product created successfully!");
       navigate("/seller/products");
     } catch (error) {
-      setSubmitError((error as Error).message || "Failed to create product");
+      const message = (error as Error).message || "Failed to create product";
+      setSubmitError(message);
+      addAlert("error", message);
     } finally {
       setIsLoading(false);
     }
@@ -214,45 +254,76 @@ const AddProductForm: React.FC = () => {
 
       <form onSubmit={handleSubmit} className="space-y-6" noValidate>
         {/* Basic Info */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Product Name *
-            </label>
-            <input
-              type="text"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              maxLength={100}
-              className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                errors.name ? "border-red-500" : "border-gray-300"
-              }`}
-              placeholder="e.g., Vintage Camera"
-            />
-            {errors.name && (
-              <p className="mt-1 text-sm text-red-500">{errors.name}</p>
-            )}
-          </div>
+        {/* Basic Info */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Product Name *
+          </label>
+          <input
+            type="text"
+            name="name"
+            value={formData.name}
+            onChange={handleChange}
+            maxLength={100}
+            className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+              errors.name ? "border-red-500" : "border-gray-300"
+            }`}
+            placeholder="e.g., Vintage Camera"
+          />
+          {errors.name && (
+            <p className="mt-1 text-sm text-red-500">{errors.name}</p>
+          )}
+        </div>
 
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Category *
             </label>
             <select
-              name="category"
-              value={formData.category}
-              onChange={handleChange}
+              value={selectedMainCategory}
+              onChange={handleMainCategoryChange}
               className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                 errors.category ? "border-red-500" : "border-gray-300"
-              }`}
+              } ${!selectedMainCategory ? "text-gray-500" : "text-gray-900"}`}
             >
               <option value="">Select a category</option>
               {categories.map((cat) => (
-                <option key={cat._id} value={cat._id}>
+                <option key={cat._id} value={cat._id} className="text-gray-900">
                   {cat.name}
                 </option>
               ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Sub Category
+            </label>
+            <select
+              value={
+                formData.category === selectedMainCategory
+                  ? ""
+                  : formData.category
+              }
+              onChange={handleSubCategoryChange}
+              disabled={!selectedMainCategory}
+              className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                errors.category ? "border-red-500" : "border-gray-300"
+              } ${formData.category === selectedMainCategory ? "text-gray-500" : "text-gray-900"} disabled:bg-gray-100 disabled:text-gray-400`}
+            >
+              <option value="">Select a sub-category</option>
+              {categories
+                .find((c) => c._id === selectedMainCategory)
+                ?.children?.map((sub) => (
+                  <option
+                    key={sub._id}
+                    value={sub._id}
+                    className="text-gray-900"
+                  >
+                    {sub.name}
+                  </option>
+                ))}
             </select>
             {errors.category && (
               <p className="mt-1 text-sm text-red-500">{errors.category}</p>
@@ -264,17 +335,21 @@ const AddProductForm: React.FC = () => {
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Main Image URL *
+              Main Image *
             </label>
-            <input
-              type="url"
-              name="mainImage"
+            <ImageUpload
               value={formData.mainImage}
-              onChange={handleChange}
-              className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                errors.mainImage ? "border-red-500" : "border-gray-300"
-              }`}
-              placeholder="https://example.com/image.jpg"
+              onChange={(url) =>
+                setFormData((prev) => ({ ...prev, mainImage: url }))
+              }
+              onRemove={() =>
+                setFormData((prev) => ({ ...prev, mainImage: "" }))
+              }
+              className={
+                errors.mainImage ? "border-red-500 rounded-lg p-1 border" : ""
+              }
+              placeholder="Upload main product image"
+              height="h-64"
             />
             {errors.mainImage && (
               <p className="mt-1 text-sm text-red-500">{errors.mainImage}</p>
@@ -283,32 +358,46 @@ const AddProductForm: React.FC = () => {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Sub Images URLs (Min 3) *
+              Sub Images (Min 3) *
             </label>
-            <div className="space-y-3">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               {formData.subImages.map((img, index) => (
-                <div key={index} className="flex gap-2">
-                  <div className="w-full">
-                    <input
-                      type="url"
-                      value={img}
-                      onChange={(e) =>
-                        handleSubImageChange(index, e.target.value)
+                <div key={index} className="relative">
+                  <ImageUpload
+                    value={img}
+                    onChange={(url) => handleSubImageChange(index, url)}
+                    onRemove={() => {
+                      if (formData.subImages.length > 3) {
+                        // If more than 3, we can remove the item
+                        const newSubImages = formData.subImages.filter(
+                          (_, i) => i !== index
+                        );
+                        setFormData((prev) => ({
+                          ...prev,
+                          subImages: newSubImages,
+                        }));
+                      } else {
+                        // If 3 or less, just clear the value but keep the slot/input
+                        handleSubImageChange(index, "");
                       }
-                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                        errors[`subImages.${index}`]
-                          ? "border-red-500"
-                          : "border-gray-300"
-                      }`}
-                      placeholder={`Sub Image URL ${index + 1}`}
-                    />
-                    {errors[`subImages.${index}`] && (
-                      <p className="mt-1 text-sm text-red-500">
-                        {errors[`subImages.${index}`]}
-                      </p>
-                    )}
-                  </div>
-                  {index >= 3 && (
+                    }}
+                    height="h-32"
+                    placeholder={`Image ${index + 1}`}
+                    className={
+                      errors[`subImages.${index}`]
+                        ? "border-red-500 rounded-lg p-1 border"
+                        : ""
+                    }
+                  />
+                  {/* Show X button if we have more than 3 items, to allow deleting the slot completely. 
+                      ImageUpload already has a remove button, but that clears the image. 
+                      Here we want to remove the slot if it's extra.
+                      However, ImageUpload's onRemove handles clearing. 
+                      Let's stick to simple logic: 
+                      - If value exists, ImageUpload shows it and X clears it.
+                      - If we want to remove the slot, we need a separate button if it's an extra slot.
+                  */}
+                  {index >= 3 && !img && (
                     <button
                       type="button"
                       onClick={() => {
@@ -320,11 +409,16 @@ const AddProductForm: React.FC = () => {
                           subImages: newSubImages,
                         }));
                       }}
-                      className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                      title="Remove image"
+                      className="absolute -top-2 -right-2 p-1 bg-white rounded-full text-gray-400 hover:text-red-500 shadow-sm border border-gray-200"
+                      title="Remove slot"
                     >
-                      <X className="w-5 h-5" />
+                      <X className="w-4 h-4" />
                     </button>
+                  )}
+                  {errors[`subImages.${index}`] && (
+                    <p className="mt-1 text-xs text-red-500">
+                      {errors[`subImages.${index}`]}
+                    </p>
                   )}
                 </div>
               ))}
@@ -336,10 +430,10 @@ const AddProductForm: React.FC = () => {
                     subImages: [...prev.subImages, ""],
                   }))
                 }
-                className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center mt-2"
+                className="h-32 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center text-gray-500 hover:border-blue-500 hover:bg-blue-50 transition-colors"
               >
-                <Plus className="w-4 h-4 mr-1" />
-                Add another image
+                <Plus className="w-6 h-6 mb-1" />
+                <span className="text-sm font-medium">Add Image</span>
               </button>
             </div>
           </div>
@@ -453,7 +547,7 @@ const AddProductForm: React.FC = () => {
               onChange={handleChange}
               className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                 errors.endTime ? "border-red-500" : "border-gray-300"
-              }`}
+              } ${!formData.endTime ? "text-gray-500" : "text-gray-900"}`}
             />
             {errors.endTime && (
               <p className="mt-1 text-sm text-red-500">{errors.endTime}</p>

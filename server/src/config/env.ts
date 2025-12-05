@@ -9,5 +9,6 @@ export const env = {
   EMAIL_PASS: process.env.EMAIL_PASS,
   FRONTEND_URL: process.env.FRONTEND_URL || "http://localhost:3000",
   RECAPTCHA_SECRET_KEY: process.env.RECAPTCHA_SECRET_KEY || "",
+  CLOUDINARY_URL: process.env.CLOUDINARY_URL || "",
   EMAIL_WEBHOOK_URL: process.env.EMAIL_WEBHOOK_URL || "",
 };

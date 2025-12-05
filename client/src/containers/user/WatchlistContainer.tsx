@@ -32,21 +32,8 @@ const WatchlistContainer: React.FC = () => {
   );
 
   useEffect(() => {
-    if (authLoading) {
-      return;
-    }
-
-    console.log('Auth loading complete');
-    console.log('Token:', token);
-    console.log('User:', user);
-
-    if (!token || !user) {
-      console.log('No token or user, redirecting to login');
-      navigate("/login");
-      return;
-    }
-
     const fetchWatchlist = async () => {
+      if (!token) return;
       setLoading(true);
       setError(null);
       try {
@@ -57,11 +44,13 @@ const WatchlistContainer: React.FC = () => {
         );
 
         setData(response);
-      } catch (err: any) {
+      } catch (err) {
         console.error("Error fetching watchlist:", err);
-        setError(
-          err.message || "An error occurred while fetching the watchlist."
-        );
+        const errorMessage =
+          err instanceof Error
+            ? err.message
+            : "An error occurred while fetching the watchlist.";
+        setError(errorMessage);
       } finally {
         setLoading(false);
       }
