@@ -113,6 +113,27 @@ const AddProductForm: React.FC = () => {
     allowUnratedBidders: false,
   });
 
+  const [selectedMainCategory, setSelectedMainCategory] = useState<string>("");
+
+  useEffect(() => {
+    // If formData.category is set (e.g. edit mode in future), try to determine main/sub
+    if (formData.category && categories.length > 0) {
+      // Check if it's a main category
+      const isMain = categories.find((c) => c._id === formData.category);
+      if (isMain) {
+        setSelectedMainCategory(isMain._id);
+      } else {
+        // Must be a sub, find parent
+        const parent = categories.find((c) =>
+          c.children?.some((child) => child._id === formData.category)
+        );
+        if (parent) {
+          setSelectedMainCategory(parent._id);
+        }
+      }
+    }
+  }, [formData.category, categories]);
+
   useEffect(() => {
     const loadCategories = async () => {
       try {
@@ -150,6 +171,19 @@ const AddProductForm: React.FC = () => {
       ...prev,
       [name]: newValue,
     }));
+  };
+
+  const handleMainCategoryChange = (
+    e: React.ChangeEvent<HTMLSelectElement>
+  ) => {
+    const mainCatId = e.target.value;
+    setSelectedMainCategory(mainCatId);
+    // Reset category to main, user must re-select sub if available
+    setFormData((prev) => ({ ...prev, category: mainCatId }));
+  };
+
+  const handleSubCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setFormData((prev) => ({ ...prev, category: e.target.value }));
   };
 
   const handleSubImageChange = (index: number, value: string) => {
@@ -214,45 +248,76 @@ const AddProductForm: React.FC = () => {
 
       <form onSubmit={handleSubmit} className="space-y-6" noValidate>
         {/* Basic Info */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Product Name *
-            </label>
-            <input
-              type="text"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              maxLength={100}
-              className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                errors.name ? "border-red-500" : "border-gray-300"
-              }`}
-              placeholder="e.g., Vintage Camera"
-            />
-            {errors.name && (
-              <p className="mt-1 text-sm text-red-500">{errors.name}</p>
-            )}
-          </div>
+        {/* Basic Info */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Product Name *
+          </label>
+          <input
+            type="text"
+            name="name"
+            value={formData.name}
+            onChange={handleChange}
+            maxLength={100}
+            className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+              errors.name ? "border-red-500" : "border-gray-300"
+            }`}
+            placeholder="e.g., Vintage Camera"
+          />
+          {errors.name && (
+            <p className="mt-1 text-sm text-red-500">{errors.name}</p>
+          )}
+        </div>
 
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Category *
             </label>
             <select
-              name="category"
-              value={formData.category}
-              onChange={handleChange}
+              value={selectedMainCategory}
+              onChange={handleMainCategoryChange}
               className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                 errors.category ? "border-red-500" : "border-gray-300"
-              }`}
+              } ${!selectedMainCategory ? "text-gray-500" : "text-gray-900"}`}
             >
               <option value="">Select a category</option>
               {categories.map((cat) => (
-                <option key={cat._id} value={cat._id}>
+                <option key={cat._id} value={cat._id} className="text-gray-900">
                   {cat.name}
                 </option>
               ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Sub Category
+            </label>
+            <select
+              value={
+                formData.category === selectedMainCategory
+                  ? ""
+                  : formData.category
+              }
+              onChange={handleSubCategoryChange}
+              disabled={!selectedMainCategory}
+              className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                errors.category ? "border-red-500" : "border-gray-300"
+              } ${formData.category === selectedMainCategory ? "text-gray-500" : "text-gray-900"} disabled:bg-gray-100 disabled:text-gray-400`}
+            >
+              <option value="">Select a sub-category</option>
+              {categories
+                .find((c) => c._id === selectedMainCategory)
+                ?.children?.map((sub) => (
+                  <option
+                    key={sub._id}
+                    value={sub._id}
+                    className="text-gray-900"
+                  >
+                    {sub.name}
+                  </option>
+                ))}
             </select>
             {errors.category && (
               <p className="mt-1 text-sm text-red-500">{errors.category}</p>
@@ -453,7 +518,7 @@ const AddProductForm: React.FC = () => {
               onChange={handleChange}
               className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                 errors.endTime ? "border-red-500" : "border-gray-300"
-              }`}
+              } ${!formData.endTime ? "text-gray-500" : "text-gray-900"}`}
             />
             {errors.endTime && (
               <p className="mt-1 text-sm text-red-500">{errors.endTime}</p>
