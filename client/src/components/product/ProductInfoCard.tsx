@@ -7,7 +7,7 @@ import {
   maskName,
 } from "@utils/product";
 import { Link } from "react-router-dom";
-import { Heart, CheckIcon } from "lucide-react";
+import { Heart } from "lucide-react";
 import Spinner from "@components/ui/Spinner";
 import BidModal from "./BidModal";
 import { bidderApi } from "@services/bidder.api";
@@ -213,7 +213,7 @@ const ProductInfoCard: React.FC<ProductInfoCardProps> = ({
             <button
               type="button"
               onClick={isInWatchlist ? handleRemoveFromWatchlist : handleAddToWatchlist}
-              className={`bg-red-500 rounded-2xl hover:scale-105 transition-transform duration-150 px-4 py-3 flex items-center gap-2 hover:cursor-pointer`}
+              className={`${isInWatchlist ? "bg-gray-600" : "bg-red-500"} rounded-2xl hover:scale-105 transition-transform duration-150 px-4 py-3 flex items-center gap-2 hover:cursor-pointer`}
             >
               {isAddingToWatchlist ? (
                 <>
@@ -222,7 +222,7 @@ const ProductInfoCard: React.FC<ProductInfoCardProps> = ({
                 </>
               ) : isInWatchlist ? (
                 <>
-                  <Heart className="w-4 h-4" />
+                  <Heart className="w-8 h-8" />
                   <span>Remove from Watchlist</span>
                 </>
               ) : (

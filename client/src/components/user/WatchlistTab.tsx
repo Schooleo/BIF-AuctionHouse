@@ -1,13 +1,13 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { bidderApi } from '@services/bidder.api';
-import type { WatchlistItem } from '@interfaces/bidder';
-import ProductCard from '@components/product/ProductCard';
-import Spinner from '@components/ui/Spinner';
-import { useAuthStore } from '@stores/useAuthStore';
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { bidderApi } from "@services/bidder.api";
+import type { WatchlistItem } from "@interfaces/bidder";
+import ProductCard from "@components/product/ProductCard";
+import Spinner from "@components/ui/Spinner";
+import { useAuthStore } from "@stores/useAuthStore";
 
 const WatchlistTab: React.FC = () => {
-  const { token } = useAuthStore();
+  const { token, user, loading: authLoading } = useAuthStore();
   const [watchlist, setWatchlist] = useState<WatchlistItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -18,28 +18,36 @@ const WatchlistTab: React.FC = () => {
 
   useEffect(() => {
     const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
+      if (document.visibilityState === "visible") {
         fetchWatchlist();
       }
     };
 
-    document.addEventListener('visibilitychange', handleVisibilityChange);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, []);
 
   useEffect(() => {
-    fetchWatchlist();
-  }, [page]);
+    // Đợi auth loading xong trước khi fetch
+    if (!authLoading) {
+      fetchWatchlist();
+    }
+  }, [page, authLoading]);
 
   const fetchWatchlist = async () => {
     try {
-      if (!token) {
-        navigate('/login');
+      // Kiểm tra auth trước khi gọi API
+      if (!token || !user) {
+        console.log("No token or user, redirecting to login");
+        navigate("/login");
         return;
       }
+
+      console.log("Fetching watchlist with token:", token);
+      console.log("User:", user);
 
       setLoading(true);
       setError(null);
@@ -47,15 +55,16 @@ const WatchlistTab: React.FC = () => {
       setWatchlist(response.watchlist || []);
       setTotalPages(response.pagination.totalPages);
     } catch (err: any) {
-      setError(err.message || 'Unable to load watchlist');
+      setError(err.message || "Unable to load watchlist");
     } finally {
       setLoading(false);
     }
   };
 
-  if (loading) {
+  // Hiển thị loading khi đang auth HOẶC đang fetch watchlist
+  if (authLoading || loading) {
     return (
-      <div className='flex justify-center items-center py-12'>
+      <div className="flex justify-center items-center py-12">
         <Spinner size={60} />
       </div>
     );
@@ -63,9 +72,12 @@ const WatchlistTab: React.FC = () => {
 
   if (error) {
     return (
-      <div className='text-center py-12'>
-        <p className='text-red-600'>{error}</p>
-        <button onClick={() => fetchWatchlist()} className='mt-4 text-blue-600 hover:underline'>
+      <div className="text-center py-12">
+        <p className="text-red-600">{error}</p>
+        <button
+          onClick={() => fetchWatchlist()}
+          className="mt-4 text-blue-600 hover:underline"
+        >
           Try Again
         </button>
       </div>
@@ -74,11 +86,11 @@ const WatchlistTab: React.FC = () => {
 
   if (watchlist.length === 0) {
     return (
-      <div className='text-center py-12 text-gray-500'>
-        <p className='text-lg mb-4'>Your watchlist is empty</p>
+      <div className="text-center py-12 text-gray-500">
+        <p className="text-lg mb-4">Your watchlist is empty</p>
         <button
-          onClick={() => navigate('/products')}
-          className='px-6 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition'
+          onClick={() => navigate("/products")}
+          className="px-6 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition"
         >
           Explore Products
         </button>
@@ -87,8 +99,8 @@ const WatchlistTab: React.FC = () => {
   }
 
   return (
-    <div className='space-y-6'>
-      <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6'>
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {watchlist.map((item) => (
           <ProductCard key={item._id} product={item.product} />
         ))}
@@ -96,21 +108,21 @@ const WatchlistTab: React.FC = () => {
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className='flex justify-center items-center gap-2 mt-6'>
+        <div className="flex justify-center items-center gap-2 mt-6">
           <button
             onClick={() => setPage(Math.max(1, page - 1))}
             disabled={page === 1}
-            className='px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed'
+            className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Previous
           </button>
-          <span className='px-4 py-2'>
+          <span className="px-4 py-2">
             Page {page} / {totalPages}
           </span>
           <button
             onClick={() => setPage(Math.min(totalPages, page + 1))}
             disabled={page === totalPages}
-            className='px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed'
+            className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Next
           </button>

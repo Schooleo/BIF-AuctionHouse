@@ -8,7 +8,6 @@ import { bidderApi } from "@services/bidder.api";
 import { useAuthStore } from "@stores/useAuthStore";
 import type { GetWatchlistResponse } from "@interfaces/watchlist";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { set } from "zod";
 import { useAlertStore } from "@stores/useAlertStore";
 
 const ITEMS_PER_PAGE = 10;
@@ -18,6 +17,7 @@ const WatchlistContainer: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const token = useAuthStore((state) => state.token);
   const user = useAuthStore((state) => state.user);
+  const authLoading = useAuthStore((state) => state.loading);
 
   const [data, setData] = useState<GetWatchlistResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -32,7 +32,16 @@ const WatchlistContainer: React.FC = () => {
   );
 
   useEffect(() => {
+    if (authLoading) {
+      return;
+    }
+
+    console.log('Auth loading complete');
+    console.log('Token:', token);
+    console.log('User:', user);
+
     if (!token || !user) {
+      console.log('No token or user, redirecting to login');
       navigate("/login");
       return;
     }
@@ -60,7 +69,7 @@ const WatchlistContainer: React.FC = () => {
 
     fetchWatchlist();
     window.scrollTo(0, 0);
-  }, [currentPage, token, user, navigate]);
+  }, [currentPage, token, user, navigate, authLoading]);
 
   const handlePageChange = (page: number) => {
     if (page !== currentPage) {
@@ -70,7 +79,7 @@ const WatchlistContainer: React.FC = () => {
     }
   };
 
-  if (loading) return <Spinner />;
+  if (authLoading || loading) return <Spinner />;
   if (error) return <ErrorMessage text={error} />;
   if (!data || !data.watchlist.length) {
     return (
