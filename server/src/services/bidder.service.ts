@@ -17,6 +17,7 @@ import {
   sendBidConfirmationToBidder,
   sendOutbidNotificationToBidders,
 } from "../utils/email.util";
+import { checkInWatchlist } from "../controllers/bidder.controller";
 
 export const bidderService = {
   async addToWatchlist(bidderId: string, productId: string) {
@@ -40,6 +41,32 @@ export const bidderService = {
     }
   },
 
+  async removeFromWatchlist(bidderId: string, productId: string) {
+    const product = await Product.findById(productId);
+    if (!product) {
+      throw new Error(WatchlistMessages.PRODUCT_NOT_FOUND);
+    }
+
+    const result = await Watchlist.findOneAndDelete({
+      user: bidderId,
+      product: productId,
+    });
+
+    if (!result) {
+      throw new Error(WatchlistMessages.NOT_IN_WATCHLIST);
+    }
+
+    return { message: WatchlistMessages.REMOVE_SUCCESS };
+  },
+
+  async checkInWatchlist(bidderId: string, productId: string) {
+    const exists = await Watchlist.exists({
+      user: bidderId,
+      product: productId,
+    });
+    return { inWatchlist: !!exists };
+  },
+  
   async getSuggestedPrice(bidderId: string, productId: string) {
     // Lấy thông tin sản phẩm
     const product = await Product.findById(productId);
