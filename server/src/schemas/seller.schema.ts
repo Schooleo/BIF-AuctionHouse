@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { SellerMessages } from "../constants/messages";
 
 export const createProductSchema = z
   .object({
@@ -55,4 +56,29 @@ export const updateSellerProfileSchema = z.object({
 export const changeSellerPasswordSchema = z.object({
   currentPassword: z.string().min(1),
   newPassword: z.string().min(8),
+});
+export const rejectBidderParamsSchema = z.object({
+  productId: z.string().length(24, "Invalid product ID"),
+  bidderId: z.string().length(24, "Invalid bidder ID"),
+});
+
+export const answerQuestionParamsSchema = z.object({
+  productId: z.string().length(24, "Invalid product ID"),
+  questionId: z.string().length(24, "Invalid question ID"),
+});
+
+export const answerQuestionBodySchema = z.object({
+  answer: z
+    .string()
+    .min(1, SellerMessages.ANSWER_REQUIRED)
+    .max(2000, "Answer must be at most 2000 characters"),
+});
+
+export const productIdParamsSchema = z.object({
+  productId: z.string().length(24, "Invalid product ID"),
+});
+
+export const sellerBidHistoryQuerySchema = z.object({
+  page: z.coerce.number().min(1).optional().default(1),
+  limit: z.coerce.number().min(1).max(100).optional().default(10),
 });

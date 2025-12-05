@@ -312,16 +312,19 @@ const seed = async () => {
       // Some started days ago.
       const now = new Date();
       const isEndingSoon = Math.random() > 0.7; // 30% chance ending soon
+      const isEnded = Math.random() > 0.9; // 10% chance already ended
 
       const startTime = new Date(
         now.getTime() - randomInt(1, 5) * 24 * 60 * 60 * 1000
       ); // Started 1-5 days ago
 
       let endTime;
-      if (isEndingSoon) {
-        endTime = new Date(now.getTime() + randomInt(10, 180) * 60 * 1000); // Ends in 10-180 mins
+      if (isEnded) {
+        endTime = new Date(now.getTime() - randomInt(10, 180) * 60 * 1000); // Ended in 10-180 mins
+      } else if (isEndingSoon) {
+        endTime = new Date(now.getTime() + randomInt(10, 180) * 60 * 1000); 
       } else {
-        endTime = new Date(
+          endTime = new Date(
           now.getTime() + randomInt(1, 7) * 24 * 60 * 60 * 1000
         ); // Ends in 1-7 days
       }
@@ -344,6 +347,7 @@ const seed = async () => {
         buyNowPrice: item.price * 1.5, // Optional buy now
         autoExtends: true,
         currentPrice: item.price, // Will be updated by bids
+        winnerConfirmed: false,
         bidCount: 0,
       });
 

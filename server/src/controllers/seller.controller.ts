@@ -48,13 +48,111 @@ export const appendProductDescription = async (req: Request, res: Response) => {
 };
 
 export const rejectBidder = async (req: Request, res: Response) => {
-  // TODO: implement reject bidder logic
-  res.status(501).json({ message: "Not implemented" });
+  try {
+    const sellerId = (req.user as any)?._id;
+    if (!sellerId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const { productId, bidderId } = req.params;
+
+    const product = await SellerService.rejectBidder(
+      String(sellerId),
+      String(productId),
+      String(bidderId)
+    );
+
+    res.status(200).json({
+      message: SellerMessages.BIDDER_REJECTED,
+      product,
+    });
+  } catch (error: any) {
+    if (
+      error.message === SellerMessages.PRODUCT_NOT_FOUND_OR_UNAUTHORIZED ||
+      error.message === SellerMessages.BIDDER_NOT_FOUND
+    ) {
+      return res.status(404).json({ message: error.message });
+    }
+    if (error.message === SellerMessages.BIDDER_ALREADY_REJECTED) {
+      return res.status(409).json({ message: error.message });
+    }
+    console.error("Error rejecting bidder:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
 };
 
 export const answerBidderQuestion = async (req: Request, res: Response) => {
-  // TODO: implement answer bidder question logic
-  res.status(501).json({ message: "Not implemented" });
+  try {
+    const sellerId = (req.user as any)?._id;
+    if (!sellerId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const { productId, questionId } = req.params;
+    const { answer } = req.body;
+
+    const { question, updated } = await SellerService.answerQuestion(
+      String(sellerId),
+      String(productId),
+      String(questionId),
+      answer
+    );
+
+    res.status(updated ? 200 : 201).json({
+      message: updated
+        ? SellerMessages.ANSWER_UPDATED
+        : SellerMessages.ANSWER_SUBMITTED,
+      question,
+    });
+  } catch (error: any) {
+    if (
+      error.message === SellerMessages.PRODUCT_NOT_FOUND_OR_UNAUTHORIZED ||
+      error.message === SellerMessages.QUESTION_NOT_FOUND
+    ) {
+      return res.status(404).json({ message: error.message });
+    }
+    if (error.message === SellerMessages.ANSWER_REQUIRED) {
+      return res.status(400).json({ message: error.message });
+    }
+    console.error("Error answering bidder question:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+export const confirmWinner = async (req: Request, res: Response) => {
+  try {
+    const sellerId = (req.user as any)?._id;
+    if (!sellerId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const { productId } = req.params;
+
+    const product = await SellerService.confirmWinner(
+      String(sellerId),
+      String(productId)
+    );
+
+    res.status(200).json({
+      message: SellerMessages.WINNER_CONFIRMED,
+      product,
+    });
+  } catch (error: any) {
+    if (error.message === SellerMessages.PRODUCT_NOT_FOUND_OR_UNAUTHORIZED) {
+      return res.status(404).json({ message: error.message });
+    }
+    if (
+      error.message === SellerMessages.AUCTION_NOT_ENDED ||
+      error.message === SellerMessages.NO_ELIGIBLE_BIDDER
+    ) {
+      return res.status(400).json({ message: error.message });
+    }
+    if (error.message === SellerMessages.WINNER_ALREADY_CONFIRMED) {
+      return res.status(409).json({ message: error.message });
+    }
+    console.error("Error confirming winner:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
 };
 
 export const viewSellerProfile = async (req: Request, res: Response) => {
@@ -141,5 +239,32 @@ export const changeSellerPassword = async (req: Request, res: Response) => {
     }
     console.error("Error changing seller password:", error);
     res.status(500).json({ message: error.message || "Internal server error" });
+  }
+};
+
+export const viewSellerBidHistory = async (req: Request, res: Response) => {
+  try {
+    const sellerId = (req.user as any)?._id;
+    if (!sellerId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const { productId } = req.params;
+    const { page = 1, limit = 10 } = req.query as any;
+
+    const result = await SellerService.getProductBidHistory(
+      String(sellerId),
+      String(productId),
+      Number(page),
+      Number(limit)
+    );
+
+    res.status(200).json(result);
+  } catch (error: any) {
+    if (error.message === SellerMessages.PRODUCT_NOT_FOUND_OR_UNAUTHORIZED) {
+      return res.status(404).json({ message: error.message });
+    }
+    console.error("Error fetching seller bid history:", error);
+    res.status(500).json({ message: "Internal server error" });
   }
 };

@@ -11,6 +11,7 @@ export interface QuestionAnswer {
   askedAt: string;
   answer: string | undefined;
   answeredAt: string | undefined;
+  answerer: UserSummary;
 }
 
 export interface BidHistoryEntry {
@@ -32,13 +33,19 @@ export interface Product {
   subImages?: string[];
   startingPrice: number;
   currentPrice: number;
+  stepPrice: number;
   buyNowPrice?: number;
   category: string | Category;
   seller: UserSummary;
   startTime: string;
   endTime: string;
   bidCount: number;
+  autoExtends?: boolean;
+  allowUnratedBidders?: boolean;
+  winnerConfirmed?: boolean;
+  currentBidder?: UserSummary | null;
   bidders?: Bid[];
+  rejectedBidders?: string[];
   highestBid?: {
     amount: number;
     bidder: UserSummary | string | null;
@@ -51,11 +58,11 @@ export interface Product {
 
 export interface ProductDetails {
   product: Product;
-  highestBid: {
+  highestBid?: {
     amount: number;
-    bidder: UserSummary | string;
-    startTime: string;
-  };
+    bidder: UserSummary | string | null;
+    startTime: string | Date | null;
+  } | null;
   bidCount: number;
   bidHistory: BidHistoryEntry[];
   questions: QuestionAnswer[];

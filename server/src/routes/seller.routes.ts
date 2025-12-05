@@ -7,6 +7,8 @@ import {
   viewSellerProfile,
   viewSellerProducts,
   rateWinnerOrCancelTransaction,
+  viewSellerBidHistory,
+  confirmWinner,
   updateSellerProfile,
   changeSellerPassword,
 } from "../controllers/seller.controller";
@@ -16,6 +18,11 @@ import {
   createProductSchema,
   appendDescriptionSchema,
   viewSellerProductsSchema,
+  rejectBidderParamsSchema,
+  answerQuestionParamsSchema,
+  answerQuestionBodySchema,
+  productIdParamsSchema,
+  sellerBidHistoryQuerySchema,
   updateSellerProfileSchema,
   changeSellerPasswordSchema,
 } from "../schemas/seller.schema";
@@ -30,15 +37,31 @@ router.post(
   validate(createProductSchema, "body"),
   createAuctionProduct
 );
+
 router.patch(
   "/products/:id/description",
   validate(appendDescriptionSchema, "body"),
   appendProductDescription
 );
-router.post("/products/:productId/reject-bidder/:bidderId", rejectBidder);
+
+router.post(
+  "/products/:productId/reject-bidder/:bidderId",
+  validate(rejectBidderParamsSchema, "params"),
+  rejectBidder
+);
+
 router.post(
   "/products/:productId/answer-question/:questionId",
+  validate(answerQuestionParamsSchema, "params"),
+  validate(answerQuestionBodySchema, "body"),
   answerBidderQuestion
+);
+
+router.get(
+  "/products/:productId/bid-history",
+  validate(productIdParamsSchema, "params"),
+  validate(sellerBidHistoryQuerySchema, "query"),
+  viewSellerBidHistory
 );
 
 router.get("/profile", viewSellerProfile);
@@ -59,6 +82,12 @@ router.get(
   "/products",
   validate(viewSellerProductsSchema, "query"),
   viewSellerProducts
+);
+
+router.post(
+  "/products/:productId/confirm-winner",
+  validate(productIdParamsSchema, "params"),
+  confirmWinner
 );
 
 router.post("/rate-or-cancel/:auctionId", rateWinnerOrCancelTransaction);

@@ -5,6 +5,7 @@ import type {
   UpdateSellerProfileDto,
   ChangeSellerPasswordDto,
   SellerProfileResponse,
+  SellerBidHistoryResponse,
 } from "@interfaces/seller";
 
 const API_BASE = import.meta.env.VITE_APP_API_URL || "";
@@ -40,6 +41,56 @@ export const sellerApi = {
         Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({ description }),
+    });
+
+    return handleResponse(res);
+  },
+
+  rejectBidder: async (productId: string, bidderId: string) => {
+    const url = `${API_BASE}/api/seller/products/${productId}/reject-bidder/${bidderId}`;
+    const token = localStorage.getItem("token");
+
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    return handleResponse(res);
+  },
+
+  answerQuestion: async (
+    productId: string,
+    questionId: string,
+    answer: string
+  ) => {
+    const url = `${API_BASE}/api/seller/products/${productId}/answer-question/${questionId}`;
+    const token = localStorage.getItem("token");
+
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ answer }),
+    });
+
+    return handleResponse(res);
+  },
+
+  confirmWinner: async (productId: string) => {
+    const url = `${API_BASE}/api/seller/products/${productId}/confirm-winner`;
+    const token = localStorage.getItem("token");
+
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
     });
 
     return handleResponse(res);
@@ -127,6 +178,28 @@ export const sellerApi = {
         Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify(data),
+    });
+
+    return handleResponse(res);
+  },
+
+  getProductBidHistory: async (
+    productId: string,
+    params: { page?: number; limit?: number } = {}
+  ): Promise<SellerBidHistoryResponse> => {
+    const query = new URLSearchParams();
+    query.set("page", String(params.page ?? 1));
+    query.set("limit", String(params.limit ?? 10));
+
+    const url = `${API_BASE}/api/seller/products/${productId}/bid-history?${query.toString()}`;
+    const token = localStorage.getItem("token");
+
+    const res = await fetch(url, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
     });
 
     return handleResponse(res);

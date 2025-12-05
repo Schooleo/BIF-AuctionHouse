@@ -9,6 +9,7 @@ import type {
   BidHistoryEntry,
   QuestionAnswer,
   SearchParams,
+  Category as ProductCategory,
 } from "../types/product";
 
 type RelatedProductDoc = IProduct & {
@@ -55,6 +56,24 @@ const normalizeUser = (user: any): UserSummary => {
     _id: user._id?.toString() ?? "",
     name: name,
     rating: calculatedRating,
+  };
+};
+
+const normalizeCategory = (category: any): ProductCategory => {
+  if (!category) {
+    return { _id: "", name: "Unknown Category" };
+  }
+
+  if (category instanceof Types.ObjectId || typeof category === "string") {
+    return { _id: category.toString(), name: "Unknown Category" };
+  }
+
+  return {
+    _id: category._id?.toString() ?? "",
+    name: category.name ?? "Unknown Category",
+    parentCategoryId: category.parentCategoryId
+      ? category.parentCategoryId.toString()
+      : undefined,
   };
 };
 
@@ -325,6 +344,7 @@ export const ProductService = {
     const productDoc = await Product.findById(pid)
       .populate("seller", userFields)
       .populate("currentBidder", userFields)
+      .populate("category", "name parentCategoryId")
       .populate({
         path: "questions",
         populate: [
@@ -345,9 +365,13 @@ export const ProductService = {
 
     // 2. Normalize seller & currentBidder
     const seller = normalizeUser(productDoc.seller);
+    const category = normalizeCategory(productDoc.category);
     const currentBidder = productDoc.currentBidder
       ? normalizeUser(productDoc.currentBidder)
       : null;
+    const rejectedBidderIds = Array.isArray(productDoc.rejectedBidders)
+      ? productDoc.rejectedBidders.map((id: any) => id.toString())
+      : [];
 
     // 3. Fetch top bid
     const topBidDoc = await Bid.findOne({ product: pid })
@@ -361,11 +385,13 @@ export const ProductService = {
           bidder: normalizeUser(topBidDoc.bidder),
           startTime: topBidDoc.createdAt.toISOString(),
         }
-      : {
+      : currentBidder
+      ? {
           amount: productDoc.currentPrice,
-          bidder: seller,
-          startTime: new Date().toISOString(), // Fallback to now
-        };
+          bidder: currentBidder,
+          startTime: null,
+        }
+      : null;
 
     // 4. Bid count
     const bidCount = await Bid.countDocuments({ product: pid });
@@ -401,6 +427,7 @@ export const ProductService = {
         askedAt: q.askedAt.toISOString(),
         answer: q.answer ?? "",
         answeredAt: q.answeredAt?.toISOString() ?? "",
+        answerer: normalizeUser(q.answerer),
       })
     );
 
@@ -425,6 +452,7 @@ export const ProductService = {
       subImages: p.subImages,
       startingPrice: p.startingPrice,
       currentPrice: p.currentPrice,
+      stepPrice: p.stepPrice,
 
       // Conditionally add buyNowPrice if it exists (Fixes exactOptionalPropertyTypes)
       ...(p.buyNowPrice !== undefined && { buyNowPrice: p.buyNowPrice }),
@@ -470,33 +498,38 @@ export const ProductService = {
         subImages: productDoc.subImages,
         startingPrice: productDoc.startingPrice,
         currentPrice: productDoc.currentPrice,
+        stepPrice: productDoc.stepPrice,
 
         // Conditional Spread for optional scalar
         ...(productDoc.buyNowPrice !== undefined && {
           buyNowPrice: productDoc.buyNowPrice,
         }),
 
-        // Handle Category (it is an ID here because we didn't populate it in step 1)
-        category: productDoc.category?.toString() ?? "",
+        autoExtends: productDoc.autoExtends,
+        allowUnratedBidders: productDoc.allowUnratedBidders,
 
+        category,
         seller: seller,
         bidCount: bidCount, // Use the real count from Step 4
 
         startTime: new Date(productDoc.startTime).toISOString(),
         endTime: new Date(productDoc.endTime).toISOString(),
 
+        rejectedBidders: rejectedBidderIds,
+        winnerConfirmed: Boolean(productDoc.winnerConfirmed),
+        currentBidder,
+
         highestBid: highestBid,
-        highestBidder: highestBid.bidder,
+        highestBidder: highestBid?.bidder ?? null,
         questions: questions,
-        related: related,
 
         // OMIT optional arrays (bidders) to satisfy exactOptionalPropertyTypes
       },
-      highestBid,
+      highestBid: highestBid,
       bidCount,
       bidHistory,
       questions,
-      related,
+      related: related,
       timeRemainingMs,
       isEndingSoon,
       isNew,

@@ -30,6 +30,7 @@ import UnauthorizedPage from "./pages/shared/UnauthorizedPage";
 import ForbiddenPage from "./pages/shared/ForbiddenPage";
 import AlertContainer from "@containers/ui/AlertContainer";
 import WatchListPage from "@pages/user/WatchlistPage";
+import SellerProductDetailsPage from "@pages/seller/SellerProductDetailsPage";
 
 const RoleBasedRedirect = ({ children }: { children: React.ReactNode }) => {
   const user = useAuthStore((state) => state.user);
@@ -91,6 +92,10 @@ const App = () => {
               <Route element={<ProtectedRoute allowedRoles={["seller"]} />}>
                 <Route path="seller" element={<SellerLayout />}>
                   <Route path="products" element={<SellerProductsPage />} />
+                  <Route
+                    path="products/:id"
+                    element={<SellerProductDetailsPage />}
+                  />
                   <Route
                     path="ended-products"
                     element={<SellerProductsPage />}

@@ -23,12 +23,12 @@ export const WatchlistMessages = {
 
 export const BidMessages = {
   BID_PLACED: 'Bid placed successfully',
-
   PRODUCT_NOT_FOUND: 'Product not found',
   REPUTATION_TOO_LOW: 'Your reputation score is too low to place a bid',
   UNRATED_NOT_ALLOWED: 'You must have at least one completed transaction to place a bid',
   BID_TOO_LOW: 'Your bid must be higher than the current highest bid',
   HISTORY_RETRIEVED: 'Bid history retrieved successfully',
+  BIDDER_REJECTED: 'You are not allowed to bid on this product',
 };
 
 export const ProductMessages = {
@@ -76,4 +76,15 @@ export const SellerMessages = {
   DESCRIPTION_REQUIRED: 'Description content is required',
   PRODUCT_NOT_FOUND_OR_UNAUTHORIZED: 'Product not found or unauthorized',
   INVALID_PRODUCT_ID: 'Invalid product ID',
+  BIDDER_REJECTED: 'Bidder rejected successfully',
+  BIDDER_ALREADY_REJECTED: 'Bidder has already been rejected for this product',
+  BIDDER_NOT_FOUND: 'Bidder not found',
+  QUESTION_NOT_FOUND: 'Question not found',
+  ANSWER_REQUIRED: 'Answer content is required',
+  ANSWER_SUBMITTED: 'Answer submitted successfully',
+  ANSWER_UPDATED: 'Answer updated successfully',
+  WINNER_CONFIRMED: 'Winner confirmed successfully',
+  WINNER_ALREADY_CONFIRMED: 'Winner has already been confirmed',
+  AUCTION_NOT_ENDED: 'Cannot confirm winner before the auction ends',
+  NO_ELIGIBLE_BIDDER: 'No eligible bidder available to confirm as winner',
 };
