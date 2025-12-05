@@ -71,7 +71,8 @@ export const placeBid = async (req: Request, res: Response) => {
     }
     if (
       error.message === BidMessages.UNRATED_NOT_ALLOWED ||
-      error.message === BidMessages.REPUTATION_TOO_LOW
+      error.message === BidMessages.REPUTATION_TOO_LOW ||
+      error.message === BidMessages.BIDDER_REJECTED
     ) {
       return res.status(403).json({ message: error.message });
     }

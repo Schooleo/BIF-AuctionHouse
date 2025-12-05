@@ -37,7 +37,7 @@ const SellerSideBar: React.FC = () => {
   ];
 
   return (
-    <div className="w-full bg-white border-r border-gray-200 min-h-screen py-4 pl-6 pr-8">
+    <div className="w-full bg-white border-r border-gray-200 min-h-screen py-4 pl-6 pr-8 h-full">
       <div className="mt-6 mb-8 flex items-center gap-3">
         <Wallet className="w-6 h-6 text-primary-blue" />
         <h2 className="text-xl font-bold text-gray-800">Seller Dashboard</h2>

@@ -75,7 +75,7 @@ const SellerProductCard: React.FC<SellerProductCardProps> = ({
         </div>
 
         <div className="p-4 flex flex-col grow space-y-3">
-          <Link to={`/product/${_id}`} className="block">
+          <Link to={`/seller/products/${_id}`} className="block">
             <h3 className="text-lg font-bold text-gray-900 line-clamp-2 hover:text-blue-600 transition-colors">
               {name}
             </h3>

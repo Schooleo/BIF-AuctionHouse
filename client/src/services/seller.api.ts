@@ -3,6 +3,25 @@ import type { Product, CreateProductDto } from "@interfaces/product";
 
 const API_BASE = import.meta.env.VITE_APP_API_URL || "";
 
+interface SellerBidHistoryResponse {
+  bidHistory: {
+    _id: string;
+    price: number;
+    createdAt: string;
+    bidder: {
+      _id: string;
+      name?: string;
+      rating?: number;
+    } | null;
+  }[];
+  pagination: {
+    currentPage: number;
+    totalPages: number;
+    totalBids: number;
+    limit: number;
+  };
+};
+
 export const sellerApi = {
   createProduct: async (data: CreateProductDto): Promise<Product> => {
     const url = `${API_BASE}/api/seller/products`;
@@ -39,6 +58,56 @@ export const sellerApi = {
     return handleResponse(res);
   },
 
+  rejectBidder: async (productId: string, bidderId: string) => {
+    const url = `${API_BASE}/api/seller/products/${productId}/reject-bidder/${bidderId}`;
+    const token = localStorage.getItem("token");
+
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    return handleResponse(res);
+  },
+
+  answerQuestion: async (
+    productId: string,
+    questionId: string,
+    answer: string
+  ) => {
+    const url = `${API_BASE}/api/seller/products/${productId}/answer-question/${questionId}`;
+    const token = localStorage.getItem("token");
+
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ answer }),
+    });
+
+    return handleResponse(res);
+  },
+
+  confirmWinner: async (productId: string) => {
+    const url = `${API_BASE}/api/seller/products/${productId}/confirm-winner`;
+    const token = localStorage.getItem("token");
+
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    return handleResponse(res);
+  },
+
   getSellerProducts: async (
     params: {
       page?: number;
@@ -63,6 +132,28 @@ export const sellerApi = {
     if (params.status) query.append("status", params.status);
 
     const url = `${API_BASE}/api/seller/products?${query.toString()}`;
+    const token = localStorage.getItem("token");
+
+    const res = await fetch(url, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    return handleResponse(res);
+  },
+
+  getProductBidHistory: async (
+    productId: string,
+    params: { page?: number; limit?: number } = {}
+  ): Promise<SellerBidHistoryResponse> => {
+    const query = new URLSearchParams();
+    query.set("page", String(params.page ?? 1));
+    query.set("limit", String(params.limit ?? 10));
+
+    const url = `${API_BASE}/api/seller/products/${productId}/bid-history?${query.toString()}`;
     const token = localStorage.getItem("token");
 
     const res = await fetch(url, {

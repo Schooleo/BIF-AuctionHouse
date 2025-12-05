@@ -7,6 +7,7 @@ export interface IQuestionAnswer extends Types.Subdocument {
   askedAt: Date;
   answer?: string;
   answeredAt?: Date;
+  answerer?: Types.ObjectId;
 }
 
 // Định nghĩa Schema cho QA
@@ -20,6 +21,7 @@ const QuestionAnswerSchema = new Schema<IQuestionAnswer>({
   askedAt: { type: Date, default: Date.now },
   answer: { type: String },
   answeredAt: { type: Date },
+  answerer: { type: Schema.Types.ObjectId, ref: "User" },
 });
 
 // Sub-document để update description (3.2)
@@ -59,6 +61,10 @@ export interface IProduct extends Document {
 
   // Embedded Q&A
   questions: IQuestionAnswer[];
+
+  winnerConfirmed?: boolean;
+
+  rejectedBidders: Types.ObjectId[];
 }
 
 // Schema cho product
@@ -94,6 +100,18 @@ const productSchema = new Schema<IProduct>(
 
     // Embedded Q&A
     questions: { type: [QuestionAnswerSchema], default: [] },
+
+    winnerConfirmed: { type: Boolean, default: false },
+    
+    rejectedBidders: {
+      type: [
+        {
+          type: Schema.Types.ObjectId,
+          ref: "User",
+        },
+      ],
+      default: [],
+    },
   },
   { timestamps: true }
 );
