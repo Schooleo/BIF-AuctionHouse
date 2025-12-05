@@ -1,5 +1,11 @@
 import { handleResponse } from "@utils/handleResponse";
 import type { Product, CreateProductDto } from "@interfaces/product";
+import type { User } from "@interfaces/auth";
+import type {
+  UpdateSellerProfileDto,
+  ChangeSellerPasswordDto,
+  SellerProfileResponse,
+} from "@interfaces/seller";
 
 const API_BASE = import.meta.env.VITE_APP_API_URL || "";
 
@@ -71,6 +77,56 @@ export const sellerApi = {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
+    });
+
+    return handleResponse(res);
+  },
+
+  getProfile: async (token: string): Promise<SellerProfileResponse> => {
+    const url = `${API_BASE}/api/seller/profile`;
+
+    const res = await fetch(url, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    return handleResponse(res);
+  },
+
+  updateProfile: async (
+    data: UpdateSellerProfileDto
+  ): Promise<{ profile: User }> => {
+    const url = `${API_BASE}/api/seller/profile`;
+    const token = localStorage.getItem("token");
+
+    const res = await fetch(url, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(data),
+    });
+
+    return handleResponse(res);
+  },
+
+  changePassword: async (
+    data: ChangeSellerPasswordDto
+  ): Promise<{ message: string }> => {
+    const url = `${API_BASE}/api/seller/change-password`;
+    const token = localStorage.getItem("token");
+
+    const res = await fetch(url, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(data),
     });
 
     return handleResponse(res);

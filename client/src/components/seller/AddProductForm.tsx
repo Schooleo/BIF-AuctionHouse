@@ -5,6 +5,7 @@ import { productApi } from "@services/product.api";
 import type { Category } from "@interfaces/product";
 import { Plus, X } from "lucide-react";
 import RichTextEditor from "@components/shared/RichTextEditor";
+import ImageUpload from "@components/shared/ImageUpload";
 import { z } from "zod";
 
 const productSchema = z
@@ -329,17 +330,21 @@ const AddProductForm: React.FC = () => {
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Main Image URL *
+              Main Image *
             </label>
-            <input
-              type="url"
-              name="mainImage"
+            <ImageUpload
               value={formData.mainImage}
-              onChange={handleChange}
-              className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                errors.mainImage ? "border-red-500" : "border-gray-300"
-              }`}
-              placeholder="https://example.com/image.jpg"
+              onChange={(url) =>
+                setFormData((prev) => ({ ...prev, mainImage: url }))
+              }
+              onRemove={() =>
+                setFormData((prev) => ({ ...prev, mainImage: "" }))
+              }
+              className={
+                errors.mainImage ? "border-red-500 rounded-lg p-1 border" : ""
+              }
+              placeholder="Upload main product image"
+              height="h-64"
             />
             {errors.mainImage && (
               <p className="mt-1 text-sm text-red-500">{errors.mainImage}</p>
@@ -348,32 +353,46 @@ const AddProductForm: React.FC = () => {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Sub Images URLs (Min 3) *
+              Sub Images (Min 3) *
             </label>
-            <div className="space-y-3">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               {formData.subImages.map((img, index) => (
-                <div key={index} className="flex gap-2">
-                  <div className="w-full">
-                    <input
-                      type="url"
-                      value={img}
-                      onChange={(e) =>
-                        handleSubImageChange(index, e.target.value)
+                <div key={index} className="relative">
+                  <ImageUpload
+                    value={img}
+                    onChange={(url) => handleSubImageChange(index, url)}
+                    onRemove={() => {
+                      if (formData.subImages.length > 3) {
+                        // If more than 3, we can remove the item
+                        const newSubImages = formData.subImages.filter(
+                          (_, i) => i !== index
+                        );
+                        setFormData((prev) => ({
+                          ...prev,
+                          subImages: newSubImages,
+                        }));
+                      } else {
+                        // If 3 or less, just clear the value but keep the slot/input
+                        handleSubImageChange(index, "");
                       }
-                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                        errors[`subImages.${index}`]
-                          ? "border-red-500"
-                          : "border-gray-300"
-                      }`}
-                      placeholder={`Sub Image URL ${index + 1}`}
-                    />
-                    {errors[`subImages.${index}`] && (
-                      <p className="mt-1 text-sm text-red-500">
-                        {errors[`subImages.${index}`]}
-                      </p>
-                    )}
-                  </div>
-                  {index >= 3 && (
+                    }}
+                    height="h-32"
+                    placeholder={`Image ${index + 1}`}
+                    className={
+                      errors[`subImages.${index}`]
+                        ? "border-red-500 rounded-lg p-1 border"
+                        : ""
+                    }
+                  />
+                  {/* Show X button if we have more than 3 items, to allow deleting the slot completely. 
+                      ImageUpload already has a remove button, but that clears the image. 
+                      Here we want to remove the slot if it's extra.
+                      However, ImageUpload's onRemove handles clearing. 
+                      Let's stick to simple logic: 
+                      - If value exists, ImageUpload shows it and X clears it.
+                      - If we want to remove the slot, we need a separate button if it's an extra slot.
+                  */}
+                  {index >= 3 && !img && (
                     <button
                       type="button"
                       onClick={() => {
@@ -385,11 +404,16 @@ const AddProductForm: React.FC = () => {
                           subImages: newSubImages,
                         }));
                       }}
-                      className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                      title="Remove image"
+                      className="absolute -top-2 -right-2 p-1 bg-white rounded-full text-gray-400 hover:text-red-500 shadow-sm border border-gray-200"
+                      title="Remove slot"
                     >
-                      <X className="w-5 h-5" />
+                      <X className="w-4 h-4" />
                     </button>
+                  )}
+                  {errors[`subImages.${index}`] && (
+                    <p className="mt-1 text-xs text-red-500">
+                      {errors[`subImages.${index}`]}
+                    </p>
                   )}
                 </div>
               ))}
@@ -401,10 +425,10 @@ const AddProductForm: React.FC = () => {
                     subImages: [...prev.subImages, ""],
                   }))
                 }
-                className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center mt-2"
+                className="h-32 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center text-gray-500 hover:border-blue-500 hover:bg-blue-50 transition-colors"
               >
-                <Plus className="w-4 h-4 mr-1" />
-                Add another image
+                <Plus className="w-6 h-6 mb-1" />
+                <span className="text-sm font-medium">Add Image</span>
               </button>
             </div>
           </div>

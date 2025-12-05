@@ -64,14 +64,76 @@ const SellerSideBar: React.FC = () => {
       </nav>
       <div className="mt-8 pt-8 border-t border-gray-200">
         <Link
-          to="/seller/settings"
-          className="flex items-center px-4 py-3 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-50 hover:text-gray-900 transition-colors duration-200"
+          to="/seller/profile"
+          className={classNames(
+            "flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors duration-200",
+            {
+              "bg-primary-blue text-white shadow-md":
+                location.pathname === "/seller/profile",
+              "text-gray-700 hover:bg-gray-50 hover:text-gray-900":
+                location.pathname !== "/seller/profile",
+            }
+          )}
         >
           <span className="mr-3">
             <Settings className="w-5 h-5" />
           </span>
-          Settings
+          Profile
         </Link>
+
+        {/* Sub-menu for Profile */}
+        {location.pathname === "/seller/profile" && (
+          <div className="ml-5 mt-2 space-y-1 border-l-2 border-gray-200 pl-3">
+            <Link
+              to="/seller/profile?tab=overview"
+              className={classNames(
+                "block py-2 text-sm transition-colors duration-200",
+                {
+                  "text-primary-blue font-semibold":
+                    new URLSearchParams(location.search).get("tab") ===
+                      "overview" ||
+                    !new URLSearchParams(location.search).get("tab"),
+                  "text-gray-500 hover:text-gray-700":
+                    new URLSearchParams(location.search).get("tab") !==
+                      "overview" &&
+                    !!new URLSearchParams(location.search).get("tab"),
+                }
+              )}
+            >
+              Overview
+            </Link>
+            <Link
+              to="/seller/profile?tab=info"
+              className={classNames(
+                "block py-2 text-sm transition-colors duration-200",
+                {
+                  "text-primary-blue font-semibold":
+                    new URLSearchParams(location.search).get("tab") === "info",
+                  "text-gray-500 hover:text-gray-700":
+                    new URLSearchParams(location.search).get("tab") !== "info",
+                }
+              )}
+            >
+              Personal Info
+            </Link>
+            <Link
+              to="/seller/profile?tab=ratings"
+              className={classNames(
+                "block py-2 text-sm transition-colors duration-200",
+                {
+                  "text-primary-blue font-semibold":
+                    new URLSearchParams(location.search).get("tab") ===
+                    "ratings",
+                  "text-gray-500 hover:text-gray-700":
+                    new URLSearchParams(location.search).get("tab") !==
+                    "ratings",
+                }
+              )}
+            >
+              Ratings Received
+            </Link>
+          </div>
+        )}
       </div>
     </div>
   );

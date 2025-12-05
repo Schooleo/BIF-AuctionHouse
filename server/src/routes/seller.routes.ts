@@ -7,6 +7,8 @@ import {
   viewSellerProfile,
   viewSellerProducts,
   rateWinnerOrCancelTransaction,
+  updateSellerProfile,
+  changeSellerPassword,
 } from "../controllers/seller.controller";
 import { protect } from "../middleware/auth.middleware";
 import { validate } from "../middleware/validate";
@@ -14,6 +16,8 @@ import {
   createProductSchema,
   appendDescriptionSchema,
   viewSellerProductsSchema,
+  updateSellerProfileSchema,
+  changeSellerPasswordSchema,
 } from "../schemas/seller.schema";
 
 const router = Router();
@@ -38,6 +42,19 @@ router.post(
 );
 
 router.get("/profile", viewSellerProfile);
+
+router.put(
+  "/profile",
+  validate(updateSellerProfileSchema, "body"),
+  updateSellerProfile
+);
+
+router.patch(
+  "/change-password",
+  validate(changeSellerPasswordSchema, "body"),
+  changeSellerPassword
+);
+
 router.get(
   "/products",
   validate(viewSellerProductsSchema, "query"),
