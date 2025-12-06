@@ -43,6 +43,7 @@ export interface Product {
     startTime: Date | string | null;
   } | null;
   highestBidder: UserSummary;
+  currentBidder: UserSummary; // some apis use this field
 
   bidCount: number;
 
