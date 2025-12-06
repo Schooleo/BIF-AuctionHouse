@@ -102,6 +102,7 @@ const App = () => {
                     path="ended-products"
                     element={<SellerProductsPage />}
                   />
+                  <Route path="bid-winners" element={<SellerProductsPage />} />
                   <Route path="add-product" element={<AddProductPage />} />
                   <Route path="profile" element={<SellerProfilePage />} />
                 </Route>

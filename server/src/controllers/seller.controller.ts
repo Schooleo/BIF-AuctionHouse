@@ -195,12 +195,144 @@ export const viewSellerProducts = async (req: Request, res: Response) => {
   }
 };
 
+// Duplicate block removed
+
+export const rateWinner = async (req: Request, res: Response) => {
+  try {
+    const sellerId = (req.user as any)?._id;
+    if (!sellerId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const { productId } = req.params;
+    const { score, comment } = req.body;
+
+    const rating = await SellerService.rateWinner(
+      String(sellerId),
+      String(productId),
+      score,
+      comment
+    );
+
+    res.status(200).json({
+      message: "Rating submitted successfully",
+      rating,
+    });
+  } catch (error: any) {
+    if (error.message === SellerMessages.PRODUCT_NOT_FOUND_OR_UNAUTHORIZED) {
+      return res.status(404).json({ message: error.message });
+    }
+    if (error.message === "Winner must be confirmed before rating") {
+      return res.status(400).json({ message: error.message });
+    }
+    console.error("Error rating winner:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+export const cancelTransaction = async (req: Request, res: Response) => {
+  try {
+    const sellerId = (req.user as any)?._id;
+    if (!sellerId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const { productId } = req.params;
+
+    const product = await SellerService.cancelTransaction(
+      String(sellerId),
+      String(productId)
+    );
+
+    res.status(200).json({
+      message: "Transaction cancelled successfully",
+      product,
+    });
+  } catch (error: any) {
+    if (error.message === SellerMessages.PRODUCT_NOT_FOUND_OR_UNAUTHORIZED) {
+      return res.status(404).json({ message: error.message });
+    }
+    if (error.message === "No confirmed transaction to cancel") {
+      return res.status(400).json({ message: error.message });
+    }
+    console.error("Error cancelling transaction:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+export const transferWinner = async (req: Request, res: Response) => {
+  try {
+    const sellerId = (req.user as any)?._id;
+    if (!sellerId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const { productId } = req.params;
+
+    const product = await SellerService.transferWinner(
+      String(sellerId),
+      String(productId)
+    );
+
+    res.status(200).json({
+      message: SellerMessages.WINNER_CONFIRMED,
+      product,
+    });
+  } catch (error: any) {
+    if (error.message === SellerMessages.PRODUCT_NOT_FOUND_OR_UNAUTHORIZED) {
+      return res.status(404).json({ message: error.message });
+    }
+    if (
+      error.message === SellerMessages.AUCTION_NOT_ENDED ||
+      error.message === SellerMessages.NO_ELIGIBLE_BIDDER
+    ) {
+      return res.status(400).json({ message: error.message });
+    }
+    console.error("Error transferring winner:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+export const completeTransaction = async (req: Request, res: Response) => {
+  try {
+    const sellerId = (req.user as any)?._id;
+    if (!sellerId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const { productId } = req.params;
+
+    const product = await SellerService.completeTransaction(
+      String(sellerId),
+      String(productId)
+    );
+
+    res.status(200).json({
+      message: "Transaction completed successfully",
+      product,
+    });
+  } catch (error: any) {
+    if (error.message === SellerMessages.PRODUCT_NOT_FOUND_OR_UNAUTHORIZED) {
+      return res.status(404).json({ message: error.message });
+    }
+    if (
+      error.message === "Cannot complete transaction without a confirmed winner"
+    ) {
+      return res.status(400).json({ message: error.message });
+    }
+    console.error("Error completing transaction:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+// Kept for backward compatibility if needed, but updated response
 export const rateWinnerOrCancelTransaction = async (
   req: Request,
   res: Response
 ) => {
-  // TODO: implement rate winner or cancel transaction logic
-  res.status(501).json({ message: "Not implemented" });
+  res.status(410).json({
+    message: "Endpoint deprecated. Use /rate-winner or /cancel-transaction",
+  });
 };
 
 export const updateSellerProfile = async (req: Request, res: Response) => {

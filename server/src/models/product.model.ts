@@ -63,6 +63,7 @@ export interface IProduct extends Document {
   questions: IQuestionAnswer[];
 
   winnerConfirmed?: boolean;
+  transactionCompleted?: boolean;
 
   rejectedBidders: Types.ObjectId[];
 }
@@ -102,7 +103,8 @@ const productSchema = new Schema<IProduct>(
     questions: { type: [QuestionAnswerSchema], default: [] },
 
     winnerConfirmed: { type: Boolean, default: false },
-    
+    transactionCompleted: { type: Boolean, default: false }, // New field (3.3)
+
     rejectedBidders: {
       type: [
         {

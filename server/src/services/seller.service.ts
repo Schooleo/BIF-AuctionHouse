@@ -183,7 +183,13 @@ export class SellerService {
       search?: string;
       sortBy?: string;
       sortOrder?: "asc" | "desc";
-      status?: "all" | "ongoing" | "ended";
+      status?:
+        | "all"
+        | "ongoing"
+        | "ended"
+        | "awaiting"
+        | "bid_winner"
+        | "history";
     } = {}
   ) {
     const {
@@ -205,7 +211,25 @@ export class SellerService {
     if (status === "ongoing") {
       query.endTime = { $gt: now };
     } else if (status === "ended") {
+      // Legacy "ended" - generic
       query.endTime = { $lte: now };
+    } else if (status === "awaiting") {
+      // Awaiting Confirmation: Ended + Bids + Not Confirmed
+      query.endTime = { $lte: now };
+      query.bidCount = { $gt: 0 };
+      query.winnerConfirmed = { $ne: true };
+    } else if (status === "bid_winner") {
+      // Confirm Winner / Active Transaction: Confirmed + Not Completed
+      query.winnerConfirmed = true;
+      query.transactionCompleted = { $ne: true };
+    } else if (status === "history") {
+      // History: Unsold (Ended + No Bids) OR Completed (Confirmed + Completed)
+      query.$or = [
+        { endTime: { $lte: now }, bidCount: 0 },
+        { winnerConfirmed: true, transactionCompleted: true },
+        // Also include cases where manual transfer might have happened effectively ending it?
+        // For now, adhere to explicit completion.
+      ];
     }
 
     const skip = (page - 1) * limit;
@@ -213,14 +237,60 @@ export class SellerService {
     const [products, total] = await Promise.all([
       Product.find(query)
         .populate("category", "name")
+        .populate("currentBidder", "name positiveRatings negativeRatings")
         .sort({ [sortBy]: sortOrder === "asc" ? 1 : -1 })
         .skip(skip)
-        .limit(limit),
+        .limit(limit)
+        .lean(),
       Product.countDocuments(query),
     ]);
 
+    // Check for ratings
+    const { Rating } = await import("../models/rating.model");
+    const productIds = products.map((p) => p._id);
+    const ratings = await Rating.find({
+      product: { $in: productIds },
+      rater: userId,
+      type: "bidder",
+    });
+
+    const productsWithRating = products.map((product) => {
+      const isRated = ratings.some(
+        (r) => r.product?.toString() === product._id.toString()
+      );
+
+      // Calculate bidder rating manually since lean() drops virtuals
+      let bidderWithRating = product.currentBidder;
+      if (product.currentBidder && (product.currentBidder as any).name) {
+        const bidder = product.currentBidder as any;
+        const totalRatings =
+          (bidder.positiveRatings || 0) + (bidder.negativeRatings || 0);
+        const reputationScore =
+          totalRatings === 0
+            ? 0 // Default to 0/Undefined for display if no ratings
+            : (bidder.positiveRatings || 0) / totalRatings;
+
+        // Convert to 5-star scale if needed, or keep as is.
+        // Frontend likely expects 5-star if using toFixed(1) generally implies 0-5 or 0-10.
+        // Given getSellerProfile uses * 5, we'll do the same.
+        const calculatedRating =
+          totalRatings === 0 ? undefined : reputationScore * 5;
+
+        bidderWithRating = {
+          ...bidder,
+          rating: calculatedRating,
+        };
+      }
+
+      return {
+        ...product,
+        isRatedBySeller: isRated,
+        currentBidder: bidderWithRating,
+      };
+    });
+
     return {
-      products,
+      products: productsWithRating,
       total,
       page,
       totalPages: Math.ceil(total / limit),
@@ -424,12 +494,190 @@ export class SellerService {
       .populate([
         {
           path: "currentBidder",
-          select: "name email positiveRatings negativeRatings rating",
+          select: "name email positiveRatings negativeRatings",
         },
         { path: "category", select: "name parentCategoryId" },
       ])
       .lean();
 
+    if (updatedProduct?.currentBidder) {
+      const bidder = updatedProduct.currentBidder as any;
+      const totalRatings =
+        (bidder.positiveRatings || 0) + (bidder.negativeRatings || 0);
+      const score =
+        totalRatings === 0 ? 0 : (bidder.positiveRatings || 0) / totalRatings;
+      const rating = totalRatings === 0 ? undefined : score * 5;
+      (updatedProduct.currentBidder as any).rating = rating;
+    }
+
     return updatedProduct;
+  }
+
+  static async completeTransaction(userId: string, productId: string) {
+    const product = await Product.findOne({
+      _id: productId,
+      seller: userId,
+    });
+
+    if (!product) {
+      throw new Error(SellerMessages.PRODUCT_NOT_FOUND_OR_UNAUTHORIZED);
+    }
+
+    if (!product.winnerConfirmed) {
+      throw new Error("Cannot complete transaction without a confirmed winner");
+    }
+
+    product.transactionCompleted = true;
+    await product.save();
+
+    return product;
+  }
+
+  static async rateWinner(
+    userId: string,
+    productId: string,
+    score: 1 | -1,
+    comment: string
+  ) {
+    const product = await Product.findOne({
+      _id: productId,
+      seller: userId,
+    });
+
+    if (!product) {
+      throw new Error(SellerMessages.PRODUCT_NOT_FOUND_OR_UNAUTHORIZED);
+    }
+
+    if (!product.winnerConfirmed || !product.currentBidder) {
+      throw new Error("Winner must be confirmed before rating");
+    }
+
+    const { Rating } = await import("../models/rating.model");
+
+    // Check if rating exists for this transaction
+    let rating = await Rating.findOne({
+      type: "bidder", // Seller rating Bidder
+      rater: userId,
+      ratee: product.currentBidder,
+      product: productId,
+    });
+
+    if (rating) {
+      // Update existing rating logic
+      // First revert old score impact on user
+      const [User] = await Promise.all([import("../models/user.model")]);
+      const oldField =
+        rating.score === 1 ? "positiveRatings" : "negativeRatings";
+      await User.User.findByIdAndUpdate(product.currentBidder, {
+        $inc: { [oldField]: -1 },
+      });
+
+      rating.score = score;
+      rating.comment = comment;
+      await rating.save();
+
+      // Re-apply new score impact
+      const newField = score === 1 ? "positiveRatings" : "negativeRatings";
+      await User.User.findByIdAndUpdate(product.currentBidder, {
+        $inc: { [newField]: 1 },
+      });
+    } else {
+      // Create new rating
+      rating = await Rating.create({
+        type: "bidder",
+        rater: userId,
+        ratee: product.currentBidder,
+        product: productId,
+        score,
+        comment,
+      });
+
+      // Apply score impact
+      const [User] = await Promise.all([import("../models/user.model")]);
+      const field = score === 1 ? "positiveRatings" : "negativeRatings";
+      await User.User.findByIdAndUpdate(product.currentBidder, {
+        $inc: { [field]: 1 },
+      });
+    }
+
+    return rating;
+  }
+
+  static async cancelTransaction(userId: string, productId: string) {
+    const product = await Product.findOne({
+      _id: productId,
+      seller: userId,
+    });
+
+    if (!product) {
+      throw new Error(SellerMessages.PRODUCT_NOT_FOUND_OR_UNAUTHORIZED);
+    }
+
+    if (!product.winnerConfirmed || !product.currentBidder) {
+      throw new Error("No confirmed transaction to cancel");
+    }
+
+    const bidderId = product.currentBidder.toString();
+
+    // 1. Auto-rate Negative
+    // Use try-catch for rating to prevent transaction crash if rating fails (e.g. already rated)
+    try {
+      await this.rateWinner(
+        userId,
+        productId,
+        -1,
+        "Winner did not pay in time - Transaction Cancelled"
+      );
+    } catch (error) {
+      console.warn("Auto-rating failed during cancellation:", error);
+      // Continue cancellation regardless
+    }
+
+    // Add to rejected list if not already
+    const alreadyRejected =
+      product.rejectedBidders?.some((id) => id.toString() === bidderId) ??
+      false;
+    if (!alreadyRejected) {
+      product.rejectedBidders.push(new Types.ObjectId(bidderId));
+    }
+
+    // Clear winner status
+    product.winnerConfirmed = false;
+    product.currentBidder = null as any;
+
+    // Recalculate bid count logic:
+    // We are NOT deleting all bids from this user history, just invalidating them for this round?
+    // Actually, "Reject" implies their bids are no longer valid for winning.
+    // But keep them for history/logs?
+    // The previous implementation deleted them. Let's stick to that to be safe + easy re-calc.
+
+    await Bid.deleteMany({ product: productId, bidder: bidderId });
+
+    // Recalculate bid count
+    product.bidCount = await Bid.countDocuments({ product: productId });
+
+    // Reset price to next highest or start price
+    const nextHighestBid = await Bid.findOne({ product: productId }).sort({
+      price: -1,
+      createdAt: 1,
+    });
+
+    if (nextHighestBid) {
+      product.currentPrice = nextHighestBid.price;
+      product.currentBidder = nextHighestBid.bidder as any;
+      // Winner NOT confirmed
+    } else {
+      product.currentPrice = product.startingPrice;
+      product.currentBidder = null as any;
+    }
+
+    await product.save();
+
+    return product;
+  }
+
+  static async transferWinner(userId: string, productId: string) {
+    // This is effectively "Confirm Winner" for the next person
+    return this.confirmWinner(userId, productId);
   }
 }

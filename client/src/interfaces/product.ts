@@ -49,13 +49,11 @@ export interface Product {
 
   bidCount: number;
 
-  questions?: QuestionAnswer[];
-  related?: Product[];
-
-  autoExtends?: boolean;
-  allowUnratedBidders?: boolean;
-  rejectedBidders?: string[];
   winnerConfirmed?: boolean;
+  transactionCompleted?: boolean;
+  currentBidder?: UserSummary | string | null;
+  isRatedBySeller?: boolean;
+  rejectedBidders?: string[];
 }
 
 export interface BidHistoryEntry {
@@ -146,5 +144,5 @@ export interface CreateProductDto {
 export interface BidHistoryItem {
   bidder: string;
   price: number;
-  time: string;      
+  time: string;
 }

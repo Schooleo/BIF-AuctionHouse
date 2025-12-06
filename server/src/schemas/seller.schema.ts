@@ -45,7 +45,10 @@ export const viewSellerProductsSchema = z.object({
   search: z.string().optional().default(""),
   sortBy: z.string().optional().default("createdAt"),
   sortOrder: z.enum(["asc", "desc"]).optional().default("desc"),
-  status: z.enum(["all", "ongoing", "ended"]).optional().default("all"),
+  status: z
+    .enum(["all", "ongoing", "ended", "awaiting", "bid_winner", "history"])
+    .optional()
+    .default("all"),
 });
 
 export const updateSellerProfileSchema = z.object({

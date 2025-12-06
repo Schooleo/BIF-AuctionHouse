@@ -6,11 +6,14 @@ import {
   answerBidderQuestion,
   viewSellerProfile,
   viewSellerProducts,
-  rateWinnerOrCancelTransaction,
+  rateWinner,
+  cancelTransaction,
+  transferWinner,
   viewSellerBidHistory,
   confirmWinner,
   updateSellerProfile,
   changeSellerPassword,
+  completeTransaction,
 } from "../controllers/seller.controller";
 import { protect } from "../middleware/auth.middleware";
 import { validate } from "../middleware/validate";
@@ -90,6 +93,9 @@ router.post(
   confirmWinner
 );
 
-router.post("/rate-or-cancel/:auctionId", rateWinnerOrCancelTransaction);
+router.post("/products/:productId/rate-winner", rateWinner);
+router.post("/products/:productId/cancel-transaction", cancelTransaction);
+router.post("/products/:productId/transfer-winner", transferWinner);
+router.post("/products/:productId/complete-transaction", completeTransaction);
 
 export default router;
