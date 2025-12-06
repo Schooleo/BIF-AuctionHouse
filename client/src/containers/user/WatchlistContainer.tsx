@@ -8,6 +8,7 @@ import { bidderApi } from "@services/bidder.api";
 import { useAuthStore } from "@stores/useAuthStore";
 import type { GetWatchlistResponse } from "@interfaces/watchlist";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { useAlertStore } from "@stores/useAlertStore";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -16,11 +17,15 @@ const WatchlistContainer: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const token = useAuthStore((state) => state.token);
   const user = useAuthStore((state) => state.user);
+  const authLoading = useAuthStore((state) => state.loading);
 
   const [data, setData] = useState<GetWatchlistResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
+  const [removingProductIds, setRemovingProductIds] = useState<Set<string>>(
+    new Set()
+  );
+  const { addAlert } = useAlertStore((state) => state);
   // Get page from URL params, default to 1
   const [currentPage, setCurrentPage] = useState(
     Number(searchParams.get("page")) || 1
@@ -53,7 +58,7 @@ const WatchlistContainer: React.FC = () => {
 
     fetchWatchlist();
     window.scrollTo(0, 0);
-  }, [currentPage, token, user, navigate]);
+  }, [currentPage, token, user, navigate, authLoading]);
 
   const handlePageChange = (page: number) => {
     if (page !== currentPage) {
@@ -63,13 +68,73 @@ const WatchlistContainer: React.FC = () => {
     }
   };
 
-  if (loading) return <Spinner />;
+  if (authLoading || loading) return <Spinner />;
   if (error) return <ErrorMessage text={error} />;
   if (!data || !data.watchlist.length) {
     return (
       <EmptyMessage text="Your watchlist is empty. Start adding products you're interested in!" />
     );
   }
+
+  const handleRemoveFromWatchlist = async (productId: string) => {
+    if (!token) {
+      addAlert(
+        "error",
+        "You must be logged in to remove items from your watchlist."
+      );
+      return;
+    }
+
+    try {
+      setRemovingProductIds((prev) => new Set(prev).add(productId));
+
+      await bidderApi.removeFromWatchlist(productId, token);
+
+      const cardElement = document.querySelector(
+        `[data-product-id="${productId}"]`
+      );
+      if (cardElement) {
+        cardElement.classList.add("animate-fade-out");
+        await new Promise((resolve) => setTimeout(resolve, 300)); // Wait animation
+      }
+
+      setData((prevData) => {
+        if (!prevData) return prevData;
+
+        return {
+          ...prevData,
+          watchlist: prevData.watchlist.filter(
+            (item) => item.product._id !== productId
+          ),
+          pagination: {
+            ...prevData.pagination,
+            total: prevData.pagination.total - 1,
+          },
+        };
+      });
+
+      addAlert("success", "Product removed from watchlist.");
+
+      if (data?.watchlist.length === 1 && currentPage > 1) {
+        setCurrentPage(currentPage - 1);
+        setSearchParams({ page: (currentPage - 1).toString() });
+      }
+    } catch (err: any) {
+      console.error("Error removing product from watchlist:", err);
+      addAlert(
+        "error",
+        err.message ||
+          "An error occurred while removing the product from the watchlist."
+      );
+    } finally {
+      setRemovingProductIds((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(productId);
+        return newSet;
+      });
+    }
+  };
+
   return (
     <div className="watchlist-container">
       {/* Header Section */}
@@ -86,7 +151,13 @@ const WatchlistContainer: React.FC = () => {
       {/* Products Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
         {data.watchlist.map((item) => (
-          <ProductCard key={item._id} product={item.product} />
+          <ProductCard
+            key={item._id}
+            product={item.product}
+            showRemoveButton={true}
+            onRemove={() => handleRemoveFromWatchlist(item.product._id)}
+            isRemoving={removingProductIds.has(item.product._id)}
+          />
         ))}
       </div>
 
