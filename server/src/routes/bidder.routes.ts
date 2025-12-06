@@ -17,6 +17,7 @@ import {
   viewReceivedRatings,
   updateRating,
   deleteRating,
+  viewMyBids,
 } from "../controllers/bidder.controller";
 import { protect } from "../middleware/auth.middleware";
 import { validate } from "../middleware/validate";
@@ -45,7 +46,7 @@ router.get(
   viewBidHistory
 );
 router.post("/ask-seller/:productId", askSellerQuestion);
-
+router.get("/my-bids", viewMyBids);
 router.get("/profile", viewProfile);
 router.put("/profile", validate(updateProfileSchema, "body"), editProfile);
 router.put(

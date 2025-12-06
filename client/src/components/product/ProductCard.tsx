@@ -3,6 +3,7 @@ import type { Product } from "@interfaces/product";
 import ProductImage from "./ProductImage";
 import { Link } from "react-router-dom";
 import { maskName } from "@utils/product";
+import { getTimeRemaining } from "@utils/time";
 
 interface ProductCardProps {
   product: Product;
@@ -46,27 +47,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
       year: "numeric",
     });
 
-  const getRemainingTime = (endStr: string) => {
-    const end = new Date(endStr).getTime();
-    const now = Date.now();
-    const diff = end - now;
-
-    if (diff <= 0) return "Ended";
-
-    const totalSeconds = Math.floor(diff / 1000);
-    const days = Math.floor(totalSeconds / (60 * 60 * 24));
-    const hours = Math.floor((totalSeconds % (60 * 60 * 24)) / (60 * 60));
-    const minutes = Math.floor((totalSeconds % (60 * 60)) / 60);
-    const seconds = totalSeconds % 60;
-
-    let timeString = "";
-    if (days > 0) timeString += `${days}d `;
-    if (hours > 0 || days > 0) timeString += `${hours}h `;
-    if (minutes > 0 || hours > 0 || days > 0) timeString += `${minutes}m `;
-    timeString += `${seconds}s`;
-
-    return timeString.trim();
-  };
+  const timeRemaining = getTimeRemaining(endTime);
 
   return (
     <Link
@@ -113,7 +94,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
         </p>
         <p className="text-sm sm:text-base text-red-600 font-bold">
           Time Remaining:{" "}
-          <span className="text-red-700">{getRemainingTime(endTime)}</span>
+          <span className="text-red-700">{timeRemaining.text}</span>
         </p>
         <p className="text-xs sm:text-sm text-gray-700">
           <span className="font-semibold">Number of Bids: </span>

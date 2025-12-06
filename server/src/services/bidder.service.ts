@@ -17,6 +17,7 @@ import {
   sendBidConfirmationToBidder,
   sendOutbidNotificationToBidders,
 } from "../utils/email.util";
+import { is } from "zod/v4/locales";
 
 export const bidderService = {
   async addToWatchlist(bidderId: string, productId: string) {
@@ -263,6 +264,196 @@ export const bidderService = {
         totalBids: totalBids,
         limit: limit,
       },
+    };
+  },
+
+  async getMyBids(
+    bidderId: string,
+    page: number = 1,
+    limit: number = 10,
+    sortBy: "endTime" | "price" | "bidCount" = "endTime",
+    sortOrder: "asc" | "desc" = "desc"
+  ) {
+    const now = new Date();
+
+    // Lấy danh sách product IDs mà bidder đã bid
+    const bids = await Bid.find({ bidder: bidderId }).distinct("product");
+
+    let sortField: any = {};
+    switch (sortBy) {
+      case "price":
+        sortField = { currentPrice: sortOrder === "asc" ? 1 : -1 };
+        break;
+      case "bidCount":
+        sortField = { bidCount: sortOrder === "asc" ? 1 : -1 };
+        break;
+      case "endTime":
+      default:
+        sortField = { endTime: sortOrder === "asc" ? -1 : 1 };
+        break;
+    }
+
+    const [awaitingTotal, activeTotal] = await Promise.all([
+      Product.countDocuments({
+        _id: { $in: bids },
+        currentBidder: bidderId,
+        endTime: { $lt: now },
+        winnerConfirmed: { $ne: true },
+      }),
+      Product.countDocuments({
+        _id: { $in: bids },
+        endTime: { $gt: now },
+        winnerConfirmed: { $ne: true },
+      }),
+    ]);
+
+    const shouldReverseGroups = sortBy === "endTime" && sortOrder === "desc";
+
+    let firstGroup: "awaiting" | "active";
+    let firstGroupTotal: number;
+    let secondGroupTotal: number;
+
+    if (shouldReverseGroups) {
+      firstGroup = "awaiting";
+      firstGroupTotal = awaitingTotal;
+      secondGroupTotal = activeTotal;
+    } else {
+      // ASC endTime hoặc Price/BidCount: Awaiting → Active
+      firstGroup = "active";
+      firstGroupTotal = activeTotal;
+      secondGroupTotal = awaitingTotal;
+    }
+
+    const startIndex = (page - 1) * limit;
+    const endIndex = page * limit;
+
+    let fetchFirstGroup = false;
+    let fetchSecondGroup = false;
+    let firstGroupSkip = 0;
+    let firstGroupLimit = 0;
+    let secondGroupSkip = 0;
+    let secondGroupLimit = 0;
+
+    if (startIndex < firstGroupTotal) {
+      // Page này có items từ first group
+      fetchFirstGroup = true;
+      firstGroupSkip = startIndex;
+      firstGroupLimit = Math.min(limit, firstGroupTotal - startIndex);
+
+      if (endIndex > firstGroupTotal) {
+        fetchSecondGroup = true;
+        secondGroupSkip = 0;
+        secondGroupLimit = endIndex - firstGroupTotal;
+      }
+    } else {
+      // Page này chỉ có second group
+      fetchSecondGroup = true;
+      secondGroupSkip = startIndex - firstGroupTotal;
+      secondGroupLimit = limit;
+    }
+
+    let awaitingProducts: any[] = [];
+    let activeProducts: any[] = [];
+
+    const populateFields = [
+      { path: "seller", select: "name email" },
+      { path: "category", select: "name" },
+      { path: "currentBidder", select: "name email" },
+    ];
+
+    if (firstGroup === "awaiting") {
+      if (fetchFirstGroup) {
+        awaitingProducts = await Product.find({
+          _id: { $in: bids },
+          currentBidder: bidderId,
+          endTime: { $lt: now },
+          winnerConfirmed: { $ne: true },
+        })
+          .populate(populateFields)
+          .sort(sortField)
+          .skip(firstGroupSkip)
+          .limit(firstGroupLimit)
+          .lean();
+      }
+
+      if (fetchSecondGroup) {
+        activeProducts = await Product.find({
+          _id: { $in: bids },
+          endTime: { $gt: now },
+          winnerConfirmed: { $ne: true },
+        })
+          .populate(populateFields)
+          .sort(sortField)
+          .skip(secondGroupSkip)
+          .limit(secondGroupLimit)
+          .lean();
+      }
+    } else {
+      if (fetchFirstGroup) {
+        activeProducts = await Product.find({
+          _id: { $in: bids },
+          endTime: { $gt: now },
+          winnerConfirmed: { $ne: true },
+        })
+          .populate(populateFields)
+          .sort(sortField)
+          .skip(firstGroupSkip)
+          .limit(firstGroupLimit)
+          .lean();
+      }
+
+      if (fetchSecondGroup) {
+        awaitingProducts = await Product.find({
+          _id: { $in: bids },
+          currentBidder: bidderId,
+          endTime: { $lt: now },
+          winnerConfirmed: { $ne: true },
+        })
+          .populate(populateFields)
+          .sort(sortField)
+          .skip(secondGroupSkip)
+          .limit(secondGroupLimit)
+          .lean();
+      }
+    }
+
+    const awaitingWithStatus = awaitingProducts.map((product: any) => ({
+      ...product,
+      isEnded: true,
+      isWinning: false,
+      awaitingConfirmation: true,
+    }));
+
+    const activeWithStatus = activeProducts.map((product: any) => {
+      const isCurrentBidder =
+        product.currentBidder?._id?.toString() === bidderId;
+      return {
+        ...product,
+        isEnded: false,
+        isWinning: isCurrentBidder,
+        awaitingConfirmation: false,
+      };
+    });
+
+    let bidsCombined: any[];
+    if (shouldReverseGroups) {
+      bidsCombined = [...awaitingWithStatus, ...activeWithStatus];
+    } else {
+      bidsCombined = [...activeWithStatus, ...awaitingWithStatus];
+    }
+
+    const totalItems = awaitingTotal + activeTotal;
+
+    return {
+      bids: bidsCombined,
+      pagination: {
+        page,
+        limit,
+        total: totalItems,
+        totalPages: Math.ceil(totalItems / limit),
+      },
+      awaitingTotal, // Thêm info để frontend hiển thị
+      activeTotal, // Thêm info để frontend hiển thị
     };
   },
 

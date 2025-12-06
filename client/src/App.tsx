@@ -30,6 +30,7 @@ import UnauthorizedPage from "./pages/shared/UnauthorizedPage";
 import ForbiddenPage from "./pages/shared/ForbiddenPage";
 import AlertContainer from "@containers/ui/AlertContainer";
 import WatchListPage from "@pages/user/WatchlistPage";
+import BiddingPage from "@pages/user/biddingPage";
 import SellerProductDetailsPage from "@pages/seller/SellerProductDetailsPage";
 
 const RoleBasedRedirect = ({ children }: { children: React.ReactNode }) => {
@@ -79,6 +80,7 @@ const App = () => {
                 <Route path="/" element={<UserLayout />}>
                   <Route path="profile" element={<ProfilePage />} />
                   <Route path="watchlist" element={<WatchListPage />} />
+                  <Route path="bidding" element={<BiddingPage />} />
                 </Route>
               </Route>
 

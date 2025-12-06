@@ -9,6 +9,7 @@ import type {
   AuctionItem,
   RateSellerDto,
   UpgradeRequestStatus,
+  GetMyBidsResponse,
 } from '@interfaces/bidder';
 import type { IPaginatedResponse } from '@interfaces/ui';
 
@@ -157,6 +158,28 @@ export const bidderApi = {
       },
     });
 
+    return handleResponse(res);
+  },
+
+  getMyBids: async (
+    page: number = 1,
+    limit: number = 10,
+    sortBy: 'endTime' | 'price' | 'bidCount' = 'endTime',
+    sortOrder: 'asc' | 'desc' = 'desc',
+  ) : Promise<GetMyBidsResponse> => {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+      sortBy,
+      sortOrder,
+    });
+
+    const url = `${API_BASE}/api/bidder/my-bids?${params}`;
+    const res = await fetch(url, {
+      method: "GET",
+      headers: getAuthHeaders(),
+    });
+    
     return handleResponse(res);
   },
 
