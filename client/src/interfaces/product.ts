@@ -1,3 +1,5 @@
+import type { User } from "./auth";
+
 export interface QuestionAnswer {
   _id: string;
   question: string;
@@ -43,7 +45,7 @@ export interface Product {
     startTime: Date | string | null;
   } | null;
   highestBidder: UserSummary;
-  currentBidder: UserSummary; // some apis use this field
+  currentBidder: UserSummary; // some apis use this field instead of highestBidder
 
   bidCount: number;
 

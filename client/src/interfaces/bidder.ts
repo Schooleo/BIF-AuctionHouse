@@ -80,3 +80,21 @@ export interface UpgradeRequestStatus {
 export interface RequestSellerUpgradeDto {
   reason: string;
 }
+
+export interface BidItem extends Product {
+  isEnded: boolean;
+  isWinning: boolean;
+  awaitingConfirmation: boolean;
+}
+
+export interface GetMyBidsResponse {
+  bids: BidItem[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+  awaitingTotal: number; 
+  activeTotal: number;     
+}
