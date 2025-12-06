@@ -188,12 +188,11 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   // Update content if value changes externally (e.g. reset form)
   React.useEffect(() => {
     if (editor && value !== editor.getHTML()) {
-      // Only update if the content is different to avoid cursor jumping
-      // This is a simple check, for production might need more robust comparison
-      if (editor.getText() === "" && value === "") {
-        editor.commands.setContent(value);
-        setCharCount(0);
-      }
+      editor.commands.setContent(value);
+      const count =
+        editor.storage.characterCount?.characters() ||
+        editor.state.doc.textContent.length;
+      setCharCount(count);
     }
   }, [value, editor]);
 

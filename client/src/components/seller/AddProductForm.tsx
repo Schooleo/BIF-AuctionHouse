@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { sellerApi } from "@services/seller.api";
 import { productApi } from "@services/product.api";
 import type { Category } from "@interfaces/product";
@@ -96,6 +96,7 @@ type ProductFormErrors = {
 
 const AddProductForm: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -119,7 +120,32 @@ const AddProductForm: React.FC = () => {
   const [selectedMainCategory, setSelectedMainCategory] = useState<string>("");
 
   useEffect(() => {
-    // If formData.category is set (e.g. edit mode in future), try to determine main/sub
+    // Check for pre-filled product data (e.g. from repost)
+    if (location.state?.product) {
+      const p = location.state.product;
+      setFormData({
+        name: p.name || "",
+        category:
+          typeof p.category === "object" ? p.category._id : p.category || "",
+        mainImage: p.mainImage || "",
+        subImages:
+          p.subImages && p.subImages.length >= 3
+            ? p.subImages
+            : [...(p.subImages || []), "", "", ""].slice(0, 3),
+        description: p.description || "",
+        endTime: "", // User must set new end time
+        startingPrice: p.startingPrice ? String(p.startingPrice) : "",
+        stepPrice: p.stepPrice ? String(p.stepPrice) : "",
+        buyNowPrice: p.buyNowPrice ? String(p.buyNowPrice) : "",
+        autoExtends: p.autoExtends ?? true,
+        allowUnratedBidders: p.allowUnratedBidders ?? false,
+      });
+      // Note: We don't set endTime because reposting requires a new schedule
+    }
+  }, [location.state]);
+
+  useEffect(() => {
+    // If formData.category is set (e.g. edit mode in future or repost), try to determine main/sub
     if (formData.category && categories.length > 0) {
       // Check if it's a main category
       const isMain = categories.find((c) => c._id === formData.category);

@@ -96,6 +96,21 @@ export const sellerApi = {
     return handleResponse(res);
   },
 
+  completeTransaction: async (productId: string) => {
+    const url = `${API_BASE}/api/seller/products/${productId}/complete-transaction`;
+    const token = localStorage.getItem("token");
+
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    return handleResponse(res);
+  },
+
   getSellerProducts: async (
     params: {
       page?: number;
@@ -103,7 +118,13 @@ export const sellerApi = {
       search?: string;
       sortBy?: string;
       sortOrder?: "asc" | "desc";
-      status?: "all" | "ongoing" | "ended";
+      status?:
+        | "all"
+        | "ongoing"
+        | "ended"
+        | "awaiting"
+        | "bid_winner"
+        | "history";
     } = {}
   ): Promise<{
     products: Product[];
@@ -196,6 +217,58 @@ export const sellerApi = {
 
     const res = await fetch(url, {
       method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    return handleResponse(res);
+  },
+
+  rateWinner: async (
+    productId: string,
+    score: 1 | -1,
+    comment: string
+  ): Promise<{ message: string }> => {
+    const url = `${API_BASE}/api/seller/products/${productId}/rate-winner`;
+    const token = localStorage.getItem("token");
+
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ score, comment }),
+    });
+
+    return handleResponse(res);
+  },
+
+  cancelTransaction: async (
+    productId: string
+  ): Promise<{ message: string }> => {
+    const url = `${API_BASE}/api/seller/products/${productId}/cancel-transaction`;
+    const token = localStorage.getItem("token");
+
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    return handleResponse(res);
+  },
+
+  transferWinner: async (productId: string): Promise<{ message: string }> => {
+    const url = `${API_BASE}/api/seller/products/${productId}/transfer-winner`;
+    const token = localStorage.getItem("token");
+
+    const res = await fetch(url, {
+      method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
