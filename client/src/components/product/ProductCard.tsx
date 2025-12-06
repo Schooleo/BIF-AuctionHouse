@@ -29,6 +29,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
     bidCount,
 
     highestBidder,
+    currentBidder,
     startTime,
     endTime,
   } = product;
@@ -42,7 +43,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
   };
 
   const currentTopBidderName =
-    highestBidder?.name ||
+    currentBidder?.name || highestBidder?.name ||
     (bidders && bidders.length > 0
       ? bidders[bidders.length - 1].bidder.name
       : null);

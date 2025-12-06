@@ -720,6 +720,13 @@ export const bidderService = {
             select: "name email",
           },
         })
+        .populate({
+          path: "product",
+          populate: {
+            path: "currentBidder",
+            select: "name",
+          },
+        })
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit),
