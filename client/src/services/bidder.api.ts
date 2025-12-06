@@ -197,6 +197,39 @@ export const bidderApi = {
     return handleResponse(res);
   },
 
+  removeFromWatchlist: async (
+    productId: string,
+    token: string
+  ): Promise<{ message: string }> => {
+    const url = `${API_BASE}/api/bidder/watchlist/${productId}`;
+
+    const res = await fetch(url, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    return handleResponse(res);
+  },
+
+  checkInWatchlist: async (
+    productId: string,
+    token: string
+  ): Promise<{ inWatchlist: boolean }> => {
+    const url = `${API_BASE}/api/bidder/watchlist/check/${productId}`;
+    const res = await fetch(url, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    return handleResponse(res);
+  },
+
   // Profile Management
   getProfile: async (): Promise<BidderProfile> => {
     const res = await fetch(`${API_BASE}/api/bidder/profile`, {

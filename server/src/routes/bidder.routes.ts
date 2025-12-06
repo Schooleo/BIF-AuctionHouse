@@ -1,6 +1,8 @@
 import { Router } from "express";
 import {
   addToWatchlist,
+  removeFromWatchlist,
+  checkInWatchlist,
   getSuggestedPrice,
   placeBid,
   viewBidHistory,
@@ -37,6 +39,8 @@ const router = Router();
 router.use(protect(["bidder"]));
 
 router.post("/watchlist", addToWatchlist);
+router.delete("/watchlist/:productId", removeFromWatchlist);
+router.get("/watchlist/check/:productId", checkInWatchlist);
 router.get("/bid/suggest/:productId", getSuggestedPrice);
 router.post("/bid", validate(placeBidSchema, "body"), placeBid);
 router.get(
