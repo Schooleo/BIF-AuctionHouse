@@ -1,19 +1,17 @@
-import { handleResponse } from "@utils/handleResponse";
-import type { BidHistoryItem } from "@interfaces/product";
-import type { GetWatchlistResponse } from "@interfaces/watchlist";
 import type {
   BidderProfile,
   UpdateProfileDto,
   ChangePasswordDto,
   RatingReceived,
+  WatchlistItem,
   AuctionItem,
   RateSellerDto,
   UpgradeRequestStatus,
-  GetMyBidsResponse,
 } from '@interfaces/bidder';
 import type { IPaginatedResponse } from '@interfaces/ui';
+import { handleResponse } from '@utils/handleResponse';
 
-const API_BASE = import.meta.env.VITE_APP_API_URL || "";
+const API_BASE = import.meta.env.VITE_APP_API_URL || '';
 
 const getAuthHeaders = () => {
   const token = localStorage.getItem('token');
@@ -23,243 +21,7 @@ const getAuthHeaders = () => {
   };
 };
 
-interface SuggestedPriceResponse {
-  suggestedPrice: number;
-  currentPrice: number;
-  stepPrice: number;
-}
-
-interface PlaceBidResponse {
-  message: string;
-  data: {
-    bid: {
-      _id?: string;
-      product?: string;
-      bidder?: string;
-      price: number;
-      createdAt?: string;
-    };
-    product: {
-      currentPrice: number;
-      currentBidder: {
-        _id: string;
-        name: string;
-        rating: number;
-      };
-      bidCount: number;
-    };
-  };
-}
-
-interface AddToWatchlistResponse {
-  message: string;
-  data: {
-    _id: string;
-    user: string;
-    product: string;
-    createdAt: string;
-    updatedAt: string;
-  };
-}
-
-interface BidHistoryResponse {
-  bidHistory: BidHistoryItem[];
-  pagination: {
-    currentPage: number;
-    totalPages: number;
-    totalBids: number;
-    limit: number;
-  };
-}
-
-interface AskQuestionResponse {
-  message: string;
-  question: {
-    _id: string;
-    question: string;
-    questioner: {
-      _id: string;
-      name: string;
-    };
-    askedAt: string;
-  };
-}
-
 export const bidderApi = {
-  getSuggestedPrice: async (
-    productId: string,
-    token: string
-  ): Promise<SuggestedPriceResponse> => {
-    const url = `${API_BASE}/api/bidder/bid/suggest/${productId}`;
-
-    const res = await fetch(url, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    return handleResponse(res);
-  },
-
-  placeBid: async (
-    productId: string,
-    price: number,
-    token: string
-  ): Promise<PlaceBidResponse> => {
-    const url = `${API_BASE}/api/bidder/bid`;
-
-    const res = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        productId,
-        price,
-      }),
-    });
-
-    return handleResponse(res);
-  },
-
-  addToWatchlist: async (
-    productId: string,
-    token: string
-  ): Promise<AddToWatchlistResponse> => {
-    const url = `${API_BASE}/api/bidder/watchlist`;
-
-    const res = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ productId }),
-    });
-
-    return handleResponse(res);
-  },
-
-  getBidHistory: async (
-    productId: string,
-    token: string,
-    page: number = 1,
-    limit: number = 10
-  ): Promise<BidHistoryResponse> => {
-    const url = `${API_BASE}/api/bidder/bid-history/${productId}?page=${page}&limit=${limit}`;
-    const res = await fetch(url, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    return handleResponse(res);
-  },
-
-  getMyBids: async (
-    page: number = 1,
-    limit: number = 10,
-    sortBy: 'endTime' | 'price' | 'bidCount' = 'endTime',
-    sortOrder: 'asc' | 'desc' = 'desc',
-    status?: 'active' | 'awaiting' | 'processing' | 'all'
-  ) : Promise<GetMyBidsResponse> => {
-    const params = new URLSearchParams({
-      page: page.toString(),
-      limit: limit.toString(),
-      sortBy,
-      sortOrder,
-    });
-
-    if (status && status !== 'all') {
-      params.append('status', status);
-    }
-
-    const url = `${API_BASE}/api/bidder/my-bids?${params}`;
-    const res = await fetch(url, {
-      method: "GET",
-      headers: getAuthHeaders(),
-    });
-    
-    return handleResponse(res);
-  },
-
-  askQuestion: async (
-    productId: string,
-    question: string,
-    token: string
-  ): Promise<AskQuestionResponse> => {
-    const url = `${API_BASE}/api/bidder/ask-seller/${productId}`;
-
-    const res = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ question }),
-    });
-
-    return handleResponse(res);
-  },
-
-  getWatchlist: async (
-    token: string,
-    page: number = 1,
-    limit: number = 10,
-    sortBy: "createdAt" | "endTime" | "currentPrice" = "createdAt",
-    sortOrder: "asc" | "desc" = "desc"
-  ): Promise<GetWatchlistResponse> => {
-    const url = `${API_BASE}/api/bidder/watchlist?page=${page}&limit=${limit}&sortBy=${sortBy}&sortOrder=${sortOrder}`;
-
-    const res = await fetch(url, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    return handleResponse(res);
-  },
-
-  removeFromWatchlist: async (
-    productId: string,
-    token: string
-  ): Promise<{ message: string }> => {
-    const url = `${API_BASE}/api/bidder/watchlist/${productId}`;
-
-    const res = await fetch(url, {
-      method: "DELETE",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    return handleResponse(res);
-  },
-
-  checkInWatchlist: async (
-    productId: string,
-    token: string
-  ): Promise<{ inWatchlist: boolean }> => {
-    const url = `${API_BASE}/api/bidder/watchlist/check/${productId}`;
-    const res = await fetch(url, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    return handleResponse(res);
-  },
-
   // Profile Management
   getProfile: async (): Promise<BidderProfile> => {
     const res = await fetch(`${API_BASE}/api/bidder/profile`, {
@@ -288,10 +50,40 @@ export const bidderApi = {
   },
 
   // Ratings
-  getReceivedRatings: async (page: number = 1, limit: number = 10): Promise<IPaginatedResponse<RatingReceived>> => {
-    const res = await fetch(`${API_BASE}/api/bidder/profile/ratings?page=${page}&limit=${limit}`, {
+  getReceivedRatings: async (
+    page: number = 1,
+    limit: number = 10,
+    filter?: 'positive' | 'negative'
+  ): Promise<IPaginatedResponse<RatingReceived>> => {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+    });
+    if (filter) {
+      params.append('filter', filter);
+    }
+    const res = await fetch(`${API_BASE}/api/bidder/profile/ratings?${params.toString()}`, {
       method: 'GET',
       headers: getAuthHeaders(),
+      cache: 'no-cache',
+    });
+    return handleResponse(res);
+  },
+
+  // Watchlist
+  getWatchlist: async (page: number = 1, limit: number = 10): Promise<IPaginatedResponse<WatchlistItem>> => {
+    const res = await fetch(`${API_BASE}/api/bidder/watchlist?page=${page}&limit=${limit}`, {
+      method: 'GET',
+      headers: getAuthHeaders(),
+    });
+    return handleResponse(res);
+  },
+
+  addToWatchlist: async (productId: string): Promise<{ message: string }> => {
+    const res = await fetch(`${API_BASE}/api/bidder/watchlist`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ productId }),
     });
     return handleResponse(res);
   },
@@ -356,6 +148,5 @@ export const bidderApi = {
       headers: getAuthHeaders(),
     });
     return handleResponse(res);
-  }
-
+  },
 };
