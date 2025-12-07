@@ -29,6 +29,15 @@ const ProductDetailsContainer: React.FC<ProductDetailsContainerProps> = ({
 
   const [isAskQuestionModalOpen, setIsAskQuestionModalOpen] = useState(false);
 
+  // Compute auction state for Ask Question button
+  const isAuctionEnded = product
+    ? new Date() > new Date(product.endTime)
+    : false;
+  const isWinnerConfirmed = product?.winnerConfirmed === true;
+  const currentUserId = user?.id;
+  const winnerId = product?.currentBidder?._id || product?.highestBidder?._id;
+  const isCurrentUserWinner = isWinnerConfirmed && currentUserId === winnerId;
+
   useEffect(() => {
     const fetchProduct = async () => {
       try {
@@ -122,7 +131,7 @@ const ProductDetailsContainer: React.FC<ProductDetailsContainerProps> = ({
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-2xl font-semibold">Questions & Answers</h2>
 
-          {!isGuest && (
+          {!isGuest && (!isAuctionEnded || isCurrentUserWinner) && (
             <button
               onClick={() => setIsAskQuestionModalOpen(true)}
               className="px-4 py-2 bg-primary-blue text-white rounded-lg hover:scale-105 transition-transform duration-200 font-semibold text-sm flex items-center gap-2"
