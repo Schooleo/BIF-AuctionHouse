@@ -66,7 +66,7 @@ export const bidderService = {
     });
     return { inWatchlist: !!exists };
   },
-  
+
   async getSuggestedPrice(bidderId: string, productId: string) {
     // Lấy thông tin sản phẩm
     const product = await Product.findById(productId);
@@ -708,10 +708,51 @@ export const bidderService = {
   },
 
   //Lấy danh sách watchlist
-  async getWatchlist(bidderId: string, page: number = 1, limit: number = 10) {
+  async getWatchlist(
+    bidderId: string,
+    page: number = 1,
+    limit: number = 10,
+    sortBy: "createdAt" | "endTime" | "currentPrice" = "createdAt",
+    sortOrder: "asc" | "desc" = "desc"
+  ) {
     const skip = (page - 1) * limit;
+    const sortDirection = sortOrder === "asc" ? 1 : -1;
 
-    const [watchlistItems, total] = await Promise.all([
+    if (sortBy === "createdAt") {
+      const [watchlistItems, total] = await Promise.all([
+        Watchlist.find({ user: bidderId })
+          .populate({
+            path: "product",
+            populate: {
+              path: "seller",
+              select: "name email",
+            },
+          })
+          .populate({
+            path: "product",
+            populate: {
+              path: "currentBidder",
+              select: "name",
+            },
+          })
+          .sort({ createdAt: sortDirection })
+          .skip(skip)
+          .limit(limit),
+        Watchlist.countDocuments({ user: bidderId }),
+      ]);
+
+      return {
+        watchlist: watchlistItems,
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+        },
+      };
+    }
+
+    const [allWatchlistItems, total] = await Promise.all([
       Watchlist.find({ user: bidderId })
         .populate({
           path: "product",
@@ -726,15 +767,30 @@ export const bidderService = {
             path: "currentBidder",
             select: "name",
           },
-        })
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(limit),
+        }),
       Watchlist.countDocuments({ user: bidderId }),
     ]);
 
+    const sortedItems = allWatchlistItems.sort((a: any, b: any) => {
+      const aValue =
+        sortBy === "endTime" ? a.product?.endTime : a.product?.currentPrice;
+      const bValue =
+        sortBy === "endTime" ? b.product?.endTime : b.product?.currentPrice;
+
+      if (!aValue && !bValue) return 0;
+      if (!aValue) return 1;
+      if (!bValue) return -1;
+
+      const comparison = aValue > bValue ? 1 : aValue < bValue ? -1 : 0;
+      const actualDirection =
+        sortBy === "endTime" ? -sortDirection : sortDirection;
+      return comparison * actualDirection;
+    });
+
+    const paginatedItems = sortedItems.slice(skip, skip + limit);
+
     return {
-      watchlist: watchlistItems,
+      watchlist: paginatedItems,
       pagination: {
         page,
         limit,

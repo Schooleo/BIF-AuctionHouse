@@ -51,7 +51,6 @@ export interface Product {
 
   winnerConfirmed?: boolean;
   transactionCompleted?: boolean;
-  currentBidder?: UserSummary | string | null;
   isRatedBySeller?: boolean;
   rejectedBidders?: string[];
 }
