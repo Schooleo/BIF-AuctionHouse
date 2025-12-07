@@ -8,6 +8,8 @@ interface RateBidderModalProps {
   onSubmit: (score: 1 | -1, comment: string) => void;
   loading: boolean;
   bidderName: string;
+  initialScore?: 1 | -1;
+  initialComment?: string;
 }
 
 const RateBidderModal: React.FC<RateBidderModalProps> = ({
@@ -16,12 +18,22 @@ const RateBidderModal: React.FC<RateBidderModalProps> = ({
   onSubmit,
   loading,
   bidderName,
+  initialScore,
+  initialComment,
 }) => {
-  const [score, setScore] = useState<1 | -1 | null>(null);
-  const [comment, setComment] = useState("");
+  const [score, setScore] = useState<1 | -1 | null>(initialScore || null);
+  const [comment, setComment] = useState(initialComment || "");
+
+  // Update state if initial props change (e.g. when reopening with new data)
+  React.useEffect(() => {
+    if (isOpen) {
+      setScore(initialScore || null);
+      setComment(initialComment || "");
+    }
+  }, [isOpen, initialScore, initialComment]);
 
   const handleSubmit = async () => {
-    if (score && comment.trim()) {
+    if (score) {
       onSubmit(score, comment);
     }
   };
@@ -31,8 +43,10 @@ const RateBidderModal: React.FC<RateBidderModalProps> = ({
       isOpen={isOpen}
       onClose={onClose}
       onSubmit={handleSubmit}
-      title={`Rate ${bidderName}`}
-      submitText="Submit Rating"
+      title={
+        initialScore ? `Update Rating for ${bidderName}` : `Rate ${bidderName}`
+      }
+      submitText={initialScore ? "Update Rating" : "Submit Rating"}
       isLoading={loading}
     >
       <div className="space-y-6">
@@ -81,7 +95,6 @@ const RateBidderModal: React.FC<RateBidderModalProps> = ({
             onChange={(e) => setComment(e.target.value)}
             placeholder="Describe your experience..."
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 h-24 resize-none"
-            required
           />
         </div>
       </div>

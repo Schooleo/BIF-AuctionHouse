@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import DOMPurify from "dompurify";
 import ProductImageCard from "@components/product/ProductImageCard";
 import Spinner from "@components/ui/Spinner";
@@ -10,6 +11,7 @@ import SellerBidHistoryModal from "@components/seller/SellerBidHistoryModal";
 import SellerQnaManager from "@components/seller/SellerQnaManager";
 import { productApi } from "@services/product.api";
 import { sellerApi } from "@services/seller.api";
+import { orderApi } from "@services/order.api";
 import { useAlertStore } from "@stores/useAlertStore";
 import { checkRecentlyAdded, formatPrice, maskName } from "@utils/product";
 import { formatBidTime } from "@utils/time";
@@ -29,6 +31,7 @@ const SellerProductDetailsContainer: React.FC<
   SellerProductDetailsContainerProps
 > = ({ id }) => {
   const addAlert = useAlertStore((state) => state.addAlert);
+  const navigate = useNavigate();
   const [details, setDetails] = useState<ProductDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -301,8 +304,16 @@ const SellerProductDetailsContainer: React.FC<
     }
   };
 
-  const handleManageTransaction = () => {
-    addAlert("info", "To be implemented: Manage Transaction flow.");
+  const handleManageTransaction = async () => {
+    if (!product) return;
+    try {
+      // Assuming createOrder handles "get or create" logic
+      const order = await orderApi.createOrder(product._id);
+      navigate(`/seller/orders/${order._id}`);
+    } catch (error) {
+      console.error("Failed to navigate to order:", error);
+      addAlert("error", "Failed to open order details.");
+    }
   };
 
   if (loading) {

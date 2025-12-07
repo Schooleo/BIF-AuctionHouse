@@ -32,6 +32,7 @@ import AlertContainer from "@containers/ui/AlertContainer";
 import WatchListPage from "@pages/user/WatchlistPage";
 import BiddingPage from "@pages/user/biddingPage";
 import SellerProductDetailsPage from "@pages/seller/SellerProductDetailsPage";
+import OrderCompletionPage from "@pages/order/OrderCompletionPage";
 
 const RoleBasedRedirect = ({ children }: { children: React.ReactNode }) => {
   const user = useAuthStore((state) => state.user);
@@ -104,12 +105,27 @@ const App = () => {
                   />
                   <Route path="bid-winners" element={<SellerProductsPage />} />
                   <Route path="add-product" element={<AddProductPage />} />
+                  <Route path="orders/:id" element={<OrderCompletionPage />} />
                   <Route path="profile" element={<SellerProfilePage />} />
                 </Route>
               </Route>
 
               <Route path="/unauthorized" element={<UnauthorizedPage />} />
               <Route path="/forbidden" element={<ForbiddenPage />} />
+
+              <Route element={<ProtectedRoute />}>
+                <Route element={<MainLayout />}>
+                  <Route
+                    path="orders/:id"
+                    element={
+                      <RoleBasedRedirect>
+                        <OrderCompletionPage />
+                      </RoleBasedRedirect>
+                    }
+                  />
+                </Route>
+              </Route>
+
               <Route path="*" element={<NotFoundPage />} />
             </>
           )

@@ -6,8 +6,8 @@ import {
   formatPrice,
   maskName,
 } from "@utils/product";
-import { Link } from "react-router-dom";
-import { Heart } from "lucide-react";
+import { orderApi } from "@services/order.api";
+import { MessageCircle, Heart } from "lucide-react";
 import Spinner from "@components/ui/Spinner";
 import BidModal from "./BidModal";
 import { bidderApi } from "@services/bidder.api";
@@ -22,6 +22,7 @@ interface ProductInfoCardProps {
 }
 
 import DOMPurify from "dompurify";
+import { Link, useNavigate } from "react-router-dom";
 
 const ExpandableText = ({
   content,
@@ -78,9 +79,24 @@ const ProductInfoCard: React.FC<ProductInfoCardProps> = ({
   const [isInWatchlist, setIsInWatchlist] = useState(false);
   const [isAddingToWatchlist, setIsAddingToWatchlist] = useState(false);
   const [isBidHistoryOpen, setIsBidHistoryOpen] = useState(false);
+  const [isCreatingOrder, setIsCreatingOrder] = useState(false);
   const addAlert = useAlertStore((state) => state.addAlert);
 
-  const { token } = useAuthStore();
+  const { token, user } = useAuthStore();
+  const navigate = useNavigate();
+
+  const handleCompleteOrder = async () => {
+    setIsCreatingOrder(true);
+    try {
+      const order = await orderApi.createOrder(product._id);
+      navigate(`/orders/${order._id}`);
+    } catch (error) {
+      console.error(error);
+      addAlert("error", "Failed to open order page");
+    } finally {
+      setIsCreatingOrder(false);
+    }
+  };
 
   useEffect(() => {
     const checkWatchlistStatus = async () => {
@@ -90,11 +106,8 @@ const ProductInfoCard: React.FC<ProductInfoCardProps> = ({
         return;
       }
 
-      try{
-        const result = await bidderApi.checkInWatchlist(
-          product._id,
-          token
-        );
+      try {
+        const result = await bidderApi.checkInWatchlist(product._id, token);
         setIsInWatchlist(result.inWatchlist);
       } catch (error) {
         console.error("Failed to check watchlist status:", error);
@@ -119,8 +132,8 @@ const ProductInfoCard: React.FC<ProductInfoCardProps> = ({
       );
       setIsInWatchlist(true);
       addAlert("success", "Added to watchlist successfully!");
-    } catch (error: any) {
-      const message = error.message || "";
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "";
 
       if (message.includes("already") || message.includes("exists")) {
         addAlert("warning", "Product is already in your watchlist.");
@@ -133,25 +146,28 @@ const ProductInfoCard: React.FC<ProductInfoCardProps> = ({
     }
   };
 
-    const handleRemoveFromWatchlist = async () => {
-      setIsAddingToWatchlist(true);
-      try {
-        if (!token) {
-          addAlert("error", "You must be logged in to remove from watchlist.");
-          return;
-        }
-
-        await bidderApi.removeFromWatchlist(product._id, token);
-
-        setIsInWatchlist(false);
-
-        addAlert("success", "Removed from watchlist successfully!");
-      } catch (error: any) {
-        const message = error.message || "Failed to remove from watchlist.";
-        addAlert("error", message);
-      } finally {
-        setIsAddingToWatchlist(false);
+  const handleRemoveFromWatchlist = async () => {
+    setIsAddingToWatchlist(true);
+    try {
+      if (!token) {
+        addAlert("error", "You must be logged in to remove from watchlist.");
+        return;
       }
+
+      await bidderApi.removeFromWatchlist(product._id, token);
+
+      setIsInWatchlist(false);
+
+      addAlert("success", "Removed from watchlist successfully!");
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Failed to remove from watchlist.";
+      addAlert("error", message);
+    } finally {
+      setIsAddingToWatchlist(false);
+    }
   };
 
   return (
@@ -212,7 +228,9 @@ const ProductInfoCard: React.FC<ProductInfoCardProps> = ({
             {/* Add to Watchlist Link (Xử lý API) */}
             <button
               type="button"
-              onClick={isInWatchlist ? handleRemoveFromWatchlist : handleAddToWatchlist}
+              onClick={
+                isInWatchlist ? handleRemoveFromWatchlist : handleAddToWatchlist
+              }
               className={`${isInWatchlist ? "bg-gray-600" : "bg-red-500"} rounded-2xl hover:scale-105 transition-transform duration-150 px-4 py-3 flex items-center gap-2 hover:cursor-pointer`}
             >
               {isAddingToWatchlist ? (
@@ -236,20 +254,46 @@ const ProductInfoCard: React.FC<ProductInfoCardProps> = ({
         )}
 
         {/* Place a Bid / Sign in Button (Primary) */}
-        {isGuest ? (
+        {/* Complete Order for Winning Bidder */}
+        {!isGuest &&
+        new Date(product.endTime) <= new Date() &&
+        (product.highestBidder?._id === user?.id ||
+          // Fallback check if populated object has _id as string
+          (typeof product.highestBidder === "object" &&
+            product.highestBidder?._id?.toString() === user?.id)) ? (
+          <button
+            onClick={handleCompleteOrder}
+            disabled={isCreatingOrder}
+            className="text-xl font-semibold w-full px-6 py-4 rounded-2xl shadow-md bg-green-600 text-white hover:scale-105 transition-transform duration-200 cursor-pointer flex items-center justify-center gap-2"
+          >
+            {isCreatingOrder ? (
+              <>
+                <Spinner /> Processing...
+              </>
+            ) : (
+              <>
+                <MessageCircle size={24} /> Complete Purchase & Chat
+              </>
+            )}
+          </button>
+        ) : isGuest ? (
           <Link
             to="/auth/login"
             className={`text-xl font-semibold w-full px-6 py-4 rounded-2xl shadow-md bg-primary-blue text-white hover:scale-105 transition-transform duration-200 text-center block cursor-pointer`}
           >
             Sign In to Start Bidding
           </Link>
-        ) : (
+        ) : new Date(product.endTime) > new Date() ? (
           <button
             onClick={() => setIsBidModalOpen(true)}
             className={`text-xl font-semibold w-full px-6 py-3 rounded-2xl shadow-md bg-primary-blue text-white hover:scale-105 transition-transform duration-200 cursor-pointer`}
           >
             Place a bid
           </button>
+        ) : (
+          <div className="text-center p-4 bg-gray-100 rounded-xl text-gray-500 font-medium">
+            Auction Ended
+          </div>
         )}
       </div>
 

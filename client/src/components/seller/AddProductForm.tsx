@@ -475,7 +475,7 @@ const AddProductForm: React.FC = () => {
             onChange={(value) =>
               setFormData((prev) => ({ ...prev, description: value }))
             }
-            limit={300}
+            limit={3000}
             placeholder="Detailed product description..."
             className={errors.description ? "border-red-500" : ""}
           />

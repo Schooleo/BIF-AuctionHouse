@@ -2,7 +2,10 @@ import app from "./app";
 import { connectDB } from "./config/db";
 import { env } from "./config/env";
 
+import { startAuctionCron } from "./cron/auction.cron";
+
 connectDB();
+startAuctionCron();
 
 const PORT = process.env.PORT || 3001;
 
