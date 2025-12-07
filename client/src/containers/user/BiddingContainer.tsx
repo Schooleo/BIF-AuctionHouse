@@ -22,6 +22,13 @@ const validateSortOrder = (orderStr: string | null): "asc" | "desc" => {
   return orderStr === "asc" ? "asc" : "desc";
 };
 
+const validateStatus = (
+  statusStr: string | null
+): "active" | "awaiting" | "processing" | "all" => {
+  const valid = ["active", "awaiting", "processing", "all"];
+  return valid.includes(statusStr || "") ? (statusStr as any) : "all";
+};
+
 const BiddingContainer: React.FC = () => {
   const navigate = useNavigate();
   const token = useAuthStore((state) => state.token);
@@ -30,6 +37,7 @@ const BiddingContainer: React.FC = () => {
   const pageFromUrl = validatePage(searchParams.get("page"));
   const sortByFromUrl = validateSortBy(searchParams.get("sortBy"));
   const sortOrderFromUrl = validateSortOrder(searchParams.get("sortOrder"));
+  const statusFromUrl = validateStatus(searchParams.get("status"));
 
   const [bids, setBids] = useState<BidItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -39,10 +47,15 @@ const BiddingContainer: React.FC = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [awaitingTotal, setAwaitingTotal] = useState(0);
   const [activeTotal, setActiveTotal] = useState(0);
+  const [processingTotal, setProcessingTotal] = useState(0);
+
   const [sortBy, setSortBy] = useState<"endTime" | "price" | "bidCount">(
     sortByFromUrl
   );
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">(sortOrderFromUrl);
+  const [status, setStatus] = useState<
+    "active" | "awaiting" | "processing" | "all"
+  >(statusFromUrl);
 
   const limit = 12;
 
@@ -50,16 +63,19 @@ const BiddingContainer: React.FC = () => {
     const newPage = validatePage(searchParams.get("page"));
     const newSortBy = validateSortBy(searchParams.get("sortBy"));
     const newSortOrder = validateSortOrder(searchParams.get("sortOrder"));
+    const newStatus = validateStatus(searchParams.get("status"));
 
     if (
       newPage !== page ||
       newSortBy !== sortBy ||
-      newSortOrder !== sortOrder
+      newSortOrder !== sortOrder ||
+      newStatus !== status
     ) {
       setIsUrlChanging(true);
       setPage(newPage);
       setSortBy(newSortBy);
       setSortOrder(newSortOrder);
+      setStatus(newStatus);
     }
   }, [searchParams]);
 
@@ -69,9 +85,10 @@ const BiddingContainer: React.FC = () => {
     if (page !== 1) params.page = page.toString();
     if (sortBy !== "endTime") params.sortBy = sortBy;
     if (sortOrder !== "desc") params.sortOrder = sortOrder;
+    if (status !== "all") params.status = status;
 
     setSearchParams(params, { replace: true });
-  }, [page, sortBy, sortOrder, setSearchParams]);
+  }, [page, sortBy, sortOrder, status, setSearchParams]);
 
   useEffect(() => {
     // Nếu page vượt quá totalPages, redirect về page cuối
@@ -83,7 +100,7 @@ const BiddingContainer: React.FC = () => {
   useEffect(() => {
     if (!token) return;
     fetchBids().finally(() => setIsUrlChanging(false));
-  }, [page, sortBy, sortOrder, token]);
+  }, [page, sortBy, sortOrder, status, token]);
 
   const fetchBids = async () => {
     try {
@@ -93,13 +110,15 @@ const BiddingContainer: React.FC = () => {
         page,
         limit,
         sortBy,
-        sortOrder
+        sortOrder,
+        status
       );
 
       setBids(response.bids || []);
       setTotalPages(response.pagination.totalPages);
-      setAwaitingTotal(response.awaitingTotal || 0);
-      setActiveTotal(response.activeTotal || 0);
+      setAwaitingTotal(response.statistics.awaitingTotal || 0);
+      setActiveTotal(response.statistics.activeTotal || 0);
+      setProcessingTotal(response.statistics.processingTotal || 0);
     } catch (err: any) {
       setError(err.message || "Unable to load your bids");
     } finally {
@@ -121,20 +140,6 @@ const BiddingContainer: React.FC = () => {
     setPage(newPage);
     window.scrollTo({ top: 0, behavior: "smooth" }); // ✅ Scroll to top
   };
-
-  // ===== Helper: Tính toán page info =====
-  const getPageInfo = () => {
-    const awaitingPages = Math.ceil(awaitingTotal / limit);
-    const activePages = Math.ceil(activeTotal / limit);
-
-    if (page <= awaitingPages) {
-      return { section: "awaiting", sectionPage: page };
-    } else {
-      return { section: "active", sectionPage: page - awaitingPages };
-    }
-  };
-
-  const pageInfo = getPageInfo();
 
   if (loading || isUrlChanging) {
     return (
@@ -174,29 +179,99 @@ const BiddingContainer: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Info Banner - Optional */}
-      {(awaitingTotal > 0 || activeTotal > 0) && (
+      {/* Info Banner */}
+      {(awaitingTotal > 0 || activeTotal > 0 || processingTotal > 0) && (
         <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-lg">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-blue-800">
-                <span className="font-semibold">{awaitingTotal}</span> awaiting
-                confirmation •{" "}
-                <span className="font-semibold">{activeTotal}</span> active bids
+                <span className="font-semibold">{activeTotal}</span> active{" "}
+                <span className="font-semibold">{awaitingTotal}</span> awaiting{" "}
+                <span className="font-semibold">{processingTotal}</span>{" "}
+                processing
               </p>
               <p className="text-xs text-blue-600 mt-1">
-                Currently viewing:{" "}
-                {pageInfo.section === "awaiting" ? "Awaiting" : "Active"} bids
-                (Page {pageInfo.sectionPage} of{" "}
-                {pageInfo.section === "awaiting"
-                  ? Math.ceil(awaitingTotal / limit)
-                  : Math.ceil(activeTotal / limit)}
-                )
+                {status === "all"
+                  ? `Showing all bids (${activeTotal + awaitingTotal + processingTotal} total)`
+                  : `Filtered by: ${status.charAt(0).toUpperCase() + status.slice(1)}`}
               </p>
             </div>
           </div>
         </div>
       )}
+
+      {/* ========== FILTER TABS ========== */}
+      <div className="flex flex-wrap gap-3 items-center bg-white p-4 rounded-lg border border-gray-200">
+        <span className="text-sm font-medium text-gray-700 mr-2">Filter:</span>
+
+        <button
+          onClick={() => {
+            setStatus("all");
+            setPage(1);
+          }}
+          className={`px-4 py-2 rounded-md text-sm font-medium transition ${
+            status === "all"
+              ? "bg-primary-blue text-white shadow-md"
+              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+          }`}
+        >
+          All Bids
+          <span className="ml-2 bg-white bg-opacity-30 px-2 py-0.5 rounded-full text-xs">
+            {activeTotal + awaitingTotal + processingTotal}
+          </span>
+        </button>
+
+        <button
+          onClick={() => {
+            setStatus("active");
+            setPage(1);
+          }}
+          className={`px-4 py-2 rounded-md text-sm font-medium transition ${
+            status === "active"
+              ? "bg-blue-600 text-white shadow-md"
+              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+          }`}
+        >
+          Active
+          <span className="ml-2 bg-white bg-opacity-30 px-2 py-0.5 rounded-full text-xs">
+            {activeTotal}
+          </span>
+        </button>
+
+        <button
+          onClick={() => {
+            setStatus("awaiting");
+            setPage(1);
+          }}
+          className={`px-4 py-2 rounded-md text-sm font-medium transition ${
+            status === "awaiting"
+              ? "bg-yellow-600 text-white shadow-md"
+              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+          }`}
+        >
+          Awaiting
+          <span className="ml-2 bg-white bg-opacity-30 px-2 py-0.5 rounded-full text-xs">
+            {awaitingTotal}
+          </span>
+        </button>
+
+        <button
+          onClick={() => {
+            setStatus("processing");
+            setPage(1);
+          }}
+          className={`px-4 py-2 rounded-md text-sm font-medium transition ${
+            status === "processing"
+              ? "bg-green-600 text-white shadow-md"
+              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+          }`}
+        >
+          Processing
+          <span className="ml-2 bg-white bg-opacity-30 px-2 py-0.5 rounded-full text-xs font-semibold">
+            {processingTotal}
+          </span>
+        </button>
+      </div>
 
       {/* Sort Controls */}
       <div className="flex flex-wrap gap-3 items-center justify-between bg-gray-50 p-4 rounded-lg">
@@ -262,9 +337,11 @@ const BiddingContainer: React.FC = () => {
           </button>
           <span className="px-4 py-2 text-sm">
             Page {page} / {totalPages}
-            <span className="text-gray-500 ml-2">
-              ({pageInfo.section === "awaiting" ? "Awaiting" : "Active"})
-            </span>
+            {status !== "all" && (
+              <span className="text-gray-500 ml-2">
+                ({status.charAt(0).toUpperCase() + status.slice(1)})
+              </span>
+            )}
           </span>
           <button
             onClick={() => handlePageChange(Math.min(totalPages, page + 1))}

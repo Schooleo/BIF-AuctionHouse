@@ -85,6 +85,8 @@ export interface BidItem extends Product {
   isEnded: boolean;
   isWinning: boolean;
   awaitingConfirmation: boolean;
+  bidStatus: 'active' | 'awaiting' | 'processing'; 
+  inProcessing: boolean;    
 }
 
 export interface GetMyBidsResponse {
@@ -95,6 +97,9 @@ export interface GetMyBidsResponse {
     total: number;
     totalPages: number;
   };
-  awaitingTotal: number; 
-  activeTotal: number;     
+  statistics: {                
+    awaitingTotal: number; 
+    activeTotal: number;
+    processingTotal: number;   
+  };
 }

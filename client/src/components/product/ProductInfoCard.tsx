@@ -6,8 +6,7 @@ import {
   formatPrice,
   maskName,
 } from "@utils/product";
-import { Link } from "react-router-dom";
-import { Heart, Star, MessageCircle, Heart } from "lucide-react";
+import { Heart, Star, MessageCircle } from "lucide-react";
 import { orderApi } from "@services/order.api";
 import Spinner from "@components/ui/Spinner";
 import BidModal from "./BidModal";
@@ -427,10 +426,6 @@ const ProductInfoCard: React.FC<ProductInfoCardProps> = ({
           >
             Place a bid
           </button>
-        ) : (
-          <div className="text-center p-4 bg-gray-100 rounded-xl text-gray-500 font-medium">
-            Auction Ended
-          </div>
         )}
       </div>
 
