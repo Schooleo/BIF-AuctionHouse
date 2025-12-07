@@ -595,7 +595,7 @@ export const bidderService = {
     ]);
 
     return {
-      ratings,
+      data: ratings,
       pagination: {
         page,
         limit,
@@ -793,20 +793,46 @@ export const bidderService = {
       Product.find({
         currentBidder: bidderId,
         endTime: { $lt: now },
+        winnerConfirmed: { $eq: true },
       })
         .populate("seller", "name email")
         .populate("category", "name")
         .sort({ endTime: -1 })
         .skip(skip)
-        .limit(limit),
+        .limit(limit)
+        .lean(),
       Product.countDocuments({
         currentBidder: bidderId,
         endTime: { $lt: now },
+        winnerConfirmed: { $eq: true },
       }),
     ]);
 
+    const sellerIds = products.map((p) => p.seller._id);
+    const ratings = await Rating.find({
+      rater: bidderId,
+      ratee: { $in: sellerIds },
+      type: "seller",
+    }).lean();
+
+    const ratingMap = new Map(
+      ratings.map((r) => [r.ratee.toString(), r])
+    );
+
+    const enrichedProducts = products.map((p) => ({
+      ...p,
+      hasRated: ratingMap.has(p.seller._id.toString()),
+      myRating: ratingMap.get(p.seller._id.toString())
+        ? {
+            _id: ratingMap.get(p.seller._id.toString())!._id,
+            score: ratingMap.get(p.seller._id.toString())!.score,
+            comment: ratingMap.get(p.seller._id.toString())!.comment,
+          }
+        : undefined,
+    }));
+
     return {
-      wonAuctions: products,
+      data: enrichedProducts,
       pagination: {
         page,
         limit,

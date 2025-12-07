@@ -6,7 +6,7 @@ export interface BidderProfile {
     name: string;
     email: string;
     role: 'bidder' | 'seller' | 'admin';
-    address?: string;
+    address: string;
     positiveRatings: number;
     negativeRatings: number;
     createdAt: string;
