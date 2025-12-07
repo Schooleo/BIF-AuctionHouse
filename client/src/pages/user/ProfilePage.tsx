@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { User, Lock, Star, Trophy, ThumbsUp, ThumbsDown } from "lucide-react";
 import { useAuthStore } from "@stores/useAuthStore";
 import { bidderApi } from "@services/bidder.api";
@@ -21,7 +21,11 @@ const ProfilePage: React.FC = () => {
   const navigate = useNavigate();
 
   // UI State
-  const [activeTab, setActiveTab] = useState<TabType>("info");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = (searchParams.get("tab") as TabType) || "info";
+  const validTabs: TabType[] = ["info", "ratings", "won"];
+  const currentTab = validTabs.includes(activeTab) ? activeTab : "info";
+
   const [loading, setLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [profileLoaded, setProfileLoaded] = useState(false);
@@ -109,6 +113,20 @@ const ProfilePage: React.FC = () => {
     }
   };
 
+  const handleTabChange = (tab: TabType) => {
+    const newParams = new URLSearchParams(searchParams);
+    newParams.set("tab", tab);
+    setSearchParams(newParams, { replace: false });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    const tab = searchParams.get("tab");
+    if (tab && !validTabs.includes(tab as TabType)) {
+      setSearchParams({ tab: "info" }, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
+
   // Loading state
   if (!user) {
     return (
@@ -153,9 +171,9 @@ const ProfilePage: React.FC = () => {
             {tabs.map((tab) => (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => handleTabChange(tab.id)}
                 className={`px-4 py-3 text-sm font-medium transition flex items-center gap-3 border-b border-gray-100 last:border-b-0 ${
-                  activeTab === tab.id
+                  currentTab === tab.id
                     ? "bg-blue-600 text-white"
                     : "bg-white text-gray-700 hover:bg-gray-50"
                 }`}
@@ -209,7 +227,7 @@ const ProfilePage: React.FC = () => {
 
         {/* Tab Content */}
         <div className="bg-white rounded-lg shadow-md p-6">
-          {activeTab === "info" && (
+          {currentTab === "info" && (
             <div>
               <h2 className="text-xl font-bold mb-6">Personal Info</h2>
               {profileLoaded ? (
@@ -280,14 +298,14 @@ const ProfilePage: React.FC = () => {
             </div>
           )}
 
-          {activeTab === "ratings" && (
+          {currentTab === "ratings" && (
             <div>
               <h2 className="text-xl font-bold mb-6">Ratings Received</h2>
               <RatingsReceivedList />
             </div>
           )}
 
-          {activeTab === "won" && (
+          {currentTab === "won" && (
             <div>
               <h2 className="text-xl font-bold mb-6">Won Auctions</h2>
               <WonAuctionsTab />
