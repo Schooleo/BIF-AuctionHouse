@@ -12,12 +12,29 @@ import { useAlertStore } from "@stores/useAlertStore";
 
 const ITEMS_PER_PAGE = 10;
 
+const validatePage = (pageStr: string | null): number => {
+  const parsed = parseInt(pageStr || "1");
+  return isNaN(parsed) || parsed < 1 ? 1 : parsed;
+};
+
+const validateSortBy = (
+  sortByStr: string | null
+): "createdAt" | "endTime" | "currentPrice" => {
+  const valid = ["createdAt", "endTime", "currentPrice"];
+  return valid.includes(sortByStr || "") ? (sortByStr as any) : "createdAt";
+};
+
+const validateSortOrder = (orderStr: string | null): "asc" | "desc" => {
+  return orderStr === "asc" ? "asc" : "desc";
+};
+
 const WatchlistContainer: React.FC = () => {
-  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const token = useAuthStore((state) => state.token);
-  const user = useAuthStore((state) => state.user);
-  const authLoading = useAuthStore((state) => state.loading);
+
+  const pageFromUrl = validatePage(searchParams.get("page"));
+  const sortByFromUrl = validateSortBy(searchParams.get("sortBy"));
+  const sortOrderFromUrl = validateSortOrder(searchParams.get("sortOrder"));
 
   const [data, setData] = useState<GetWatchlistResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -26,10 +43,40 @@ const WatchlistContainer: React.FC = () => {
     new Set()
   );
   const { addAlert } = useAlertStore((state) => state);
+  const [isUrlChanging, setIsUrlChanging] = useState(false);
   // Get page from URL params, default to 1
-  const [currentPage, setCurrentPage] = useState(
-    Number(searchParams.get("page")) || 1
-  );
+  const [currentPage, setCurrentPage] = useState(pageFromUrl);
+  const [sortBy, setSortBy] = useState<
+    "createdAt" | "endTime" | "currentPrice"
+  >(sortByFromUrl);
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">(sortOrderFromUrl);
+
+  useEffect(() => {
+    const newPage = validatePage(searchParams.get("page"));
+    const newSortBy = validateSortBy(searchParams.get("sortBy"));
+    const newSortOrder = validateSortOrder(searchParams.get("sortOrder"));
+
+    if (
+      newPage !== currentPage ||
+      newSortBy !== sortBy ||
+      newSortOrder !== sortOrder
+    ) {
+      setIsUrlChanging(true);
+      setCurrentPage(newPage);
+      setSortBy(newSortBy);
+      setSortOrder(newSortOrder);
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
+    const params: Record<string, string> = {};
+
+    if (currentPage !== 1) params.page = currentPage.toString();
+    if (sortBy !== "createdAt") params.sortBy = sortBy;
+    if (sortOrder !== "desc") params.sortOrder = sortOrder;
+
+    setSearchParams(params, { replace: true });
+  }, [currentPage, sortBy, sortOrder, setSearchParams]);
 
   useEffect(() => {
     const fetchWatchlist = async () => {
@@ -40,7 +87,9 @@ const WatchlistContainer: React.FC = () => {
         const response = await bidderApi.getWatchlist(
           token,
           currentPage,
-          ITEMS_PER_PAGE
+          ITEMS_PER_PAGE,
+          sortBy,
+          sortOrder
         );
 
         setData(response);
@@ -53,22 +102,40 @@ const WatchlistContainer: React.FC = () => {
         setError(errorMessage);
       } finally {
         setLoading(false);
+        setIsUrlChanging(false);
       }
     };
 
     fetchWatchlist();
     window.scrollTo(0, 0);
-  }, [currentPage, token, user, navigate, authLoading]);
+  }, [currentPage, sortBy, sortOrder, token]);
 
   const handlePageChange = (page: number) => {
     if (page !== currentPage) {
       setCurrentPage(page);
-      // Update URL params
-      setSearchParams({ page: page.toString() });
+      window.scrollTo(0, 0);
     }
   };
 
-  if (authLoading || loading) return <Spinner />;
+  const handleSortChange = (
+    newSortBy: "createdAt" | "endTime" | "currentPrice"
+  ) => {
+    if (newSortBy === "createdAt") {
+      // Recently Added always DESC (newest first), no toggle
+      setSortBy("createdAt");
+      setSortOrder("desc");
+    } else if (newSortBy === sortBy) {
+      // Toggle sort order if clicking same field (only for endTime and currentPrice)
+      setSortOrder(sortOrder === "desc" ? "asc" : "desc");
+    } else {
+      // Change field, reset to desc
+      setSortBy(newSortBy);
+      setSortOrder("desc");
+    }
+    setCurrentPage(1); // Reset to page 1 when sorting changes
+  };
+
+  if (loading || isUrlChanging) return <Spinner />;
   if (error) return <ErrorMessage text={error} />;
   if (!data || !data.watchlist.length) {
     return (
@@ -146,6 +213,60 @@ const WatchlistContainer: React.FC = () => {
           You're watching {data.pagination.total} product
           {data.pagination.total !== 1 ? "s" : ""}
         </p>
+      </div>
+
+      {/* Sort Controls */}
+      <div className="flex flex-wrap gap-3 items-center justify-between bg-gray-50 p-4 rounded-lg mb-6">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-sm font-medium text-gray-700">Sort by:</span>
+
+          {/* Sort by Recently Added */}
+          <button
+            onClick={() => handleSortChange("createdAt")}
+            className={`px-4 py-2 rounded-md text-sm font-medium transition ${
+              sortBy === "createdAt"
+                ? "bg-primary-blue text-white"
+                : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-300"
+            }`}
+          >
+            Recently Added
+          </button>
+
+          {/* Sort by End Time */}
+          <button
+            onClick={() => handleSortChange("endTime")}
+            className={`px-4 py-2 rounded-md text-sm font-medium transition ${
+              sortBy === "endTime"
+                ? "bg-primary-blue text-white"
+                : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-300"
+            }`}
+          >
+            End Time{" "}
+            {sortBy === "endTime" && (sortOrder === "desc" ? "↓" : "↑")}
+          </button>
+
+          {/* Sort by Price */}
+          <button
+            onClick={() => handleSortChange("currentPrice")}
+            className={`px-4 py-2 rounded-md text-sm font-medium transition ${
+              sortBy === "currentPrice"
+                ? "bg-primary-blue text-white"
+                : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-300"
+            }`}
+          >
+            Price{" "}
+            {sortBy === "currentPrice" && (sortOrder === "desc" ? "↓" : "↑")}
+          </button>
+        </div>
+
+        {/* Sort Info */}
+        <div className="text-xs text-gray-500">
+          {sortBy === "createdAt" && "Newest first"}
+          {sortBy === "endTime" &&
+            (sortOrder === "desc" ? "Ending soon" : "Latest end time")}
+          {sortBy === "currentPrice" &&
+            (sortOrder === "desc" ? "Highest price" : "Lowest price")}
+        </div>
       </div>
 
       {/* Products Grid */}

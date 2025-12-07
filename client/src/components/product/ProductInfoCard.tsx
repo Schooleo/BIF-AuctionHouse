@@ -6,8 +6,9 @@ import {
   formatPrice,
   maskName,
 } from "@utils/product";
+import { Link } from "react-router-dom";
+import { Heart, Star, MessageCircle, Heart } from "lucide-react";
 import { orderApi } from "@services/order.api";
-import { MessageCircle, Heart } from "lucide-react";
 import Spinner from "@components/ui/Spinner";
 import BidModal from "./BidModal";
 import { bidderApi } from "@services/bidder.api";
@@ -98,6 +99,15 @@ const ProductInfoCard: React.FC<ProductInfoCardProps> = ({
     }
   };
 
+  // Compute auction state
+  const now = new Date();
+  const endTime = new Date(product.endTime);
+  const isAuctionEnded = now > endTime;
+  const isWinnerConfirmed = product.winnerConfirmed === true;
+  const currentUserId = useAuthStore.getState().user?.id;
+  const winnerId = product.currentBidder?._id || product.highestBidder?._id;
+  const isCurrentUserWinner = isWinnerConfirmed && currentUserId === winnerId;
+
   useEffect(() => {
     const checkWatchlistStatus = async () => {
       // Skip nếu là guest hoặc không có token
@@ -159,15 +169,19 @@ const ProductInfoCard: React.FC<ProductInfoCardProps> = ({
       setIsInWatchlist(false);
 
       addAlert("success", "Removed from watchlist successfully!");
-    } catch (error: unknown) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : "Failed to remove from watchlist.";
+    } catch (error: any) {
+      const message = error.message || "Failed to remove from watchlist.";
       addAlert("error", message);
     } finally {
       setIsAddingToWatchlist(false);
     }
+  };
+
+  const handleCheckout = () => {
+    addAlert(
+      "info",
+      "🚧 Checkout feature is currently under development. Stay tuned!"
+    );
   };
 
   return (
@@ -176,11 +190,23 @@ const ProductInfoCard: React.FC<ProductInfoCardProps> = ({
       <p className="text-gray-500">
         Posted Time: {formatPostedTime(product.startTime)}
       </p>
-      <p className="text-red-600 font-semibold">
-        Time Remaining: {timeRemaining(product.endTime)}
-      </p>
+      {isAuctionEnded ? (
+        <div className="flex items-center gap-2">
+          <span className="px-3 py-1 bg-gray-200 text-gray-700 rounded-full text-sm font-bold uppercase">
+            Auction Ended
+          </span>
+          <p className="text-gray-600 text-sm">
+            Ended {timeRemaining(product.endTime)}
+          </p>
+        </div>
+      ) : (
+        <p className="text-red-600 font-semibold">
+          Time Remaining: {timeRemaining(product.endTime)}
+        </p>
+      )}
       <p className="text-xl font-semibold">
-        Current Price: {formatPrice(product.currentPrice)}
+        {isAuctionEnded ? "Final Price" : "Current Price"}:{" "}
+        {formatPrice(product.currentPrice)}
       </p>
       {product.buyNowPrice && (
         <p className="text-lg text-green-600">
@@ -189,25 +215,104 @@ const ProductInfoCard: React.FC<ProductInfoCardProps> = ({
       )}
       <p className="text-gray-700">
         Seller - {product.seller?.name || "Seller"} •{" "}
-        <span className="text-yellow-500">
-          {`★`.repeat(Math.round(product.seller?.rating || 0))}{" "}
-          {product.seller?.rating?.toFixed(1) || "N/A"}
+        <span className="text-yellow-500 inline-flex items-center gap-0.5">
+          {Array.from({ length: Math.round(product.seller?.rating || 0) }).map((_, i) => (
+            <Star key={i} className="w-4 h-4 fill-yellow-500" />
+          ))}{" "}
+          <span className="ml-1">{product.seller?.rating?.toFixed(1) || "N/A"}</span>
         </span>
       </p>
-      <p className="text-gray-700">
-        Current Highest Bidder -{" "}
-        {product.bidCount > 0 ? (
-          <>
-            {maskName(product.highestBidder.name || "Anonymous")} •{" "}
-            <span className="text-yellow-500">
-              {`★`.repeat(Math.round(product.highestBidder.rating))}{" "}
-              {product.highestBidder.rating.toFixed(1)}
-            </span>
-          </>
-        ) : (
-          <span className="text-gray-500 italic">No bids yet</span>
-        )}
-      </p>
+      {isAuctionEnded ? (
+        <div className="border-l-4 border-green-500 bg-green-50 px-4 py-3 rounded-md">
+          {isWinnerConfirmed ? (
+            isCurrentUserWinner ? (
+              <div>
+                <p className="text-green-700 font-bold text-lg">
+                  Congratulations! You won this auction!
+                </p>
+                <p className="text-green-600 text-sm mt-1">
+                  Please proceed to checkout to complete your purchase.
+                </p>
+              </div>
+            ) : (
+              <div>
+                <p className="text-green-700 font-semibold">
+                  Winner:{" "}
+                  {maskName(
+                    product.currentBidder?.name ||
+                      product.highestBidder?.name ||
+                      "Anonymous"
+                  )}
+                </p>
+                {(product.currentBidder?.rating ||
+                  product.highestBidder?.rating) && (
+                  <span className="text-yellow-500 text-sm inline-flex items-center gap-0.5">
+                    {Array.from({
+                      length: Math.round(
+                        product.currentBidder?.rating ||
+                          product.highestBidder?.rating ||
+                          0
+                      ),
+                    }).map((_, i) => (
+                      <Star key={i} className="w-3.5 h-3.5 fill-yellow-500" />
+                    ))}{" "}
+                    <span className="ml-1">
+                      {(
+                        product.currentBidder?.rating ||
+                        product.highestBidder?.rating
+                      )?.toFixed(1)}
+                    </span>
+                  </span>
+                )}
+              </div>
+            )
+          ) : (
+            <div>
+              <p className="text-orange-700 font-semibold">
+                Awaiting winner confirmation...
+              </p>
+              <p className="text-orange-600 text-sm mt-1">
+                The seller is reviewing the final bid. This usually takes 1-2
+                business days.
+              </p>
+            </div>
+          )}
+        </div>
+      ) : (
+        <p className="text-gray-700">
+          Current Highest Bidder -{" "}
+          {product.bidCount > 0 ? (
+            <>
+              {maskName(
+                product.highestBidder?.name ||
+                  product.currentBidder?.name ||
+                  "Anonymous"
+              )}{" "}
+              •{" "}
+              <span className="text-yellow-500 inline-flex items-center gap-0.5">
+                {Array.from({
+                  length: Math.round(
+                    product.highestBidder?.rating ||
+                      product.currentBidder?.rating ||
+                      0
+                  ),
+                }).map((_, i) => (
+                  <Star key={i} className="w-4 h-4 fill-yellow-500" />
+                ))}{" "}
+                <span className="ml-1">
+                  {(
+                    product.highestBidder?.rating ||
+                    product.currentBidder?.rating ||
+                    0
+                  ).toFixed(1)}
+                </span>
+              </span>
+            </>
+          ) : (
+            <span className="text-gray-500 italic">No bids yet</span>
+          )}
+        </p>
+      )}
       {/* Button Area */}
       <div className="flex flex-col gap-4 mt-6 max-w-sm">
         {/* Bid History & Watchlist (Logged in) */}
@@ -231,7 +336,19 @@ const ProductInfoCard: React.FC<ProductInfoCardProps> = ({
               onClick={
                 isInWatchlist ? handleRemoveFromWatchlist : handleAddToWatchlist
               }
-              className={`${isInWatchlist ? "bg-gray-600" : "bg-red-500"} rounded-2xl hover:scale-105 transition-transform duration-150 px-4 py-3 flex items-center gap-2 hover:cursor-pointer`}
+              disabled={isAuctionEnded}
+              className={`${
+                isAuctionEnded
+                  ? "bg-gray-400 cursor-not-allowed opacity-50"
+                  : isInWatchlist
+                    ? "bg-gray-600 hover:scale-105"
+                    : "bg-red-500 hover:scale-105"
+              } rounded-2xl transition-transform duration-150 px-4 py-3 flex items-center gap-2`}
+              title={
+                isAuctionEnded
+                  ? "Cannot modify watchlist for ended auctions"
+                  : ""
+              }
             >
               {isAddingToWatchlist ? (
                 <>
@@ -279,14 +396,34 @@ const ProductInfoCard: React.FC<ProductInfoCardProps> = ({
         ) : isGuest ? (
           <Link
             to="/auth/login"
-            className={`text-xl font-semibold w-full px-6 py-4 rounded-2xl shadow-md bg-primary-blue text-white hover:scale-105 transition-transform duration-200 text-center block cursor-pointer`}
+            className={`text-xl font-semibold w-full px-6 py-4 rounded-2xl shadow-md ${
+              isAuctionEnded
+                ? "bg-gray-400 cursor-not-allowed opacity-50 pointer-events-none"
+                : "bg-primary-blue hover:scale-105"
+            } text-white transition-transform duration-200 text-center block`}
           >
-            Sign In to Start Bidding
+            {isAuctionEnded ? "Auction Ended" : "Sign In to Start Bidding"}
           </Link>
-        ) : new Date(product.endTime) > new Date() ? (
+        ) : isAuctionEnded ? (
+          isCurrentUserWinner ? (
+            <button
+              onClick={handleCheckout}
+              className="text-xl font-semibold w-full px-6 py-3 rounded-2xl shadow-md bg-green-600 text-white hover:scale-105 transition-transform duration-200 cursor-pointer flex items-center justify-center gap-2"
+            >
+              <span>Proceed to Checkout</span>
+            </button>
+          ) : (
+            <button
+              disabled
+              className="text-xl font-semibold w-full px-6 py-3 rounded-2xl shadow-md bg-gray-400 text-gray-200 cursor-not-allowed opacity-50"
+            >
+              Auction Ended
+            </button>
+          )
+        ) : (
           <button
             onClick={() => setIsBidModalOpen(true)}
-            className={`text-xl font-semibold w-full px-6 py-3 rounded-2xl shadow-md bg-primary-blue text-white hover:scale-105 transition-transform duration-200 cursor-pointer`}
+            className="text-xl font-semibold w-full px-6 py-3 rounded-2xl shadow-md bg-primary-blue text-white hover:scale-105 transition-transform duration-200 cursor-pointer"
           >
             Place a bid
           </button>

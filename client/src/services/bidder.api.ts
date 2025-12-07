@@ -205,9 +205,11 @@ export const bidderApi = {
   getWatchlist: async (
     token: string,
     page: number = 1,
-    limit: number = 10
+    limit: number = 10,
+    sortBy: "createdAt" | "endTime" | "currentPrice" = "createdAt",
+    sortOrder: "asc" | "desc" = "desc"
   ): Promise<GetWatchlistResponse> => {
-    const url = `${API_BASE}/api/bidder/watchlist?page=${page}&limit=${limit}`;
+    const url = `${API_BASE}/api/bidder/watchlist?page=${page}&limit=${limit}&sortBy=${sortBy}&sortOrder=${sortOrder}`;
 
     const res = await fetch(url, {
       method: "GET",

@@ -41,7 +41,7 @@ export const removeFromWatchlist = async (req: Request, res: Response) => {
 
     const result = await bidderService.removeFromWatchlist(userId, productId!);
     res.status(200).json(result);
-  } catch (error : any) {
+  } catch (error: any) {
     if (error.message === WatchlistMessages.NOT_IN_WATCHLIST) {
       return res.status(404).json({ message: error.message });
     }
@@ -59,7 +59,7 @@ export const checkInWatchlist = async (req: Request, res: Response) => {
 
     const result = await bidderService.checkInWatchlist(userId, productId!);
     res.status(200).json(result);
-  } catch (error : any) {
+  } catch (error: any) {
     res.status(500).json({ message: error.message });
   }
 };
@@ -240,8 +240,18 @@ export const viewWatchlist = async (req: Request, res: Response) => {
 
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
+    const sortBy =
+      (req.query.sortBy as "createdAt" | "endTime" | "currentPrice") ||
+      "createdAt";
+    const sortOrder = (req.query.sortOrder as "asc" | "desc") || "desc";
 
-    const result = await bidderService.getWatchlist(bidderId, page, limit);
+    const result = await bidderService.getWatchlist(
+      bidderId,
+      page,
+      limit,
+      sortBy,
+      sortOrder
+    );
     res.json(result);
   } catch (error: any) {
     res.status(500).json({ message: error.message });
