@@ -1,16 +1,15 @@
 import React from "react";
 import type { Product } from "@interfaces/product";
 import { formatPrice, timeRemaining, maskName } from "@utils/product";
-import { formatBidTime, formatDateTime } from "@utils/time";
+import { formatDateTime } from "@utils/time";
 import {
   CalendarDays,
   Crown,
   Gavel,
   Loader2,
-  ShieldX,
   User,
   Star,
-  Wallet,
+  Box,
 } from "lucide-react";
 
 interface SellerProductSummaryProps {
@@ -40,8 +39,8 @@ const SellerProductSummary: React.FC<SellerProductSummaryProps> = ({
     categoryName ??
     (typeof product.category === "string"
       ? product.category
-      : product.category?.name ?? "Unknown Category");
-  
+      : (product.category?.name ?? "Unknown Category"));
+
   const bidderLabel = winnerConfirmed ? "Winner" : "Highest Bidder";
   const highestBidderDisplay = product.highestBidder?.name
     ? maskName(product.highestBidder.name)
@@ -108,9 +107,13 @@ const SellerProductSummary: React.FC<SellerProductSummaryProps> = ({
       </div>
 
       <div className="p-4 bg-gray-50 rounded-lg border border-gray-100">
-        <p className={winnerConfirmed 
-          ? "text-base font-bold text-emerald-600 uppercase tracking-wide" 
-          : "text-sm font-bold text-indigo-500 uppercase tracking-wide"}>
+        <p
+          className={
+            winnerConfirmed
+              ? "text-base font-bold text-emerald-600 uppercase tracking-wide"
+              : "text-sm font-bold text-indigo-500 uppercase tracking-wide"
+          }
+        >
           {bidderLabel}
         </p>
         <div className="mt-2 flex flex-wrap items-baseline gap-3">
@@ -172,16 +175,16 @@ const SellerProductSummary: React.FC<SellerProductSummaryProps> = ({
       </div>
 
       {isEnded && winnerConfirmed && (
-      <div className="flex flex-col sm:flex-row gap-3">
-            <button
-              type="button"
-              onClick={onManageTransaction}
-              className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold text-white rounded-lg transition bg-indigo-600 hover:bg-indigo-700"
-            >
-              <Wallet className="w-4 h-4" />
-              Manage Transaction
-            </button>
-      </div>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <button
+            type="button"
+            onClick={onManageTransaction}
+            className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold text-white rounded-lg transition bg-indigo-600 hover:bg-indigo-700"
+          >
+            <Box className="w-4 h-4" />
+            Go to Order
+          </button>
+        </div>
       )}
     </div>
   );

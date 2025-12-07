@@ -325,6 +325,32 @@ export const completeTransaction = async (req: Request, res: Response) => {
   }
 };
 
+export const archiveCancelledProduct = async (req: Request, res: Response) => {
+  try {
+    const sellerId = (req.user as any)?._id;
+    if (!sellerId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const { productId } = req.params;
+
+    await SellerService.archiveCancelledProduct(
+      String(sellerId),
+      String(productId)
+    );
+
+    res.status(200).json({
+      message: "Product archived successfully",
+    });
+  } catch (error: any) {
+    if (error.message === SellerMessages.PRODUCT_NOT_FOUND_OR_UNAUTHORIZED) {
+      return res.status(404).json({ message: error.message });
+    }
+    console.error("Error archiving product:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
 // Kept for backward compatibility if needed, but updated response
 export const rateWinnerOrCancelTransaction = async (
   req: Request,

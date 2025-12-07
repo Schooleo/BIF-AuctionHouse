@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   Clock,
   Gavel,
@@ -7,9 +7,11 @@ import {
   History,
   CheckCircle,
   RefreshCw,
+  MessageCircle,
 } from "lucide-react";
 import type { Product } from "@interfaces/product";
 import { sellerApi } from "@services/seller.api";
+import { orderApi } from "@services/order.api";
 import { formatPrice } from "@utils/product";
 import SellerBidHistoryModal from "./SellerBidHistoryModal";
 import { useAlertStore } from "@stores/useAlertStore";
@@ -26,6 +28,28 @@ const EndedProductCard: React.FC<EndedProductCardProps> = ({
   const navigate = useNavigate();
   const addAlert = useAlertStore((state) => state.addAlert);
   const [loading, setLoading] = useState(false);
+
+  const currentBidderId =
+    typeof product.currentBidder === "object"
+      ? product.currentBidder?._id
+      : product.currentBidder;
+
+  const isRejected =
+    product.currentBidder &&
+    product.rejectedBidders?.includes(currentBidderId || "");
+
+  const handleChatOrder = async () => {
+    try {
+      setLoading(true);
+      const order = await orderApi.createOrder(product._id);
+      navigate(`/seller/orders/${order._id}`);
+    } catch (error) {
+      console.error(error);
+      addAlert("error", "Failed to open order");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Bid History Logic
   const [isBidHistoryOpen, setIsBidHistoryOpen] = useState(false);
@@ -69,25 +93,32 @@ const EndedProductCard: React.FC<EndedProductCardProps> = ({
 
   return (
     <>
-      <div className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col md:flex-row">
+      <div className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow p-5 flex flex-col sm:flex-row items-center gap-5">
         {/* Image Section */}
-        <div className="w-full md:w-48 h-48 relative bg-gray-100 shrink-0">
+        <Link
+          to={`/seller/products/${product._id}`}
+          className="w-44 h-44 relative bg-gray-100 rounded-lg overflow-hidden shrink-0 border border-gray-200 group"
+        >
           <img
             src={product.mainImage}
             alt={product.name}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           />
-          <div className="absolute top-2 left-2 bg-gray-900/80 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1">
-            <Clock size={12} /> Ended
+          <div className="absolute top-1 left-1 bg-gray-900/80 text-white text-[10px] px-1.5 py-0.5 rounded-full flex items-center gap-1 backdrop-blur-sm">
+            <Clock size={10} /> Ended
           </div>
-        </div>
+        </Link>
 
         {/* Content Section */}
-        <div className="p-4 flex-1 flex flex-col justify-between">
+        <div className="flex-1 min-w-0 w-full flex flex-col justify-between h-auto gap-4">
           <div>
-            <h3 className="text-lg font-bold text-gray-800 mb-1">
+            <Link
+              to={`/seller/products/${product._id}`}
+              className="text-lg font-bold text-gray-800 mb-1 line-clamp-1 hover:text-blue-700 transition-colors duration-300"
+              title={product.name}
+            >
               {product.name}
-            </h3>
+            </Link>
             <div className="flex items-center gap-4 text-sm text-gray-600 mb-3">
               <span className="flex items-center gap-1">
                 <Gavel size={14} /> {product.bidCount} Bids
@@ -99,16 +130,36 @@ const EndedProductCard: React.FC<EndedProductCardProps> = ({
               </span>
             </div>
 
-            <div className="bg-blue-50 p-3 rounded-md border border-blue-100">
-              <h4 className="text-xs font-semibold text-blue-800 uppercase tracking-wide mb-1 flex items-center gap-1">
-                <Trophy size={12} />{" "}
-                {product.winnerConfirmed ? "Winner" : "Provisional Winner"}
+            <div
+              className={`p-2.5 rounded-md border inline-block min-w-0 w-full ${
+                !product.currentBidder
+                  ? "bg-gray-50 border-gray-200"
+                  : "bg-blue-50 border-blue-200"
+              }`}
+            >
+              <h4
+                className={`text-xs font-semibold uppercase tracking-wide mb-1 flex items-center gap-1 ${
+                  !product.currentBidder ? "text-gray-600" : "text-blue-800"
+                }`}
+              >
+                {product.currentBidder && <Trophy size={12} />}{" "}
+                {!product.currentBidder
+                  ? "No bids placed"
+                  : product.winnerConfirmed
+                    ? "Final Winner"
+                    : isRejected
+                      ? "Rejected Bidder"
+                      : "Provisional Winner"}
               </h4>
               {product.currentBidder ? (
                 <div className="text-sm font-medium text-gray-700">
-                  {(typeof product.currentBidder === "object" &&
-                    product.currentBidder?.name) ||
-                    "Unknown User"}
+                  <span
+                    className={isRejected ? "text-red-600 line-through" : ""}
+                  >
+                    {(typeof product.currentBidder === "object" &&
+                      product.currentBidder?.name) ||
+                      "Unknown User"}
+                  </span>
                   <span className="text-gray-500 text-xs ml-1">
                     (Rating:{" "}
                     {(typeof product.currentBidder === "object" &&
@@ -119,27 +170,29 @@ const EndedProductCard: React.FC<EndedProductCardProps> = ({
                 </div>
               ) : (
                 <div className="text-sm text-gray-500 italic">
-                  No bids placed
+                  Please consider reposting
                 </div>
               )}
             </div>
           </div>
 
           {/* Actions */}
-          <div className="mt-4 flex items-center gap-3">
+          <div className="flex items-center gap-3 w-full">
             <button
               onClick={handleViewHistory}
-              className="p-2 text-gray-600 hover:bg-gray-100 rounded-md border border-gray-200 transition"
+              className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg border border-gray-200 transition"
               title="View Bid History"
             >
               <History size={20} />
             </button>
 
-            {product.currentBidder && !product.winnerConfirmed ? (
+            {product.currentBidder &&
+            !product.winnerConfirmed &&
+            product.bidCount > 0 ? (
               <button
                 onClick={handleConfirmWinner}
                 disabled={loading}
-                className="flex-1 py-2 px-4 bg-green-600 hover:bg-green-700 text-white rounded-md font-medium flex items-center justify-center gap-2 transition disabled:bg-gray-300 disabled:cursor-not-allowed"
+                className="flex-1 py-2 px-4 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-semibold flex items-center justify-center gap-2 transition disabled:bg-gray-300 disabled:cursor-not-allowed shadow-sm"
               >
                 {loading ? (
                   <span>Confirming...</span>
@@ -150,12 +203,32 @@ const EndedProductCard: React.FC<EndedProductCardProps> = ({
                   </>
                 )}
               </button>
+            ) : product.winnerConfirmed ? (
+              <button
+                onClick={handleChatOrder}
+                className="flex-1 py-2 px-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold flex items-center justify-center gap-2 transition shadow-sm"
+              >
+                <MessageCircle size={18} />
+                Order & Chat
+              </button>
             ) : (
               <button
-                onClick={() =>
-                  navigate("/seller/add-product", { state: { product } })
-                }
-                className="flex-1 py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-medium flex items-center justify-center gap-2 transition"
+                onClick={async () => {
+                  try {
+                    setLoading(true);
+                    await sellerApi.archiveCancelledProduct(product._id);
+                    navigate("/seller/add-product", { state: { product } });
+                    onRefresh();
+                  } catch (error) {
+                    console.error("Failed to archive product:", error);
+                    // Still navigate even if archive fails, so user can at least repost
+                    navigate("/seller/add-product", { state: { product } });
+                  } finally {
+                    setLoading(false);
+                  }
+                }}
+                disabled={loading}
+                className="flex-1 py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold flex items-center justify-center gap-2 transition shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <RefreshCw size={18} />
                 Repost Product

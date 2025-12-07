@@ -1,5 +1,3 @@
-import type { User } from "./auth";
-
 export interface QuestionAnswer {
   _id: string;
   question: string;
@@ -45,14 +43,34 @@ export interface Product {
     startTime: Date | string | null;
   } | null;
   highestBidder: UserSummary;
-  currentBidder: UserSummary; // some apis use this field instead of highestBidder
 
+  // Direct Auction Data
   bidCount: number;
+  currentBidder?: UserSummary | null;
+
+  // Configuration
+  autoExtends?: boolean;
+  allowUnratedBidders?: boolean;
+  questions?: QuestionAnswer[];
 
   winnerConfirmed?: boolean;
   transactionCompleted?: boolean;
+
   isRatedBySeller?: boolean;
+  sellerRating?: {
+    score: number;
+    comment: string;
+  };
   rejectedBidders?: string[];
+  latestOrder?: {
+    _id: string;
+    status: string;
+    buyer: UserSummary;
+    ratingBySeller?: {
+      score: 1 | -1;
+      comment: string;
+    };
+  };
 }
 
 export interface BidHistoryEntry {

@@ -7,7 +7,8 @@ import {
   maskName,
 } from "@utils/product";
 import { Link } from "react-router-dom";
-import { Heart, Star } from "lucide-react";
+import { Heart, Star, MessageCircle, Heart } from "lucide-react";
+import { orderApi } from "@services/order.api";
 import Spinner from "@components/ui/Spinner";
 import BidModal from "./BidModal";
 import { bidderApi } from "@services/bidder.api";
@@ -22,6 +23,7 @@ interface ProductInfoCardProps {
 }
 
 import DOMPurify from "dompurify";
+import { Link, useNavigate } from "react-router-dom";
 
 const ExpandableText = ({
   content,
@@ -78,9 +80,24 @@ const ProductInfoCard: React.FC<ProductInfoCardProps> = ({
   const [isInWatchlist, setIsInWatchlist] = useState(false);
   const [isAddingToWatchlist, setIsAddingToWatchlist] = useState(false);
   const [isBidHistoryOpen, setIsBidHistoryOpen] = useState(false);
+  const [isCreatingOrder, setIsCreatingOrder] = useState(false);
   const addAlert = useAlertStore((state) => state.addAlert);
 
-  const { token } = useAuthStore();
+  const { token, user } = useAuthStore();
+  const navigate = useNavigate();
+
+  const handleCompleteOrder = async () => {
+    setIsCreatingOrder(true);
+    try {
+      const order = await orderApi.createOrder(product._id);
+      navigate(`/orders/${order._id}`);
+    } catch (error) {
+      console.error(error);
+      addAlert("error", "Failed to open order page");
+    } finally {
+      setIsCreatingOrder(false);
+    }
+  };
 
   // Compute auction state
   const now = new Date();
@@ -125,8 +142,8 @@ const ProductInfoCard: React.FC<ProductInfoCardProps> = ({
       );
       setIsInWatchlist(true);
       addAlert("success", "Added to watchlist successfully!");
-    } catch (error: any) {
-      const message = error.message || "";
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "";
 
       if (message.includes("already") || message.includes("exists")) {
         addAlert("warning", "Product is already in your watchlist.");
@@ -354,7 +371,29 @@ const ProductInfoCard: React.FC<ProductInfoCardProps> = ({
         )}
 
         {/* Place a Bid / Sign in Button (Primary) */}
-        {isGuest ? (
+        {/* Complete Order for Winning Bidder */}
+        {!isGuest &&
+        new Date(product.endTime) <= new Date() &&
+        (product.highestBidder?._id === user?.id ||
+          // Fallback check if populated object has _id as string
+          (typeof product.highestBidder === "object" &&
+            product.highestBidder?._id?.toString() === user?.id)) ? (
+          <button
+            onClick={handleCompleteOrder}
+            disabled={isCreatingOrder}
+            className="text-xl font-semibold w-full px-6 py-4 rounded-2xl shadow-md bg-green-600 text-white hover:scale-105 transition-transform duration-200 cursor-pointer flex items-center justify-center gap-2"
+          >
+            {isCreatingOrder ? (
+              <>
+                <Spinner /> Processing...
+              </>
+            ) : (
+              <>
+                <MessageCircle size={24} /> Complete Purchase & Chat
+              </>
+            )}
+          </button>
+        ) : isGuest ? (
           <Link
             to="/auth/login"
             className={`text-xl font-semibold w-full px-6 py-4 rounded-2xl shadow-md ${
@@ -388,6 +427,10 @@ const ProductInfoCard: React.FC<ProductInfoCardProps> = ({
           >
             Place a bid
           </button>
+        ) : (
+          <div className="text-center p-4 bg-gray-100 rounded-xl text-gray-500 font-medium">
+            Auction Ended
+          </div>
         )}
       </div>
 

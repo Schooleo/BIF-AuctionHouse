@@ -4,6 +4,7 @@ import guestRoutes from "./guest.routes";
 import bidderRoutes from "./bidder.routes";
 import sellerRoutes from "./seller.routes";
 import adminRoutes from "./admin.routes";
+import orderRoutes from "./order.routes";
 
 const router = Router();
 
@@ -21,5 +22,7 @@ router.use("/seller", sellerRoutes);
 
 // Admin routes (đã bảo vệ trong file admin.routes.ts)
 router.use("/admin", adminRoutes);
+
+router.use("/orders", orderRoutes);
 
 export default router;

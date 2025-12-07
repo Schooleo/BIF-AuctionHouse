@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { CheckCircle, ThumbsUp, XCircle, Info, Calendar } from "lucide-react";
+import { useNavigate } from "react-router-dom"; // Import useNavigate
 import { sellerApi } from "@services/seller.api";
+import { orderApi } from "@services/order.api"; // Import orderApi
 import { useAlertStore } from "@stores/useAlertStore";
 import PopUpWindow from "@components/ui/PopUpWindow";
 import type { Product } from "@interfaces/product";
@@ -28,25 +30,22 @@ const ManageTransactionModal: React.FC<ManageTransactionModalProps> = ({
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
   const [isPostCancelModalOpen, setIsPostCancelModalOpen] = useState(false);
 
-  const handleCompleteTransaction = async () => {
-    if (
-      !window.confirm(
-        "Mark this transaction as completed? Returns are generally not accepted after this."
-      )
-    )
-      return;
+  const navigate = useNavigate();
 
+  const handleCompleteTransaction = async () => {
     try {
       setLoading(true);
-      await sellerApi.completeTransaction(product._id);
-      addAlert("success", "Transaction completed!");
-      onRefresh();
+      // Initialize or get existing order
+      const order = await orderApi.createOrder(product._id);
+
+      // Navigate to order completion page
+      navigate(`/seller/orders/${order._id}`);
       onClose();
     } catch (err: unknown) {
       addAlert(
         "error",
         (err as { message?: string })?.message ||
-          "Failed to complete transaction"
+          "Failed to initialize order transaction"
       );
     } finally {
       setLoading(false);
@@ -206,7 +205,7 @@ const ManageTransactionModal: React.FC<ManageTransactionModalProps> = ({
           onClose(); // Close parent modal too
           onRefresh();
         }}
-        productId={product._id}
+        product={product}
         onRefresh={onRefresh}
       />
     </>

@@ -10,11 +10,26 @@ interface PopUpWindowProps {
   title: string;
   children: React.ReactNode;
 
-  size?: "sm" | "md" | "lg" | "xl";
+  size?:
+    | "sm"
+    | "md"
+    | "lg"
+    | "xl"
+    | "2xl"
+    | "3xl"
+    | "4xl"
+    | "5xl"
+    | "6xl"
+    | "7xl"
+    | "auto";
   submitText?: string;
   cancelText?: string;
   isLoading?: boolean;
   hideSubmitButton?: boolean;
+  hideFooter?: boolean;
+  noPadding?: boolean;
+  contentClassName?: string;
+  closeOnOverlayClick?: boolean;
 }
 
 const PopUpWindow: React.FC<PopUpWindowProps> = ({
@@ -28,6 +43,10 @@ const PopUpWindow: React.FC<PopUpWindowProps> = ({
   cancelText = "Cancel",
   isLoading = false,
   hideSubmitButton = false,
+  hideFooter = false,
+  noPadding = false,
+  contentClassName = "",
+  closeOnOverlayClick = false,
 }) => {
   const modalRef = useRef<HTMLDivElement>(null);
 
@@ -41,12 +60,10 @@ const PopUpWindow: React.FC<PopUpWindowProps> = ({
 
     if (isOpen) {
       document.addEventListener("keydown", handleEscape);
-      document.body.style.overflow = "hidden";
     }
 
     return () => {
       document.removeEventListener("keydown", handleEscape);
-      document.body.style.overflow = "unset";
     };
   }, [isOpen, onClose, isLoading]);
 
@@ -54,10 +71,17 @@ const PopUpWindow: React.FC<PopUpWindowProps> = ({
 
   // Size mapping
   const sizeClasses = {
-    sm: "max-w-sm",
-    md: "max-w-md",
-    lg: "max-w-lg",
-    xl: "max-w-xl",
+    sm: "w-full max-w-sm",
+    md: "w-full max-w-md",
+    lg: "w-full max-w-lg",
+    xl: "w-full max-w-xl",
+    "2xl": "w-full max-w-2xl",
+    "3xl": "w-full max-w-3xl",
+    "4xl": "w-full max-w-4xl",
+    "5xl": "w-full max-w-5xl",
+    "6xl": "w-full max-w-6xl",
+    "7xl": "w-full max-w-7xl",
+    auto: "w-auto max-w-[95vw]",
   };
 
   // Handle submit
@@ -68,11 +92,20 @@ const PopUpWindow: React.FC<PopUpWindowProps> = ({
     }
   };
 
+  const handleOverlayClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (e.target === e.currentTarget && closeOnOverlayClick && !isLoading) {
+      onClose();
+    }
+  };
+
   return createPortal(
-    <div className="fixed inset-0 z-100 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+    <div
+      className="fixed inset-0 z-100 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200"
+      onClick={handleOverlayClick}
+    >
       <div
         ref={modalRef}
-        className={`bg-white rounded-xl shadow-xl w-full ${sizeClasses[size]} overflow-hidden animate-in zoom-in-95 duration-200 border border-gray-100`}
+        className={`bg-white rounded-xl shadow-xl ${sizeClasses[size]} overflow-hidden animate-in zoom-in-95 duration-200 border border-gray-100`}
         role="dialog"
         aria-modal="true"
       >
@@ -93,40 +126,48 @@ const PopUpWindow: React.FC<PopUpWindowProps> = ({
 
         {/* Content */}
         <form onSubmit={handleSubmit}>
-          <div className="p-6 max-h-[70vh] overflow-y-auto">{children}</div>
+          <div
+            className={`${
+              noPadding ? "p-0" : "p-6"
+            } max-h-[70vh] overflow-y-auto ${contentClassName}`}
+          >
+            {children}
+          </div>
 
           {/* Footer with buttons - Same style as ConfirmationModal */}
-          <div className="flex justify-center gap-4 p-6 pt-0">
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={isLoading}
-              className={`px-6 py-2.5 text-sm font-semibold text-gray-700 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors min-w-[100px] ${
-                isLoading ? "opacity-50 cursor-not-allowed" : ""
-              }`}
-            >
-              {cancelText}
-            </button>
-
-            {!hideSubmitButton && (
+          {!hideFooter && (
+            <div className="flex justify-center gap-4 p-6 pt-0">
               <button
-                type="submit"
+                type="button"
+                onClick={onClose}
                 disabled={isLoading}
-                className={`px-6 py-2.5 text-sm font-semibold text-white rounded-full transition-colors shadow-md min-w-[100px] bg-primary-blue hover:scale-105 ${
-                  isLoading ? "opacity-75 cursor-not-allowed" : ""
+                className={`px-6 py-2.5 text-sm font-semibold text-gray-700 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors min-w-[100px] ${
+                  isLoading ? "opacity-50 cursor-not-allowed" : ""
                 }`}
               >
-                {isLoading ? (
-                  <div className="flex items-center justify-center gap-2">
-                    <Spinner />
-                    <span>Loading...</span>
-                  </div>
-                ) : (
-                  submitText
-                )}
+                {cancelText}
               </button>
-            )}
-          </div>
+
+              {!hideSubmitButton && (
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className={`px-6 py-2.5 text-sm font-semibold text-white rounded-full transition-colors shadow-md min-w-[100px] bg-primary-blue hover:scale-105 ${
+                    isLoading ? "opacity-75 cursor-not-allowed" : ""
+                  }`}
+                >
+                  {isLoading ? (
+                    <div className="flex items-center justify-center gap-2">
+                      <Spinner />
+                      <span>Loading...</span>
+                    </div>
+                  ) : (
+                    submitText
+                  )}
+                </button>
+              )}
+            </div>
+          )}
         </form>
       </div>
     </div>,

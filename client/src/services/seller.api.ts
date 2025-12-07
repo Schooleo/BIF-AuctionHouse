@@ -246,10 +246,26 @@ export const sellerApi = {
     return handleResponse(res);
   },
 
-  cancelTransaction: async (
-    productId: string
-  ): Promise<{ message: string }> => {
+  cancelTransaction: async (productId: string): Promise<Product> => {
     const url = `${API_BASE}/api/seller/products/${productId}/cancel-transaction`;
+    const token = localStorage.getItem("token");
+
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    const data = await handleResponse<{ message: string; product: Product }>(
+      res
+    );
+    return data.product;
+  },
+
+  transferWinner: async (productId: string): Promise<{ message: string }> => {
+    const url = `${API_BASE}/api/seller/products/${productId}/transfer-winner`;
     const token = localStorage.getItem("token");
 
     const res = await fetch(url, {
@@ -263,8 +279,10 @@ export const sellerApi = {
     return handleResponse(res);
   },
 
-  transferWinner: async (productId: string): Promise<{ message: string }> => {
-    const url = `${API_BASE}/api/seller/products/${productId}/transfer-winner`;
+  archiveCancelledProduct: async (
+    productId: string
+  ): Promise<{ message: string }> => {
+    const url = `${API_BASE}/api/seller/products/${productId}/archive`;
     const token = localStorage.getItem("token");
 
     const res = await fetch(url, {
