@@ -1,19 +1,21 @@
 import React, { useState } from "react";
-import { UserPlus, RefreshCw } from "lucide-react";
+import { UserPlus, RefreshCw, XCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { sellerApi } from "@services/seller.api";
 import { useAlertStore } from "@stores/useAlertStore";
 import PopUpWindow from "@components/ui/PopUpWindow";
 
+import type { Product } from "@interfaces/product";
+
 interface PostCancelModalProps {
-  productId: string;
+  product: Product;
   isOpen: boolean;
   onClose: () => void;
   onRefresh: () => void;
 }
 
 const PostCancelModal: React.FC<PostCancelModalProps> = ({
-  productId,
+  product,
   isOpen,
   onClose,
   onRefresh,
@@ -25,7 +27,7 @@ const PostCancelModal: React.FC<PostCancelModalProps> = ({
   const handleSelectNextWinner = async () => {
     try {
       setLoading(true);
-      await sellerApi.confirmWinner(productId);
+      await sellerApi.confirmWinner(product._id);
       addAlert("success", "Next highest bidder confirmed!");
       onClose();
       onRefresh();
@@ -44,17 +46,40 @@ const PostCancelModal: React.FC<PostCancelModalProps> = ({
     }
   };
 
-  const handleRepost = () => {
-    navigate("/seller/add-product");
+  const handleRepost = async () => {
+    try {
+      setLoading(true);
+      await sellerApi.archiveCancelledProduct(product._id);
+      navigate("/seller/add-product", { state: { product } });
+      onClose();
+      onRefresh(); // Refresh list to remove the old item
+    } catch (err) {
+      console.error("Failed to archive product on repost:", err);
+      navigate("/seller/add-product", { state: { product } });
+      onClose();
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleClose = () => {
+    // If no bids left, treats closing as "Ending Auction"
+    if (product.bidCount === 0) {
+      addAlert(
+        "success",
+        "Auction ended! Product has been moved to 'Ended Auctions'"
+      );
+    }
     onClose();
   };
 
   return (
     <PopUpWindow
       isOpen={isOpen}
-      onClose={onClose}
+      onClose={handleClose}
       title="Transaction Cancelled"
       size="md"
+      hideFooter={true}
     >
       <div className="p-4">
         <p className="text-gray-600 mb-6">
@@ -62,21 +87,41 @@ const PostCancelModal: React.FC<PostCancelModalProps> = ({
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <button
-            onClick={handleSelectNextWinner}
-            disabled={loading}
-            className="flex flex-col items-center justify-center p-6 border-2 border-blue-50 bg-blue-50/50 rounded-xl hover:bg-blue-100 hover:border-blue-200 transition gap-3 group"
-          >
-            <div className="p-3 bg-white rounded-full shadow-sm text-blue-600 group-hover:scale-110 transition-transform">
-              <UserPlus size={24} />
-            </div>
-            <div className="text-center">
-              <h4 className="font-bold text-gray-800">Select Next Winner</h4>
-              <p className="text-xs text-gray-500 mt-1">
-                Offer to the next highest bidder if available
-              </p>
-            </div>
-          </button>
+          {product.bidCount > 0 ? (
+            <button
+              onClick={handleSelectNextWinner}
+              disabled={loading}
+              className="flex flex-col items-center justify-center p-6 border-2 border-blue-50 bg-blue-50/50 rounded-xl hover:bg-blue-100 hover:border-blue-200 transition gap-3 group"
+            >
+              <div className="p-3 bg-white rounded-full shadow-sm text-blue-600 group-hover:scale-110 transition-transform">
+                <UserPlus size={24} />
+              </div>
+              <div className="text-center">
+                <h4 className="font-bold text-gray-800">Select Next Winner</h4>
+                <p className="text-xs text-gray-500 mt-1">
+                  Offer to the next highest bidder if available
+                </p>
+              </div>
+            </button>
+          ) : (
+            <button
+              onClick={() => {
+                handleClose();
+                onRefresh();
+              }}
+              className="flex flex-col items-center justify-center p-6 border-2 border-orange-100 bg-orange-50 rounded-xl hover:bg-orange-200 hover:border-orange-300 transition gap-3 group"
+            >
+              <div className="p-3 bg-white rounded-full shadow-sm text-orange-600 group-hover:scale-110 transition-transform">
+                <XCircle size={24} />
+              </div>
+              <div className="text-center">
+                <h4 className="font-bold text-gray-800">End Auction</h4>
+                <p className="text-xs text-gray-500 mt-1">
+                  No bidders left. Move to Ended Auctions.
+                </p>
+              </div>
+            </button>
+          )}
 
           <button
             onClick={handleRepost}
@@ -95,14 +140,16 @@ const PostCancelModal: React.FC<PostCancelModalProps> = ({
           </button>
         </div>
 
-        <div className="mt-6 flex justify-end">
-          <button
-            onClick={onClose}
-            className="text-gray-500 hover:text-gray-700 text-sm font-medium"
-          >
-            Decide Later
-          </button>
-        </div>
+        {product.bidCount > 0 && (
+          <div className="mt-6 flex justify-end">
+            <button
+              onClick={handleClose}
+              className="text-gray-500 hover:text-gray-700 text-sm font-medium"
+            >
+              Decide Later
+            </button>
+          </div>
+        )}
       </div>
     </PopUpWindow>
   );

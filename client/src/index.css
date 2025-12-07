@@ -1,6 +1,10 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
+html {
+  scrollbar-gutter: stable;
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -36,8 +40,14 @@
 }
 
 @keyframes fadeOut {
-  from { opacity: 1; transform: scale(1); }
-  to { opacity: 0; transform: scale(0.95); }
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.95);
+  }
 }
 
 .animate-fade-out {

@@ -6,6 +6,8 @@ import { Product } from "../models/product.model";
 import { Bid } from "../models/bid.model";
 import { Rating } from "../models/rating.model";
 import { SystemConfig } from "../models/systemConfig.model";
+import { Order, OrderStatus } from "../models/order.model";
+import { Chat } from "../models/chat.model";
 
 dotenv.config();
 
@@ -169,8 +171,6 @@ Fast shipping available worldwide. 30-day return policy if the item does not mat
 
 const randomInt = (min: number, max: number) =>
   Math.floor(Math.random() * (max - min + 1)) + min;
-const randomDate = (start: Date, end: Date) =>
-  new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime()));
 
 const connectDB = async () => {
   try {
@@ -192,6 +192,8 @@ const seed = async () => {
   await Bid.deleteMany({});
   await Rating.deleteMany({});
   await SystemConfig.deleteMany({});
+  await Order.deleteMany({});
+  await Chat.deleteMany({});
 
   console.log("⚙️ Creating System Config...");
   await SystemConfig.create({
@@ -231,41 +233,41 @@ const seed = async () => {
     name: "Fashion Boutique",
     email: "seller2@gmail.com",
     password: commonPassword,
-    role: "seller",
     address: "HCMC, Vietnam",
     positiveRatings: 50,
     negativeRatings: 0,
   });
 
-  // Create Bidders
+  // Tạo Bidders
   let bidders = [];
   for (let i = 1; i <= NUM_BIDDERS; i++) {
-    // Generate deterministic IDs for bidders based on index
-    // Using a base hex string and replacing the last char
+    // Tạo ID xác định cho bidder dựa trên index
+    // Sử dụng chuỗi hex cơ sở và thay thế ký tự cuối cùng
     const hex = `64b0f1a9e1b9b1a2b3c4d5f${i}`;
     const bidderId = new mongoose.Types.ObjectId(hex);
 
     const bidder = await User.create({
       _id: bidderId,
-      name: `Bidder ${String.fromCharCode(64 + i)}`, // Bidder A, B, C...
+      name: `Bidder ${String.fromCharCode(64 + i)}`,
       email: `bidder${i}@gmail.com`,
       password: commonPassword,
       role: "bidder",
       address: `Street ${i}, City`,
       positiveRatings: randomInt(0, 5),
       negativeRatings: randomInt(0, 1),
+      reputationScore: 0.8 / (Math.random() + 0.1),
     });
     bidders.push(bidder);
   }
 
   console.log("📂 Creating Categories...");
-  // Level 1
+  // Cấp 1
   const electronics = await Category.create({ name: "Electronics" });
   const fashion = await Category.create({ name: "Fashion" });
   const home = await Category.create({ name: "Home & Living" });
-  const sports = await Category.create({ name: "Sports" }); // Empty cat to test empty state
+  const sports = await Category.create({ name: "Sports" });
 
-  // Level 2
+  // Cấp 2
   const phones = await Category.create({
     name: "Mobile Phones",
     parent: electronics._id,
@@ -284,7 +286,7 @@ const seed = async () => {
     parent: home._id,
   });
 
-  // Map category names to IDs for easy lookup
+  // Map tên danh mục sang ID để tra cứu dễ dàng
   const catMap: Record<string, any> = {
     Phones: phones._id,
     Laptops: laptops._id,
@@ -297,117 +299,258 @@ const seed = async () => {
 
   let totalProducts = 0;
   let totalBids = 0;
+  let totalOrders = 0;
 
-  // Helper to process catalog
+  // Hàm hỗ trợ xử lý catalog
   const processCatalog = async (catKey: string, sellerId: any) => {
     const items = PRODUCT_CATALOG[catKey];
     if (!items) return;
 
     const isTech = ["Phones", "Laptops"].includes(catKey);
     const subImages = isTech ? TECH_SUB_IMAGES : FASHION_SUB_IMAGES;
+    const targetCount = 10; // 10 products per category for volume
 
-    for (const item of items) {
-      // Setup time:
-      // Some ending very soon (minutes), some in days.
-      // Some started days ago.
+    for (let i = 0; i < targetCount; i++) {
+      const item = items[i % items.length];
+      const productName = `${item.name} #${i + 1}`;
+
+      // Thiết lập kịch bản dựa trên Index
+      // 0: Đã kết thúc, 0 Bid (Lịch sử/Chưa bán)
+      // 1: Đã kết thúc, Có Bid, Chưa xác nhận (Chờ xác nhận)
+      // 2: Đã kết thúc, Đã xác nhận, Bước 1 (Người thắng - Chờ thanh toán)
+      // 3: Đã kết thúc, Đã xác nhận, Hoàn thành (Lịch sử/Đã bán)
+      // 4: Đang diễn ra (Active)
+
+      let scenarioType = i % 5;
+      if (items.length > 5) scenarioType = randomInt(0, 4);
+
+      const isEnded = scenarioType !== 4;
+      const isEndingSoon = !isEnded && Math.random() > 0.5;
+
       const now = new Date();
-      const isEndingSoon = Math.random() > 0.7; // 30% chance ending soon
-      const isEnded = Math.random() > 0.9; // 10% chance already ended
-
       const startTime = new Date(
-        now.getTime() - randomInt(1, 5) * 24 * 60 * 60 * 1000
-      ); // Started 1-5 days ago
+        now.getTime() - randomInt(2, 7) * 24 * 60 * 60 * 1000
+      );
 
       let endTime;
       if (isEnded) {
-        endTime = new Date(now.getTime() - randomInt(10, 180) * 60 * 1000); // Ended in 10-180 mins
+        endTime = new Date(now.getTime() - randomInt(60, 24 * 60) * 60 * 1000);
       } else if (isEndingSoon) {
-        endTime = new Date(now.getTime() + randomInt(10, 180) * 60 * 1000); 
+        endTime = new Date(now.getTime() + randomInt(10, 180) * 60 * 1000);
       } else {
-          endTime = new Date(
-          now.getTime() + randomInt(1, 7) * 24 * 60 * 60 * 1000
-        ); // Ends in 1-7 days
+        endTime = new Date(
+          now.getTime() + randomInt(1, 5) * 24 * 60 * 60 * 1000
+        );
       }
 
-      // Step price logic (e.g., 5-10% of starting price rounded)
+      // Logic bước giá
       const stepPrice = Math.ceil((item.price * 0.05) / 1000) * 1000;
 
-      // Create Product Initial
+      // Tạo Sản phẩm ban đầu
       const product = new Product({
-        name: item.name,
+        name: productName,
         category: catMap[catKey],
         seller: sellerId,
-        mainImage: item.img, // Use reliable placeholder with text
+        mainImage: item.img,
         subImages: subImages,
         description: generateDescription(item.name, catKey),
         startTime: startTime,
         endTime: endTime,
         startingPrice: item.price,
         stepPrice: stepPrice,
-        buyNowPrice: item.price * 1.5, // Optional buy now
+        buyNowPrice: item.price * 1.5,
         autoExtends: true,
-        currentPrice: item.price, // Will be updated by bids
+        currentPrice: item.price,
         winnerConfirmed: false,
         bidCount: 0,
+        descriptionHistory: [],
+        rejectedBidders: [],
       });
+
+      // Lịch sử mô tả (Ngẫu nhiên)
+      if (Math.random() > 0.7) {
+        product.descriptionHistory?.push({
+          content: "Added details about the battery life.",
+          updatedAt: new Date(startTime.getTime() + 24 * 60 * 60 * 1000),
+        } as any);
+      }
 
       await product.save();
       totalProducts++;
 
-      // --- GENERATE BIDS ---
-      // Randomly decide how many bids (min 3 as requested)
-      const bidCount = randomInt(3, 8);
-      let currentPrice = item.price;
-      let lastBidder = null;
+      const shouldHaveBids = scenarioType !== 0;
+
+      let bidCount = 0;
+      let lastBidder: any = null;
+      let secondToLastBidder = null;
       let lastBidTime = startTime;
+      let currentPrice = item.price;
 
-      for (let k = 0; k < bidCount; k++) {
-        // Pick random bidder
-        const bidder = bidders[randomInt(0, bidders.length - 1)]!;
+      if (shouldHaveBids) {
+        bidCount = randomInt(3, 8);
 
-        // Increase price by step + random small amount
-        const increment = stepPrice + randomInt(0, 5) * 10000;
-        currentPrice += increment;
+        for (let k = 0; k < bidCount; k++) {
+          const bidder = bidders[randomInt(0, bidders.length - 1)]!;
+          const increment = stepPrice + randomInt(0, 5) * 10000;
+          currentPrice += increment;
 
-        // Ensure bid time is ascending but before now
-        const nextTime = new Date(
-          lastBidTime.getTime() + randomInt(10, 60) * 60 * 1000
-        );
-        if (nextTime > now) break; // Don't bid in the future
-        lastBidTime = nextTime;
+          const nextTime = new Date(
+            lastBidTime.getTime() + randomInt(10, 60) * 60 * 1000
+          );
+          if (nextTime > now || (isEnded && nextTime > endTime)) break;
+          lastBidTime = nextTime;
 
-        await Bid.create({
-          product: product._id,
-          bidder: bidder._id,
-          price: currentPrice,
-          createdAt: lastBidTime,
-        });
+          await Bid.create({
+            product: product._id,
+            bidder: bidder._id,
+            price: currentPrice,
+            createdAt: lastBidTime,
+          });
 
-        lastBidder = bidder;
-        totalBids++;
+          secondToLastBidder = lastBidder;
+          lastBidder = bidder;
+          totalBids++;
+        }
+
+        product.currentPrice = currentPrice;
+        product.currentBidder = (
+          lastBidder ? lastBidder._id : undefined
+        ) as any;
+        product.bidCount = bidCount;
+
+        if (Math.random() > 0.5 && bidCount > 0) {
+          product.questions.push({
+            question: "Is this product authentic?",
+            questioner: bidders[0]!._id,
+            askedAt: new Date(startTime.getTime() + 100000),
+            answer: "Yes, 100% authentic with invoice.",
+            answeredAt: new Date(startTime.getTime() + 200000),
+            answerer: sellerId,
+          } as any);
+        }
       }
 
-      // Update Product with final bid info
-      product.currentPrice = currentPrice;
-      product.currentBidder = (lastBidder ? lastBidder._id : undefined) as any;
-      product.bidCount = bidCount;
+      if (isEnded && lastBidder) {
+        if (scenarioType === 1) {
+          // No action
+        } else {
+          product.winnerConfirmed = true;
+          await product.save();
 
-      // Randomly add questions to some products
-      if (Math.random() > 0.5) {
-        product.questions.push({
-          question: "Is this item authentic?",
-          questioner: bidders[0]!._id,
-          askedAt: new Date(startTime.getTime() + 100000),
-          answer: "Yes, 100% authentic with receipt.",
-          answeredAt: new Date(startTime.getTime() + 200000),
-        } as any);
+          if (scenarioType === 5 && Math.random() > 0.5 && secondToLastBidder) {
+            product.rejectedBidders?.push(lastBidder._id as any);
+            product.winnerConfirmed = false;
+            product.currentBidder = (secondToLastBidder as any)._id as any;
+            product.currentPrice -= stepPrice + randomInt(0, 2) * 10000;
+            await product.save();
+            console.log(`❌ Đã hủy & Từ chối người thắng cho ${productName}`);
+            continue;
+          }
+
+          const order = new Order({
+            product: product._id,
+            seller: sellerId,
+            buyer: (lastBidder as any)._id,
+            amount: product.currentPrice,
+            status: OrderStatus.PENDING_PAYMENT,
+            step: 1,
+            createdAt: lastBidTime,
+            updatedAt: lastBidTime,
+          });
+
+          const chat = await Chat.create({
+            participants: [(lastBidder as any)._id, sellerId],
+            product: product._id,
+            order: order._id,
+            messages: [
+              {
+                sender: (lastBidder as any)._id,
+                content: "I have won the bid! When's the product being sent?",
+                timestamp: new Date(lastBidTime.getTime() + 10000),
+              },
+              {
+                sender: sellerId as any,
+                content:
+                  "Congrats bro! I'll send it right away when payment is confirmed.",
+                timestamp: new Date(lastBidTime.getTime() + 60000),
+              },
+            ],
+          });
+
+          order.chat = chat._id as any;
+
+          if (scenarioType === 2) {
+            if (Math.random() > 0.5) {
+              order.status = OrderStatus.PAID_CONFIRMED;
+              order.step = 2;
+              order.shippingAddress = (lastBidder as any).address;
+              order.paymentProof = "https://picsum.photos/300/600";
+              chat.messages.push({
+                sender: (lastBidder as any)._id,
+                content: "I've paid the amount! Waiting for confirmation.",
+                timestamp: new Date(lastBidTime.getTime() + 120000),
+              });
+              await chat.save();
+            }
+          }
+
+          if (scenarioType === 3) {
+            order.status = OrderStatus.COMPLETED;
+            order.step = 4;
+            product.transactionCompleted = true;
+
+            const buyerScore = 1;
+            order.ratingByBuyer = {
+              score: buyerScore,
+              comment: "This seller guy is awesome!",
+              updatedAt: new Date(),
+            };
+            try {
+              await Rating.create({
+                rater: (lastBidder as any)._id,
+                ratee: sellerId,
+                product: product._id,
+                type: "seller",
+                score: buyerScore,
+                comment: order.ratingByBuyer.comment,
+              });
+            } catch (error: any) {
+              if (error.code !== 11000) {
+                console.error("Failed to create buyer rating:", error);
+              }
+            }
+
+            const sellerScore = 1;
+            order.ratingBySeller = {
+              score: sellerScore,
+              comment: "This buyer guy is awesome with fast payment!",
+              updatedAt: new Date(),
+            };
+            try {
+              await Rating.create({
+                rater: sellerId,
+                ratee: (lastBidder as any)._id,
+                product: product._id,
+                type: "bidder",
+                score: sellerScore,
+                comment: order.ratingBySeller.comment,
+              });
+            } catch (error: any) {
+              if (error.code !== 11000) {
+                console.error("Failed to create seller rating:", error);
+              }
+            }
+          }
+
+          await order.save();
+          totalOrders++;
+        }
       }
 
       await product.save();
     }
   };
 
-  // Run catalog processing
   await processCatalog("Phones", seller1._id);
   await processCatalog("Laptops", seller1._id);
   await processCatalog("Shoes", seller2._id);
@@ -421,6 +564,7 @@ const seed = async () => {
   console.log(`   - Categories: 9`);
   console.log(`   - Products: ${totalProducts}`);
   console.log(`   - Bids: ${totalBids}`);
+  console.log(`   - Orders: ${totalOrders}`);
   console.log("-----------------------------------------");
 
   process.exit(0);

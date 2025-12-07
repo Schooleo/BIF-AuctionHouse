@@ -105,9 +105,7 @@ const BidWinnersContainer: React.FC = () => {
         </div>
       ) : products.length === 0 ? (
         <div className="text-center py-16 bg-white rounded-xl border border-gray-200 flex flex-col items-center justify-center">
-          <p className="text-gray-500 mb-6 text-lg">
-            No active winners awaiting rating.
-          </p>
+          <p className="text-gray-500 mb-6 text-lg">No active winners yet...</p>
         </div>
       ) : (
         <div className="flex flex-col gap-4">

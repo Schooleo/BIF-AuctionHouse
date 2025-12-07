@@ -5,7 +5,7 @@ import type { Product } from "@interfaces/product";
 import Pagination from "@components/pagination/Pagination";
 import { useLocation } from "react-router-dom";
 
-const LIMIT = 8;
+const LIMIT = 6;
 
 const EndedProductsContainer: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
@@ -19,6 +19,7 @@ const EndedProductsContainer: React.FC = () => {
     "awaiting"
   );
   const [search, setSearch] = useState("");
+  const [awaitingCount, setAwaitingCount] = useState<number>(0);
   const location = useLocation();
 
   useEffect(() => {
@@ -55,6 +56,26 @@ const EndedProductsContainer: React.FC = () => {
     };
     fetchProducts();
   }, [page, search, sortBy, sortOrder, endedFilter, statusRefresh]);
+
+  // Fetch awaiting count for badge
+  useEffect(() => {
+    const fetchAwaitingCount = async () => {
+      try {
+        const data = await sellerApi.getSellerProducts({
+          page: 1,
+          limit: 1,
+          search: "",
+          sortBy: "createdAt",
+          sortOrder: "desc",
+          status: "awaiting",
+        });
+        setAwaitingCount(data.total || 0);
+      } catch (error) {
+        console.error("Failed to fetch awaiting count", error);
+      }
+    };
+    fetchAwaitingCount();
+  }, [statusRefresh]);
 
   const handleSortChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const value = e.target.value;
@@ -124,7 +145,12 @@ const EndedProductsContainer: React.FC = () => {
               }`}
               onClick={() => setEndedFilter("awaiting")}
             >
-              Awaiting Confirmation
+              <span>Awaiting Confirmation</span>
+              {awaitingCount > 0 && (
+                <span className="ml-2 inline-flex items-center justify-center px-2 py-1.5 text-xs font-bold leading-none text-white bg-red-800 rounded-full">
+                  {awaitingCount}
+                </span>
+              )}
             </button>
             <button
               className={`pb-4 px-4 font-medium text-sm transition-colors relative ${

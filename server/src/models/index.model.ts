@@ -6,3 +6,5 @@ export * from "./rating.model";
 export * from "./watchlist.model";
 export * from "./upgradeRequest.model";
 export * from "./systemConfig.model";
+export * from "./order.model";
+export * from "./chat.model";

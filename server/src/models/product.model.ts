@@ -66,6 +66,7 @@ export interface IProduct extends Document {
   transactionCompleted?: boolean;
 
   rejectedBidders: Types.ObjectId[];
+  isEndedEmailSent?: boolean;
 }
 
 // Schema cho product
@@ -114,6 +115,7 @@ const productSchema = new Schema<IProduct>(
       ],
       default: [],
     },
+    isEndedEmailSent: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

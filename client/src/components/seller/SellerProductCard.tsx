@@ -5,7 +5,11 @@ import type { Product } from "@interfaces/product";
 import ProductImage from "../product/ProductImage";
 import { sellerApi } from "@services/seller.api";
 import DescriptionHistoryPopover from "./DescriptionHistoryPopover";
-import { checkRecentlyAdded, getShortRemainingTime } from "@utils/product";
+import {
+  checkRecentlyAdded,
+  formatPrice,
+  getShortRemainingTime,
+} from "@utils/product";
 import RichTextEditor from "@components/shared/RichTextEditor";
 import { useAlertStore } from "@stores/useAlertStore";
 
@@ -87,7 +91,7 @@ const SellerProductCard: React.FC<SellerProductCardProps> = ({
           <div className="flex justify-between items-center text-sm">
             <span className="text-gray-600">Current Price:</span>
             <span className="font-bold text-blue-600">
-              {currentPrice.toLocaleString()}₫
+              {formatPrice(currentPrice)}
             </span>
           </div>
 

@@ -43,24 +43,47 @@ const SellerSideBar: React.FC = () => {
         <h2 className="text-xl font-bold text-gray-800">Seller Dashboard</h2>
       </div>
       <nav className="space-y-1">
-        {menuItems.map((item) => (
-          <Link
-            key={item.path}
-            to={item.path}
-            className={classNames(
-              "flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors duration-200",
-              {
-                "bg-primary-blue text-white shadow-md":
-                  location.pathname === item.path,
-                "text-gray-700 hover:bg-gray-100 hover:text-gray-900":
-                  location.pathname !== item.path,
-              }
-            )}
-          >
-            <span className="mr-3">{item.icon}</span>
-            {item.label}
-          </Link>
-        ))}
+        {menuItems.map((item) => {
+          const isProductDetails =
+            item.path === "/seller/products" &&
+            location.pathname.startsWith("/seller/products/") &&
+            location.pathname !== "/seller/products";
+
+          const isOrderDetails =
+            item.path === "/seller/bid-winners" &&
+            location.pathname.startsWith("/seller/orders/");
+
+          const isActive =
+            location.pathname === item.path ||
+            isProductDetails ||
+            isOrderDetails;
+
+          return (
+            <React.Fragment key={item.path}>
+              <Link
+                to={item.path}
+                className={classNames(
+                  "flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors duration-200",
+                  {
+                    "bg-primary-blue text-white shadow-md": isActive,
+                    "text-gray-700 hover:bg-gray-100 hover:text-gray-900":
+                      !isActive,
+                  }
+                )}
+              >
+                <span className="mr-3">{item.icon}</span>
+                {item.label}
+              </Link>
+              {(isProductDetails || isOrderDetails) && (
+                <div className="ml-5 mt-2 space-y-1 border-l-2 border-gray-200 pl-3">
+                  <span className="block py-2 text-sm transition-colors duration-200 text-primary-blue font-semibold">
+                    {isProductDetails ? "Product Details" : "Order Completion"}
+                  </span>
+                </div>
+              )}
+            </React.Fragment>
+          );
+        })}
       </nav>
       <div className="mt-8 pt-8 border-t border-gray-200">
         <Link

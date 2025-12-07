@@ -1,5 +1,5 @@
 import React, { useRef, useState } from "react";
-import { Upload, X, Loader2, Check } from "lucide-react";
+import { Upload, X, Loader2 } from "lucide-react";
 import { uploadApi } from "@services/upload.api";
 
 interface ImageUploadProps {
@@ -82,21 +82,21 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
     <div className={`w-full ${className}`}>
       {value ? (
         <div
-          className={`relative w-full ${height} rounded-lg overflow-hidden border border-green-200 bg-green-50 flex flex-col items-center justify-center p-4 group`}
+          className={`relative w-full ${height} rounded-lg overflow-hidden border border-green-200 bg-green-50 flex items-center justify-center`}
         >
-          <div className="flex flex-col items-center text-green-600">
-            <div className="p-2 bg-green-100 rounded-full mb-2">
-              <Check className="w-6 h-6" />
-            </div>
-            <span className="text-sm font-medium text-center">
-              Image Uploaded Successfully
-            </span>
-          </div>
+          <img
+            src={value}
+            alt="Uploaded content"
+            className="w-full h-full object-contain"
+          />
           {onRemove && (
             <button
               type="button"
-              onClick={onRemove}
-              className="absolute top-2 right-2 p-1 bg-white rounded-full text-gray-400 hover:text-red-500 shadow-sm border border-gray-200 transition-colors"
+              onClick={(e) => {
+                e.stopPropagation();
+                onRemove();
+              }}
+              className="absolute top-2 right-2 p-1.5 bg-white/90 rounded-full text-gray-500 hover:text-red-500 shadow-sm border border-gray-200 transition-colors z-10"
               title="Remove image"
             >
               <X className="w-4 h-4" />

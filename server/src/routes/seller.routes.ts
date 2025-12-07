@@ -14,6 +14,7 @@ import {
   updateSellerProfile,
   changeSellerPassword,
   completeTransaction,
+  archiveCancelledProduct,
 } from "../controllers/seller.controller";
 import { protect } from "../middleware/auth.middleware";
 import { validate } from "../middleware/validate";
@@ -97,5 +98,10 @@ router.post("/products/:productId/rate-winner", rateWinner);
 router.post("/products/:productId/cancel-transaction", cancelTransaction);
 router.post("/products/:productId/transfer-winner", transferWinner);
 router.post("/products/:productId/complete-transaction", completeTransaction);
+router.post(
+  "/products/:productId/archive",
+  validate(productIdParamsSchema, "params"),
+  archiveCancelledProduct
+);
 
 export default router;
