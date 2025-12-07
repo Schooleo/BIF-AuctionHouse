@@ -7,7 +7,7 @@ import {
   maskName,
 } from "@utils/product";
 import { Link } from "react-router-dom";
-import { Heart } from "lucide-react";
+import { Heart, Star } from "lucide-react";
 import Spinner from "@components/ui/Spinner";
 import BidModal from "./BidModal";
 import { bidderApi } from "@services/bidder.api";
@@ -198,9 +198,11 @@ const ProductInfoCard: React.FC<ProductInfoCardProps> = ({
       )}
       <p className="text-gray-700">
         Seller - {product.seller?.name || "Seller"} •{" "}
-        <span className="text-yellow-500">
-          {`★`.repeat(Math.round(product.seller?.rating || 0))}{" "}
-          {product.seller?.rating?.toFixed(1) || "N/A"}
+        <span className="text-yellow-500 inline-flex items-center gap-0.5">
+          {Array.from({ length: Math.round(product.seller?.rating || 0) }).map((_, i) => (
+            <Star key={i} className="w-4 h-4 fill-yellow-500" />
+          ))}{" "}
+          <span className="ml-1">{product.seller?.rating?.toFixed(1) || "N/A"}</span>
         </span>
       </p>
       {isAuctionEnded ? (
@@ -227,18 +229,22 @@ const ProductInfoCard: React.FC<ProductInfoCardProps> = ({
                 </p>
                 {(product.currentBidder?.rating ||
                   product.highestBidder?.rating) && (
-                  <span className="text-yellow-500 text-sm">
-                    {`★`.repeat(
-                      Math.round(
+                  <span className="text-yellow-500 text-sm inline-flex items-center gap-0.5">
+                    {Array.from({
+                      length: Math.round(
                         product.currentBidder?.rating ||
                           product.highestBidder?.rating ||
                           0
-                      )
-                    )}{" "}
-                    {(
-                      product.currentBidder?.rating ||
-                      product.highestBidder?.rating
-                    )?.toFixed(1)}
+                      ),
+                    }).map((_, i) => (
+                      <Star key={i} className="w-3.5 h-3.5 fill-yellow-500" />
+                    ))}{" "}
+                    <span className="ml-1">
+                      {(
+                        product.currentBidder?.rating ||
+                        product.highestBidder?.rating
+                      )?.toFixed(1)}
+                    </span>
                   </span>
                 )}
               </div>
@@ -266,19 +272,23 @@ const ProductInfoCard: React.FC<ProductInfoCardProps> = ({
                   "Anonymous"
               )}{" "}
               •{" "}
-              <span className="text-yellow-500">
-                {`★`.repeat(
-                  Math.round(
+              <span className="text-yellow-500 inline-flex items-center gap-0.5">
+                {Array.from({
+                  length: Math.round(
                     product.highestBidder?.rating ||
                       product.currentBidder?.rating ||
                       0
-                  )
-                )}{" "}
-                {(
-                  product.highestBidder?.rating ||
-                  product.currentBidder?.rating ||
-                  0
-                ).toFixed(1)}
+                  ),
+                }).map((_, i) => (
+                  <Star key={i} className="w-4 h-4 fill-yellow-500" />
+                ))}{" "}
+                <span className="ml-1">
+                  {(
+                    product.highestBidder?.rating ||
+                    product.currentBidder?.rating ||
+                    0
+                  ).toFixed(1)}
+                </span>
               </span>
             </>
           ) : (
