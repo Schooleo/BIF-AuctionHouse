@@ -1,8 +1,8 @@
 import type { BidItem } from "../../interfaces/bidder";
 import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
-import { maskName } from "@utils/product"; 
-import { getTimeRemaining } from "@utils/time"; 
+import { maskName } from "@utils/product";
+import { getTimeRemaining } from "@utils/time";
 
 interface BiddingProductCardProps {
   bid: BidItem;
@@ -21,33 +21,40 @@ const BiddingProductCard: React.FC<BiddingProductCardProps> = ({ bid }) => {
     isWinning,
     awaitingConfirmation,
     currentBidder,
+    bidStatus,
+    inProcessing,
   } = bid;
 
-  const getBadgeInfo = () => {
-    if (isWinning) {
-      return {
-        text: "Winning",
-        bgColor: "bg-green-500",
-        textColor: "text-white",
-      };
+  const getBidStatusBadge = (status: string) => {
+    switch (status) {
+      case "active":
+        return {
+          text: "Active Bidding",
+          bgColor: "bg-blue-100",
+          textColor: "text-blue-700",
+        };
+      case "awaiting":
+        return {
+          text: "Awaiting Confirmation",
+          bgColor: "bg-yellow-100",
+          textColor: "text-yellow-700",
+        };
+      case "processing":
+        return {
+          text: "Payment & Delivery",
+          bgColor: "bg-green-100",
+          textColor: "text-green-700",
+        };
+      default:
+        return {
+          text: "Unknown",
+          bgColor: "bg-gray-100",
+          textColor: "text-gray-700",
+        };
     }
-
-    if (awaitingConfirmation) {
-      return {
-        text: "Awaiting Confirmation",
-        bgColor: "bg-yellow-500",
-        textColor: "text-black",
-      };
-    }
-
-    return {
-      text: "Outbid",
-      bgColor: "bg-red-500",
-      textColor: "text-white",
-    };
   };
 
-  const badgeInfo = getBadgeInfo();
+  const badgeInfo = getBidStatusBadge(bidStatus);
 
   const timeRemaining = getTimeRemaining(endTime);
 
@@ -55,7 +62,7 @@ const BiddingProductCard: React.FC<BiddingProductCardProps> = ({ bid }) => {
     if (timeRemaining.isEnded) return "text-gray-500";
     if (timeRemaining.isUrgent) return "text-red-600 font-bold";
     return "text-gray-800";
-  }
+  };
 
   const timeColor = getTimeColor();
 
@@ -118,7 +125,7 @@ const BiddingProductCard: React.FC<BiddingProductCardProps> = ({ bid }) => {
             )}
 
             {/* Seller - CHỈ HIỆN KHI AWAITING CONFIRMATION */}
-            {awaitingConfirmation && seller?.name && (
+            {(awaitingConfirmation || inProcessing) && seller?.name && (
               <div className="flex items-center gap-2">
                 <span className="text-gray-600 font-medium">Seller:</span>
                 <span className="text-gray-800 font-semibold">
@@ -157,8 +164,8 @@ const BiddingProductCard: React.FC<BiddingProductCardProps> = ({ bid }) => {
         </div>
       </div>
 
-      {/* ========== BOTTOM: AWAITING MESSAGE (OPTIONAL) ========== */}
-      {awaitingConfirmation && (
+      {/* ========== BOTTOM: AWAITING MESSAGE ========== */}
+      {awaitingConfirmation && !inProcessing && (
         <div className="border-t border-gray-200 bg-amber-50 px-4 py-3">
           <p className="text-sm text-amber-800 text-center">
             The auction has ended. Waiting for{" "}
@@ -166,6 +173,18 @@ const BiddingProductCard: React.FC<BiddingProductCardProps> = ({ bid }) => {
               {seller?.name ? seller.name : "seller"}
             </span>{" "}
             to confirm the winner.
+          </p>
+        </div>
+      )}
+
+      {/* ========== BOTTOM: PROCESSING MESSAGE ========== */}
+      {inProcessing && (
+        <div className="border-t border-gray-200 bg-green-50 px-4 py-3">
+          <p className="text-sm text-green-800 text-center">
+            Congratulations! You won this auction.{" "}
+            <span className="font-semibold">
+              Payment and delivery in progress.
+            </span>
           </p>
         </div>
       )}

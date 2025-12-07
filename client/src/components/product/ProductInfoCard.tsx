@@ -6,8 +6,7 @@ import {
   formatPrice,
   maskName,
 } from "@utils/product";
-import { Link } from "react-router-dom";
-import { Heart, Star, MessageCircle, Heart } from "lucide-react";
+import { Heart, Star, ArrowRight } from "lucide-react";
 import { orderApi } from "@services/order.api";
 import Spinner from "@components/ui/Spinner";
 import BidModal from "./BidModal";
@@ -83,7 +82,7 @@ const ProductInfoCard: React.FC<ProductInfoCardProps> = ({
   const [isCreatingOrder, setIsCreatingOrder] = useState(false);
   const addAlert = useAlertStore((state) => state.addAlert);
 
-  const { token, user } = useAuthStore();
+  const { token } = useAuthStore();
   const navigate = useNavigate();
 
   const handleCompleteOrder = async () => {
@@ -175,13 +174,6 @@ const ProductInfoCard: React.FC<ProductInfoCardProps> = ({
     } finally {
       setIsAddingToWatchlist(false);
     }
-  };
-
-  const handleCheckout = () => {
-    addAlert(
-      "info",
-      "🚧 Checkout feature is currently under development. Stay tuned!"
-    );
   };
 
   return (
@@ -371,29 +363,7 @@ const ProductInfoCard: React.FC<ProductInfoCardProps> = ({
         )}
 
         {/* Place a Bid / Sign in Button (Primary) */}
-        {/* Complete Order for Winning Bidder */}
-        {!isGuest &&
-        new Date(product.endTime) <= new Date() &&
-        (product.highestBidder?._id === user?.id ||
-          // Fallback check if populated object has _id as string
-          (typeof product.highestBidder === "object" &&
-            product.highestBidder?._id?.toString() === user?.id)) ? (
-          <button
-            onClick={handleCompleteOrder}
-            disabled={isCreatingOrder}
-            className="text-xl font-semibold w-full px-6 py-4 rounded-2xl shadow-md bg-green-600 text-white hover:scale-105 transition-transform duration-200 cursor-pointer flex items-center justify-center gap-2"
-          >
-            {isCreatingOrder ? (
-              <>
-                <Spinner /> Processing...
-              </>
-            ) : (
-              <>
-                <MessageCircle size={24} /> Complete Purchase & Chat
-              </>
-            )}
-          </button>
-        ) : isGuest ? (
+        {isGuest ? (
           <Link
             to="/auth/login"
             className={`text-xl font-semibold w-full px-6 py-4 rounded-2xl shadow-md ${
@@ -407,17 +377,26 @@ const ProductInfoCard: React.FC<ProductInfoCardProps> = ({
         ) : isAuctionEnded ? (
           isCurrentUserWinner ? (
             <button
-              onClick={handleCheckout}
-              className="text-xl font-semibold w-full px-6 py-3 rounded-2xl shadow-md bg-green-600 text-white hover:scale-105 transition-transform duration-200 cursor-pointer flex items-center justify-center gap-2"
+              onClick={handleCompleteOrder}
+              disabled={isCreatingOrder}
+              className="text-xl font-semibold w-full px-6 py-4 rounded-2xl shadow-md bg-green-600 text-white hover:scale-105 transition-transform duration-200 cursor-pointer flex items-center justify-center gap-2"
             >
-              <span>Proceed to Checkout</span>
+              {isCreatingOrder ? (
+                <>
+                  <Spinner /> Processing...
+                </>
+              ) : (
+                <>
+                  Go to Order <ArrowRight size={24} />
+                </>
+              )}
             </button>
           ) : (
             <button
               disabled
               className="text-xl font-semibold w-full px-6 py-3 rounded-2xl shadow-md bg-gray-400 text-gray-200 cursor-not-allowed opacity-50"
             >
-              Auction Ended
+              Waiting for Winner Confirmation
             </button>
           )
         ) : (
@@ -427,10 +406,6 @@ const ProductInfoCard: React.FC<ProductInfoCardProps> = ({
           >
             Place a bid
           </button>
-        ) : (
-          <div className="text-center p-4 bg-gray-100 rounded-xl text-gray-500 font-medium">
-            Auction Ended
-          </div>
         )}
       </div>
 

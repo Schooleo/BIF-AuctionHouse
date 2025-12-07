@@ -166,6 +166,7 @@ export const bidderApi = {
     limit: number = 10,
     sortBy: 'endTime' | 'price' | 'bidCount' = 'endTime',
     sortOrder: 'asc' | 'desc' = 'desc',
+    status?: 'active' | 'awaiting' | 'processing' | 'all'
   ) : Promise<GetMyBidsResponse> => {
     const params = new URLSearchParams({
       page: page.toString(),
@@ -173,6 +174,10 @@ export const bidderApi = {
       sortBy,
       sortOrder,
     });
+
+    if (status && status !== 'all') {
+      params.append('status', status);
+    }
 
     const url = `${API_BASE}/api/bidder/my-bids?${params}`;
     const res = await fetch(url, {

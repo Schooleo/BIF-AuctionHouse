@@ -145,13 +145,15 @@ export const viewMyBids = async (req: Request, res: Response) => {
     const sortBy =
       (req.query.sortBy as "endTime" | "price" | "bidCount") || "endTime";
     const sortOrder = (req.query.sortOrder as "asc" | "desc") || "desc";
+    const status = req.query.status as "active" | "awaiting" | "processing" | undefined;
 
     const result = await bidderService.getMyBids(
       bidderId,
       page,
       limit,
       sortBy,
-      sortOrder
+      sortOrder,
+      status
     );
     res.json(result);
   } catch (error: any) {

@@ -298,88 +298,38 @@ export const bidderService = {
     page: number = 1,
     limit: number = 10,
     sortBy: "endTime" | "price" | "bidCount" = "endTime",
-    sortOrder: "asc" | "desc" = "desc"
+    sortOrder: "asc" | "desc" = "desc",
+    status?: "active" | "awaiting" | "processing" | "all"
   ) {
     const now = new Date();
 
     // Lấy danh sách product IDs mà bidder đã bid
     const bids = await Bid.find({ bidder: bidderId }).distinct("product");
 
-    let sortField: any = {};
-    switch (sortBy) {
-      case "price":
-        sortField = { currentPrice: sortOrder === "asc" ? 1 : -1 };
-        break;
-      case "bidCount":
-        sortField = { bidCount: sortOrder === "asc" ? 1 : -1 };
-        break;
-      case "endTime":
-      default:
-        sortField = { endTime: sortOrder === "asc" ? -1 : 1 };
-        break;
-    }
-
-    const [awaitingTotal, activeTotal] = await Promise.all([
-      Product.countDocuments({
+    const queries = {
+      active: {
+        _id: { $in: bids },
+        endTime: { $gt: now },
+      },
+      awaiting: {
         _id: { $in: bids },
         currentBidder: bidderId,
         endTime: { $lt: now },
         winnerConfirmed: { $ne: true },
-      }),
-      Product.countDocuments({
+      },
+      processing: {
         _id: { $in: bids },
-        endTime: { $gt: now },
-        winnerConfirmed: { $ne: true },
-      }),
+        currentBidder: bidderId,
+        winnerConfirmed: true,
+        transactionCompleted: { $ne: true },
+      },
+    };
+
+    const [activeTotal, awaitingTotal, processingTotal] = await Promise.all([
+      Product.countDocuments(queries.active),
+      Product.countDocuments(queries.awaiting),
+      Product.countDocuments(queries.processing),
     ]);
-
-    const shouldReverseGroups = sortBy === "endTime" && sortOrder === "desc";
-
-    let firstGroup: "awaiting" | "active";
-    let firstGroupTotal: number;
-    let secondGroupTotal: number;
-
-    if (shouldReverseGroups) {
-      firstGroup = "awaiting";
-      firstGroupTotal = awaitingTotal;
-      secondGroupTotal = activeTotal;
-    } else {
-      // ASC endTime hoặc Price/BidCount: Awaiting → Active
-      firstGroup = "active";
-      firstGroupTotal = activeTotal;
-      secondGroupTotal = awaitingTotal;
-    }
-
-    const startIndex = (page - 1) * limit;
-    const endIndex = page * limit;
-
-    let fetchFirstGroup = false;
-    let fetchSecondGroup = false;
-    let firstGroupSkip = 0;
-    let firstGroupLimit = 0;
-    let secondGroupSkip = 0;
-    let secondGroupLimit = 0;
-
-    if (startIndex < firstGroupTotal) {
-      // Page này có items từ first group
-      fetchFirstGroup = true;
-      firstGroupSkip = startIndex;
-      firstGroupLimit = Math.min(limit, firstGroupTotal - startIndex);
-
-      if (endIndex > firstGroupTotal) {
-        fetchSecondGroup = true;
-        secondGroupSkip = 0;
-        secondGroupLimit = endIndex - firstGroupTotal;
-      }
-    } else {
-      // Page này chỉ có second group
-      fetchSecondGroup = true;
-      secondGroupSkip = startIndex - firstGroupTotal;
-      secondGroupLimit = limit;
-    }
-
-    let awaitingProducts: any[] = [];
-    let activeProducts: any[] = [];
 
     const populateFields = [
       { path: "seller", select: "name email" },
@@ -387,99 +337,187 @@ export const bidderService = {
       { path: "currentBidder", select: "name email" },
     ];
 
-    if (firstGroup === "awaiting") {
-      if (fetchFirstGroup) {
-        awaitingProducts = await Product.find({
-          _id: { $in: bids },
-          currentBidder: bidderId,
-          endTime: { $lt: now },
-          winnerConfirmed: { $ne: true },
-        })
-          .populate(populateFields)
-          .sort(sortField)
-          .skip(firstGroupSkip)
-          .limit(firstGroupLimit)
-          .lean();
-      }
-
-      if (fetchSecondGroup) {
-        activeProducts = await Product.find({
-          _id: { $in: bids },
-          endTime: { $gt: now },
-          winnerConfirmed: { $ne: true },
-        })
-          .populate(populateFields)
-          .sort(sortField)
-          .skip(secondGroupSkip)
-          .limit(secondGroupLimit)
-          .lean();
-      }
-    } else {
-      if (fetchFirstGroup) {
-        activeProducts = await Product.find({
-          _id: { $in: bids },
-          endTime: { $gt: now },
-          winnerConfirmed: { $ne: true },
-        })
-          .populate(populateFields)
-          .sort(sortField)
-          .skip(firstGroupSkip)
-          .limit(firstGroupLimit)
-          .lean();
-      }
-
-      if (fetchSecondGroup) {
-        awaitingProducts = await Product.find({
-          _id: { $in: bids },
-          currentBidder: bidderId,
-          endTime: { $lt: now },
-          winnerConfirmed: { $ne: true },
-        })
-          .populate(populateFields)
-          .sort(sortField)
-          .skip(secondGroupSkip)
-          .limit(secondGroupLimit)
-          .lean();
-      }
-    }
-
-    const awaitingWithStatus = awaitingProducts.map((product: any) => ({
-      ...product,
-      isEnded: true,
-      isWinning: false,
-      awaitingConfirmation: true,
-    }));
-
-    const activeWithStatus = activeProducts.map((product: any) => {
+    const enrichProduct = (product: any) => {
       const isCurrentBidder =
         product.currentBidder?._id?.toString() === bidderId;
-      return {
-        ...product,
-        isEnded: false,
-        isWinning: isCurrentBidder,
-        awaitingConfirmation: false,
-      };
-    });
 
-    let bidsCombined: any[];
-    if (shouldReverseGroups) {
-      bidsCombined = [...awaitingWithStatus, ...activeWithStatus];
+      if (product.winnerConfirmed && !product.transactionCompleted) {
+        return {
+          ...product,
+          isEnded: true,
+          isWinning: true,
+          bidStatus: "processing" as const,
+          awaitingConfirmation: false,
+          inProcessing: true,
+        };
+      } else if (
+        product.endTime < now &&
+        !product.winnerConfirmed &&
+        isCurrentBidder
+      ) {
+        return {
+          ...product,
+          isEnded: true,
+          isWinning: false,
+          bidStatus: "awaiting" as const,
+          awaitingConfirmation: true,
+          inProcessing: false,
+        };
+      } else {
+        return {
+          ...product,
+          isEnded: false,
+          isWinning: isCurrentBidder,
+          bidStatus: "active" as const,
+          awaitingConfirmation: false,
+          inProcessing: false,
+        };
+      }
+    };
+
+    let enrichedProducts: any[];
+    let totalForFilter: number;
+
+    if (sortBy === "endTime" && (!status || status === "all")) {
+      let groupOrder: Array<"processing" | "awaiting" | "active">;
+
+      if (sortOrder === "desc") {
+        groupOrder = ["processing", "awaiting", "active"];
+      } else {
+        groupOrder = ["active", "awaiting", "processing"];
+      }
+
+      const startIndex = (page - 1) * limit;
+      const endIndex = page * limit;
+
+      interface FetchPlan {
+        group: "active" | "awaiting" | "processing";
+        skip: number;
+        limit: number;
+      }
+
+      const totals: Record<string, number> = {
+        processing: processingTotal,
+        awaiting: awaitingTotal,
+        active: activeTotal,
+      };
+
+      const fetchPlan: FetchPlan[] = [];
+      let cumulativeTotal = 0;
+
+      for (const group of groupOrder) {
+        const groupTotal = totals[group] || 0;
+        const groupStart = cumulativeTotal;
+        const groupEnd = cumulativeTotal + groupTotal;
+
+        if (startIndex < groupEnd && endIndex > groupStart) {
+          const skip = Math.max(0, startIndex - groupStart);
+          const alreadyFetched = fetchPlan.reduce((sum, p) => sum + p.limit, 0);
+          const take = Math.min(
+            limit - alreadyFetched,
+            groupEnd - Math.max(startIndex, groupStart)
+          );
+
+          if (take > 0) {
+            fetchPlan.push({ group, skip, limit: take });
+          }
+        }
+
+        cumulativeTotal = groupEnd;
+      }
+
+      const getSortFieldForGroup = (group: string) => {
+        if (group === "processing") {
+          return { updatedAt: sortOrder === "asc" ? 1 : -1 };
+        }
+        return { endTime: sortOrder === "asc" ? 1 : -1 };
+      };
+
+      const results = await Promise.all(
+        fetchPlan.map((plan) =>
+          Product.find(queries[plan.group])
+            .populate(populateFields)
+            .sort(getSortFieldForGroup(plan.group))
+            .skip(plan.skip)
+            .limit(plan.limit)
+            .lean()
+        )
+      );
+
+      enrichedProducts = results.flatMap((products) =>
+        products.map((p) => enrichProduct(p))
+      );
+
+      totalForFilter = activeTotal + awaitingTotal + processingTotal;
     } else {
-      bidsCombined = [...activeWithStatus, ...awaitingWithStatus];
+      let queryFilter: any;
+      let sortField: any = {};
+
+      switch (sortBy) {
+        case "price":
+          sortField = { currentPrice: sortOrder === "asc" ? 1 : -1 };
+          break;
+        case "bidCount":
+          sortField = { bidCount: sortOrder === "asc" ? 1 : -1 };
+          break;
+        case "endTime":
+        default:
+          sortField = { endTime: sortOrder === "asc" ? 1 : -1 };
+          break;
+      }
+
+      if (!status || status === "all") {
+        queryFilter = {
+          _id: { $in: bids },
+          $or: [
+            { endTime: { $gt: now } },
+            {
+              currentBidder: bidderId,
+              endTime: { $lt: now },
+              winnerConfirmed: { $ne: true },
+            },
+            {
+              currentBidder: bidderId,
+              winnerConfirmed: true,
+              transactionCompleted: { $ne: true },
+            },
+          ],
+        };
+        totalForFilter = activeTotal + awaitingTotal + processingTotal;
+      } else {
+        queryFilter = queries[status];
+        totalForFilter =
+          status === "active"
+            ? activeTotal
+            : status === "awaiting"
+            ? awaitingTotal
+            : processingTotal;
+      }
+
+      const skip = (page - 1) * limit;
+      const products = await Product.find(queryFilter)
+        .populate(populateFields)
+        .sort(sortField)
+        .skip(skip)
+        .limit(limit)
+        .lean();
+
+      enrichedProducts = products.map(enrichProduct);
     }
 
-    const totalItems = awaitingTotal + activeTotal;
-
     return {
-      bids: bidsCombined,
+      bids: enrichedProducts,
       pagination: {
         page,
         limit,
-        total: totalItems,
-        totalPages: Math.ceil(totalItems / limit),
+        total: totalForFilter,
+        totalPages: Math.ceil(totalForFilter / limit),
       },
-      awaitingTotal, // Thêm info để frontend hiển thị
-      activeTotal, // Thêm info để frontend hiển thị
+      statistics: {
+        activeTotal,
+        awaitingTotal,
+        processingTotal,
+      },
     };
   },
 
@@ -871,9 +909,7 @@ export const bidderService = {
       type: "seller",
     }).lean();
 
-    const ratingMap = new Map(
-      ratings.map((r) => [r.ratee.toString(), r])
-    );
+    const ratingMap = new Map(ratings.map((r) => [r.ratee.toString(), r]));
 
     const enrichedProducts = products.map((p) => ({
       ...p,
