@@ -22,7 +22,7 @@ const WonAuctionsTab: React.FC = () => {
   const [auctionToDelete, setAuctionToDelete] = useState<AuctionItem | null>(null);
   const [deleting, setDeleting] = useState(false);
   const navigate = useNavigate();
-  const limit = 12;
+  const limit = 6;
 
   useEffect(() => {
     fetchAuctions();
@@ -130,18 +130,18 @@ const WonAuctionsTab: React.FC = () => {
   }
 
   return (
-    <div className='space-y-4'>
-      {' '}
-      {/* Changed from grid to stack */}
-      {auctions.map((auction) => (
-        <WonAuctionCard
-          key={auction._id}
-          auction={auction}
-          onRate={() => handleOpenRateModal(auction, 'create')}
-          onUpdateRating={() => handleOpenRateModal(auction, 'update')}
-          onDeleteRating={() => handleDeleteRating(auction)}
-        />
-      ))}
+    <div className='space-y-6'>
+      <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+        {auctions.map((auction) => (
+          <WonAuctionCard
+            key={auction._id}
+            auction={auction}
+            onRate={() => handleOpenRateModal(auction, 'create')}
+            onUpdateRating={() => handleOpenRateModal(auction, 'update')}
+            onDeleteRating={() => handleDeleteRating(auction)}
+          />
+        ))}
+      </div>
       {/* Pagination */}
       {totalPages > 1 && (
         <div className='flex justify-center items-center gap-2 mt-6'>
