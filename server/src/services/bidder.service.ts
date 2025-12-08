@@ -532,7 +532,10 @@ export const bidderService = {
 
   //Cập nhật thông tin cá nhân (name, address)
 
-  async updateProfile(bidderId: string, updates: { name?: string; address?: string }) {
+  async updateProfile(
+    bidderId: string,
+    updates: { name?: string; address?: string; dateOfBirth?: Date; contactEmail?: string }
+  ) {
     const bidder = await User.findByIdAndUpdate(bidderId, { $set: updates }, { new: true, runValidators: true });
 
     if (!bidder) {

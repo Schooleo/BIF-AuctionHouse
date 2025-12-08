@@ -1,12 +1,14 @@
-import mongoose, { Document, Schema } from "mongoose";
-import * as bcrypt from "bcrypt";
+import mongoose, { Document, Schema } from 'mongoose';
+import * as bcrypt from 'bcrypt';
 
 export interface IUser extends Document {
   name: string;
   email: string;
   password: string;
   address: string;
-  role: "bidder" | "seller" | "admin";
+  role: 'bidder' | 'seller' | 'admin';
+  dateOfBirth?: Date;
+  contactEmail?: string;
 
   positiveRatings: number; // Yêu cầu 2.2
   negativeRatings: number; // Yêu cầu 2.2
@@ -27,9 +29,11 @@ const userSchema = new Schema<IUser>(
     address: { type: String },
     role: {
       type: String,
-      enum: ["bidder", "seller", "admin"],
-      default: "bidder",
+      enum: ['bidder', 'seller', 'admin'],
+      default: 'bidder',
     },
+    dateOfBirth: { type: Date },
+    contactEmail: { type: String },
     positiveRatings: { type: Number, default: 0 },
     negativeRatings: { type: Number, default: 0 },
   },
@@ -42,9 +46,9 @@ const userSchema = new Schema<IUser>(
 );
 
 // Hash mật khẩu trước khi lưu người dùng
-userSchema.pre<IUser>("save", async function (next) {
+userSchema.pre<IUser>('save', async function (next) {
   // Chỉ chạy khi mật khấu thay đổi
-  if (!this.isModified("password")) return next();
+  if (!this.isModified('password')) return next();
 
   // Băm mật khẩu với cost factor là 10
   const salt = await bcrypt.genSalt(10);
@@ -54,14 +58,12 @@ userSchema.pre<IUser>("save", async function (next) {
 });
 
 // So sánh mật khẩu candidate với mật khẩu đã hash
-userSchema.methods.comparePassword = async function (
-  candidatePassword: string
-): Promise<boolean> {
+userSchema.methods.comparePassword = async function (candidatePassword: string): Promise<boolean> {
   return await bcrypt.compare(candidatePassword, this.password);
 };
 
 // Thuộc tính ảo để tính điểm đánh giá
-userSchema.virtual("reputationScore").get(function (this: IUser) {
+userSchema.virtual('reputationScore').get(function (this: IUser) {
   const totalRatings = this.positiveRatings + this.negativeRatings;
   if (totalRatings === 0) {
     // Trường hợp chưa được đánh giá
@@ -70,4 +72,4 @@ userSchema.virtual("reputationScore").get(function (this: IUser) {
   return this.positiveRatings / totalRatings;
 });
 
-export const User = mongoose.model<IUser>("User", userSchema);
+export const User = mongoose.model<IUser>('User', userSchema);
