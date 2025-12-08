@@ -253,8 +253,8 @@ const seed = async () => {
       password: commonPassword,
       role: "bidder",
       address: `Street ${i}, City`,
-      positiveRatings: randomInt(0, 5),
-      negativeRatings: randomInt(0, 1),
+      positiveRatings: 10,
+      negativeRatings: 1000,
       reputationScore: 0.8 / (Math.random() + 0.1),
     });
     bidders.push(bidder);
