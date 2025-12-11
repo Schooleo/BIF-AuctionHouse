@@ -1,5 +1,5 @@
-import { useSearchParams } from "react-router-dom";
-import type { ProductSortOption } from "@interfaces/product";
+import { useSearchParams } from 'react-router-dom';
+import type { ProductSortOption } from '@interfaces/product';
 
 interface SortBarProps {
   sort: ProductSortOption;
@@ -11,27 +11,24 @@ const SortBar: React.FC<SortBarProps> = ({ sort, setSort }) => {
 
   const handleSortChange = (value: ProductSortOption) => {
     setSort(value);
-    searchParams.set("sort", value);
+    searchParams.set('sort', value);
     setSearchParams(searchParams);
   };
 
   return (
-    <div className="flex mb-4">
-      <label
-        className="mr-2 self-center font-bold text-primary-blue"
-        htmlFor="sort"
-      >
+    <div className='flex mb-4'>
+      <label className='mr-2 self-center font-bold text-primary-blue' htmlFor='sort'>
         Sort:
       </label>
       <select
         value={sort}
         onChange={(e) => handleSortChange(e.target.value as ProductSortOption)}
-        className="px-3 py-2 border rounded-md"
+        className='px-3 py-2 border rounded-md'
       >
-        <option value="default">Default</option>
-        <option value="endingSoon">Ending Soon</option>
-        <option value="mostBidOn">Most Bid-On</option>
-        <option value="highestPriced">Highest Priced</option>
+        <option value='default'>Default</option>
+        <option value='endingSoon'>Ending Soon</option>
+        <option value='mostBidOn'>Most Bid-On</option>
+        <option value='highestPriced'>Highest Priced</option>
       </select>
     </div>
   );

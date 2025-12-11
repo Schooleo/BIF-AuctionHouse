@@ -2,8 +2,10 @@ export interface User {
   id: string;
   name: string;
   email: string;
-  role: "bidder" | "seller" | "admin";
+  role: 'bidder' | 'seller' | 'admin';
   address?: string;
+  dateOfBirth?: string;
+  contactEmail?: string;
   createdAt: string;
   updatedAt: string;
   positiveRatings?: number;
@@ -26,7 +28,7 @@ export interface AuthStore {
 
 export interface RequestOtpDto {
   email: string;
-  from: "register" | "reset-password";
+  from: 'register' | 'reset-password';
 }
 
 export interface RegisterDto {

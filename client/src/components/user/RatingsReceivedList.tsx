@@ -5,7 +5,11 @@ import Spinner from '@components/ui/Spinner';
 
 type FilterType = 'all' | 'positive' | 'negative';
 
-const RatingsReceivedList: React.FC = () => {
+interface RatingsReceivedListProps {
+  title?: string;
+}
+
+const RatingsReceivedList: React.FC<RatingsReceivedListProps> = ({ title = 'Ratings Received' }) => {
   const [ratings, setRatings] = useState<RatingReceived[]>([]);
   const [allRatings, setAllRatings] = useState<RatingReceived[]>([]);
   const [loading, setLoading] = useState(true);
@@ -13,7 +17,7 @@ const RatingsReceivedList: React.FC = () => {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [filter, setFilter] = useState<FilterType>('all');
-  const limit = 10;
+  const limit = 6;
 
   useEffect(() => {
     fetchRatings();
@@ -51,7 +55,7 @@ const RatingsReceivedList: React.FC = () => {
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('vi-VN', {
+    return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
@@ -77,88 +81,76 @@ const RatingsReceivedList: React.FC = () => {
     );
   }
 
-  if (ratings.length === 0) {
-    return (
-      <div className='text-center py-12 text-gray-500'>
-        <p className='text-lg'>You haven't received any ratings yet</p>
-      </div>
-    );
-  }
-
   return (
     <div className='space-y-6'>
-      {/* Filter Buttons */}
-      <div className='flex gap-3 justify-center'>
-        <button
-          onClick={() => handleFilterChange('all')}
-          className={`px-6 py-2 rounded-full font-medium transition ${
-            filter === 'all' ? 'bg-blue-600 text-white shadow-md' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-          }`}
-        >
-          All
-        </button>
-        <button
-          onClick={() => handleFilterChange('positive')}
-          className={`px-6 py-2 rounded-full font-medium transition ${
-            filter === 'positive' ? 'bg-green-600 text-white shadow-md' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-          }`}
-        >
-          Positive
-        </button>
-        <button
-          onClick={() => handleFilterChange('negative')}
-          className={`px-6 py-2 rounded-full font-medium transition ${
-            filter === 'negative' ? 'bg-red-600 text-white shadow-md' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-          }`}
-        >
-          Negative
-        </button>
+      {/* Title and Filter */}
+      <div className='flex items-center justify-between'>
+        <h2 className='text-xl font-bold'>{title}</h2>
+        <div className='flex items-center gap-2'>
+          <span className='text-sm font-bold text-primary-blue'>Sort:</span>
+          <select
+            value={filter}
+            onChange={(e) => handleFilterChange(e.target.value as FilterType)}
+            className='px-3 py-2 border rounded-md'
+          >
+            <option value='all'>All Ratings</option>
+            <option value='positive'>Positive</option>
+            <option value='negative'>Negative</option>
+          </select>
+        </div>
       </div>
 
-      {/* Ratings List */}
-      <div className='space-y-4'>
-        {ratings.map((rating) => (
-          <div
-            key={rating._id}
-            className='bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow'
-          >
-            <div className='flex items-start justify-between mb-3'>
-              <div className='flex items-center gap-3'>
-                <div className='w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center'>
-                  <span className='text-blue-600 font-semibold text-lg'>
-                    {rating.rater.name.charAt(0).toUpperCase()}
-                  </span>
+      {/* Ratings Grid */}
+      {ratings.length === 0 ? (
+        <div className='text-center py-12 text-gray-500'>
+          <p className='text-lg'>You haven't received any ratings yet</p>
+        </div>
+      ) : (
+        <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+          {ratings.map((rating) => (
+            <div
+              key={rating._id}
+              className='bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow'
+            >
+              {/* Header: Avatar + Name + Score Badge */}
+              <div className='flex items-start justify-between mb-3'>
+                <div className='flex items-center gap-3'>
+                  <div className='w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center shrink-0'>
+                    <span className='text-blue-600 font-semibold text-lg'>
+                      {rating.rater.name.charAt(0).toUpperCase()}
+                    </span>
+                  </div>
+                  <div className='min-w-0'>
+                    <h3 className='font-semibold text-gray-900 truncate'>{rating.rater.name}</h3>
+                    <p className='text-sm text-gray-500 truncate'>{rating.rater.email}</p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className='font-semibold text-gray-900'>{rating.rater.name}</h3>
-                  <p className='text-sm text-gray-500'>{rating.rater.email}</p>
-                </div>
-              </div>
-              <div className='flex items-center gap-2'>
                 {rating.score === 1 ? (
-                  <div className='flex items-center gap-1 bg-green-100 text-green-700 px-3 py-1 rounded-full'>
-                    <svg className='w-5 h-5' fill='currentColor' viewBox='0 0 20 20'>
+                  <div className='flex items-center gap-1 bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-medium shrink-0'>
+                    <svg className='w-4 h-4' fill='currentColor' viewBox='0 0 20 20'>
                       <path d='M2 10.5a1.5 1.5 0 113 0v6a1.5 1.5 0 01-3 0v-6zM6 10.333v5.43a2 2 0 001.106 1.79l.05.025A4 4 0 008.943 18h5.416a2 2 0 001.962-1.608l1.2-6A2 2 0 0015.56 8H12V4a2 2 0 00-2-2 1 1 0 00-1 1v.667a4 4 0 01-.8 2.4L6.8 7.933a4 4 0 00-.8 2.4z' />
                     </svg>
-                    <span className='font-medium'>Positive</span>
+                    <span>+1</span>
                   </div>
                 ) : (
-                  <div className='flex items-center gap-1 bg-red-100 text-red-700 px-3 py-1 rounded-full'>
-                    <svg className='w-5 h-5' fill='currentColor' viewBox='0 0 20 20'>
+                  <div className='flex items-center gap-1 bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs font-medium shrink-0'>
+                    <svg className='w-4 h-4' fill='currentColor' viewBox='0 0 20 20'>
                       <path d='M18 9.5a1.5 1.5 0 11-3 0v-6a1.5 1.5 0 013 0v6zM14 9.667v-5.43a2 2 0 00-1.105-1.79l-.05-.025A4 4 0 0011.055 2H5.64a2 2 0 00-1.962 1.608l-1.2 6A2 2 0 004.44 12H8v4a2 2 0 002 2 1 1 0 001-1v-.667a4 4 0 01.8-2.4l1.4-1.866a4 4 0 00.8-2.4z' />
                     </svg>
-                    <span className='font-medium'>Negative</span>
+                    <span>-1</span>
                   </div>
                 )}
               </div>
+
+              {/* Comment */}
+              <p className='text-gray-700 text-sm mb-2 line-clamp-3'>{rating.comment}</p>
+
+              {/* Date */}
+              <div className='text-xs text-gray-500'>{formatDate(rating.createdAt)}</div>
             </div>
-
-            <p className='text-gray-700 mb-3 pl-13'>{rating.comment}</p>
-
-            <div className='text-sm text-gray-500 pl-13'>{formatDate(rating.createdAt)}</div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
       {/* Pagination */}
       {totalPages > 1 && (

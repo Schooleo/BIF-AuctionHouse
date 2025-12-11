@@ -7,6 +7,8 @@ export interface BidderProfile {
     email: string;
     role: 'bidder' | 'seller' | 'admin';
     address: string;
+    dateOfBirth?: string;
+    contactEmail?: string;
     positiveRatings: number;
     negativeRatings: number;
     createdAt: string;
@@ -17,6 +19,8 @@ export interface BidderProfile {
 export interface UpdateProfileDto {
   name?: string;
   address?: string;
+  dateOfBirth?: string;
+  contactEmail?: string;
 }
 
 export interface ChangePasswordDto {
@@ -85,8 +89,8 @@ export interface BidItem extends Product {
   isEnded: boolean;
   isWinning: boolean;
   awaitingConfirmation: boolean;
-  bidStatus: 'active' | 'awaiting' | 'processing'; 
-  inProcessing: boolean;    
+  bidStatus: 'active' | 'awaiting' | 'processing';
+  inProcessing: boolean;
 }
 
 export interface GetMyBidsResponse {
@@ -97,9 +101,9 @@ export interface GetMyBidsResponse {
     total: number;
     totalPages: number;
   };
-  statistics: {                
-    awaitingTotal: number; 
+  statistics: {
+    awaitingTotal: number;
     activeTotal: number;
-    processingTotal: number;   
+    processingTotal: number;
   };
 }
