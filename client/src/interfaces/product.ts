@@ -42,7 +42,7 @@ export interface Product {
     bidder: UserSummary | string | null;
     startTime: Date | string | null;
   } | null;
-  highestBidder: UserSummary;
+  highestBidder?: UserSummary | null;
 
   // Direct Auction Data
   bidCount: number;

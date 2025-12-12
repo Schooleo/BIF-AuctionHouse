@@ -1,148 +1,144 @@
-import mongoose from 'mongoose';
-import dotenv from 'dotenv';
-import { User } from '../models/user.model';
-import { Category } from '../models/category.model';
-import { Product } from '../models/product.model';
-import { Bid } from '../models/bid.model';
-import { Rating } from '../models/rating.model';
-import { SystemConfig } from '../models/systemConfig.model';
-import { Order, OrderStatus } from '../models/order.model';
-import { Chat } from '../models/chat.model';
+import mongoose from "mongoose";
+import dotenv from "dotenv";
+import { User } from "../models/user.model";
+import { Category } from "../models/category.model";
+import { Product } from "../models/product.model";
+import { Bid } from "../models/bid.model";
+import { Rating } from "../models/rating.model";
+import { SystemConfig } from "../models/systemConfig.model";
+import { Order, OrderStatus } from "../models/order.model";
+import { Chat } from "../models/chat.model";
+import { AutoBid } from "../models/autoBid.model";
+import { connectDB } from "../config/db";
 
 dotenv.config();
 
-let uri = process.env.MONGO_URI || 'mongodb://localhost:27017/auction_db';
-if (uri.includes('mongo:')) {
-  uri = uri.replace('mongo:', 'localhost:');
-}
-
 // --- CONFIGURATION ---
-const MONGO_URI = uri;
 const NUM_BIDDERS = 5;
 
 // --- DATA SETS ---
 const TECH_SUB_IMAGES = [
-  'https://images.unsplash.com/photo-1550009158-9ebf69173e03?w=800&q=80',
-  'https://picsum.photos/id/0/500/333',
-  'https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=800&q=80',
+  "https://images.unsplash.com/photo-1550009158-9ebf69173e03?w=800&q=80",
+  "https://picsum.photos/id/0/500/333",
+  "https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=800&q=80",
 ];
 
 const FASHION_SUB_IMAGES = [
-  'https://images.unsplash.com/photo-1445205170230-053b83016050?w=800&q=80',
-  'https://images.unsplash.com/photo-1515955656352-a1fa3ffcd111?w=800&q=80',
-  'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?w=800&q=80',
+  "https://images.unsplash.com/photo-1445205170230-053b83016050?w=800&q=80",
+  "https://images.unsplash.com/photo-1515955656352-a1fa3ffcd111?w=800&q=80",
+  "https://images.unsplash.com/photo-1556905055-8f358a7a47b2?w=800&q=80",
 ];
 
 // Danh sách sản phẩm mẫu theo Category
 const PRODUCT_CATALOG: Record<string, any[]> = {
   Phones: [
     {
-      name: 'iPhone 15 Pro Max Titanium',
+      name: "iPhone 15 Pro Max Titanium",
       price: 25000000,
-      img: 'https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=800&q=80',
+      img: "https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=800&q=80",
     },
     {
-      name: 'Samsung Galaxy S24 Ultra',
+      name: "Samsung Galaxy S24 Ultra",
       price: 23000000,
-      img: 'https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=800&q=80',
+      img: "https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=800&q=80",
     },
     {
-      name: 'Google Pixel 8 Pro',
+      name: "Google Pixel 8 Pro",
       price: 18000000,
-      img: 'https://images.unsplash.com/photo-1732386650203-d8db284edeb7?w=800&q=80',
+      img: "https://images.unsplash.com/photo-1732386650203-d8db284edeb7?w=800&q=80",
     },
     {
-      name: 'Xiaomi 14 Ultra',
+      name: "Xiaomi 14 Ultra",
       price: 16000000,
-      img: 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=800&q=80',
+      img: "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=800&q=80",
     },
   ],
   Laptops: [
     {
-      name: 'MacBook Air M2 13-inch',
+      name: "MacBook Air M2 13-inch",
       price: 19000000,
-      img: 'https://images.unsplash.com/photo-1593642634315-48f5414c3ad9?w=800&q=80',
+      img: "https://images.unsplash.com/photo-1593642634315-48f5414c3ad9?w=800&q=80",
     },
     {
-      name: 'Dell XPS 13 Plus',
+      name: "Dell XPS 13 Plus",
       price: 22000000,
-      img: 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=800&q=80',
+      img: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=800&q=80",
     },
     {
-      name: 'Asus ROG Zephyrus G14',
+      name: "Asus ROG Zephyrus G14",
       price: 28000000,
-      img: 'https://images.unsplash.com/photo-1630794180018-433d915c34ac?w=800&q=80',
+      img: "https://images.unsplash.com/photo-1630794180018-433d915c34ac?w=800&q=80",
     },
     {
-      name: 'Lenovo ThinkPad X1 Carbon',
+      name: "Lenovo ThinkPad X1 Carbon",
       price: 24000000,
-      img: 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=800&q=80',
+      img: "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=800&q=80",
     },
   ],
   Shoes: [
     {
-      name: 'Nike Air Jordan 1 High',
+      name: "Nike Air Jordan 1 High",
       price: 4000000,
-      img: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=800&q=80',
+      img: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=800&q=80",
     },
     {
-      name: 'Adidas Yeezy Boost 350',
+      name: "Adidas Yeezy Boost 350",
       price: 5500000,
-      img: 'https://images.unsplash.com/photo-1549298916-b41d501d3772?w=800&q=80',
+      img: "https://images.unsplash.com/photo-1549298916-b41d501d3772?w=800&q=80",
     },
     {
-      name: 'Converse Chuck 70 High',
+      name: "Converse Chuck 70 High",
       price: 1200000,
-      img: 'https://images.unsplash.com/photo-1607522370275-f14206abe5d3?w=800&q=80',
+      img: "https://images.unsplash.com/photo-1607522370275-f14206abe5d3?w=800&q=80",
     },
     {
-      name: 'New Balance 550 White',
+      name: "New Balance 550 White",
       price: 2500000,
-      img: 'https://images.unsplash.com/photo-1551107696-a4b0c5a0d9a2?w=800&q=80',
+      img: "https://images.unsplash.com/photo-1551107696-a4b0c5a0d9a2?w=800&q=80",
     },
   ],
   Watches: [
     {
-      name: 'Rolex Submariner Date',
+      name: "Rolex Submariner Date",
       price: 250000000,
-      img: 'https://images.unsplash.com/photo-1523170335258-f5ed11844a49?w=800&q=80',
+      img: "https://images.unsplash.com/photo-1523170335258-f5ed11844a49?w=800&q=80",
     },
     {
-      name: 'Casio G-Shock GA-2100',
+      name: "Casio G-Shock GA-2100",
       price: 3000000,
-      img: 'https://images.unsplash.com/photo-1524592094714-0f0654e20314?w=800&q=80',
+      img: "https://images.unsplash.com/photo-1524592094714-0f0654e20314?w=800&q=80",
     },
     {
-      name: 'Apple Watch Ultra 2',
+      name: "Apple Watch Ultra 2",
       price: 18000000,
-      img: 'https://images.unsplash.com/photo-1546868871-7041f2a55e12?w=800&q=80',
+      img: "https://images.unsplash.com/photo-1546868871-7041f2a55e12?w=800&q=80",
     },
     {
-      name: 'Seiko 5 Sports Automatic',
+      name: "Seiko 5 Sports Automatic",
       price: 6000000,
-      img: 'https://images.unsplash.com/photo-1614164185128-e4ec99c436d7?w=800&q=80',
+      img: "https://images.unsplash.com/photo-1614164185128-e4ec99c436d7?w=800&q=80",
     },
   ],
   Furniture: [
     {
-      name: 'Herman Miller Aeron Chair',
+      name: "Herman Miller Aeron Chair",
       price: 20000000,
-      img: 'https://images.unsplash.com/photo-1505843490538-5133c6c7d0e1?w=800&q=80',
+      img: "https://images.unsplash.com/photo-1505843490538-5133c6c7d0e1?w=800&q=80",
     },
     {
-      name: 'IKEA Sofa Landskrona',
+      name: "IKEA Sofa Landskrona",
       price: 12000000,
-      img: 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=800&q=80',
+      img: "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=800&q=80",
     },
     {
-      name: 'Minimalist Oak Desk',
+      name: "Minimalist Oak Desk",
       price: 5000000,
-      img: 'https://images.unsplash.com/photo-1518455027359-f3f8164ba6bd?w=800&q=80',
+      img: "https://images.unsplash.com/photo-1518455027359-f3f8164ba6bd?w=800&q=80",
     },
     {
-      name: 'Vintage Standing Lamp',
+      name: "Vintage Standing Lamp",
       price: 1500000,
-      img: 'https://images.unsplash.com/photo-1555488205-d5e67846cf40?w=800&q=80',
+      img: "https://images.unsplash.com/photo-1555488205-d5e67846cf40?w=800&q=80",
     },
   ],
 };
@@ -169,22 +165,13 @@ Fast shipping available worldwide. 30-day return policy if the item does not mat
   `;
 };
 
-const randomInt = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min;
-
-const connectDB = async () => {
-  try {
-    await mongoose.connect(MONGO_URI);
-    console.log('✅ Connected to MongoDB');
-  } catch (error) {
-    console.error('❌ MongoDB connection failed', error);
-    process.exit(1);
-  }
-};
+const randomInt = (min: number, max: number) =>
+  Math.floor(Math.random() * (max - min + 1)) + min;
 
 const seed = async () => {
   await connectDB();
 
-  console.log('🧹 Cleaning Database...');
+  console.log("🧹 Cleaning Database...");
   await User.deleteMany({});
   await Category.deleteMany({});
   await Product.deleteMany({});
@@ -193,51 +180,53 @@ const seed = async () => {
   await SystemConfig.deleteMany({});
   await Order.deleteMany({});
   await Chat.deleteMany({});
+  await AutoBid.deleteMany({});
 
-  console.log('⚙️ Creating System Config...');
+  console.log("⚙️ Creating System Config...");
   await SystemConfig.create({
     auctionExtensionWindow: 5,
     auctionExtensionTime: 10,
+    autoBidDelay: 1000,
   });
 
-  console.log('👤 Creating Users...');
-  const commonPassword = '12345678';
+  console.log("👤 Creating Users...");
+  const commonPassword = "12345678";
 
-  const adminId = new mongoose.Types.ObjectId('64b0f1a9e1b9b1a2b3c4d5e6');
-  const seller1Id = new mongoose.Types.ObjectId('64b0f1a9e1b9b1a2b3c4d5e7');
-  const seller2Id = new mongoose.Types.ObjectId('64b0f1a9e1b9b1a2b3c4d5e8');
+  const adminId = new mongoose.Types.ObjectId("64b0f1a9e1b9b1a2b3c4d5e6");
+  const seller1Id = new mongoose.Types.ObjectId("64b0f1a9e1b9b1a2b3c4d5e7");
+  const seller2Id = new mongoose.Types.ObjectId("64b0f1a9e1b9b1a2b3c4d5e8");
 
   const admin = await User.create({
     _id: adminId,
-    name: 'System Admin',
-    email: 'admin@gmail.com',
+    name: "System Admin",
+    email: "admin@gmail.com",
     password: commonPassword,
-    role: 'admin',
-    address: 'Admin HQ',
-    dateOfBirth: new Date('1985-01-15'),
-    contactEmail: 'admin.contact@gmail.com',
+    role: "admin",
+    address: "Admin HQ",
+    dateOfBirth: new Date("1985-01-15"),
+    contactEmail: "admin.contact@gmail.com",
   });
 
   const seller1 = await User.create({
     _id: seller1Id,
-    name: 'Tech World Seller',
-    email: 'seller1@gmail.com',
+    name: "Tech World Seller",
+    email: "seller1@gmail.com",
     password: commonPassword,
-    role: 'seller',
-    address: 'Hanoi, Vietnam',
-    dateOfBirth: new Date('1990-05-20'),
-    contactEmail: 'techworld.contact@gmail.com',
+    role: "seller",
+    address: "Hanoi, Vietnam",
+    dateOfBirth: new Date("1990-05-20"),
+    contactEmail: "techworld.contact@gmail.com",
     positiveRatings: 10,
     negativeRatings: 1,
   });
 
   const seller2 = await User.create({
     _id: seller2Id,
-    name: 'Fashion Boutique',
-    email: 'seller2@gmail.com',
+    name: "Fashion Boutique",
+    email: "seller2@gmail.com",
     password: commonPassword,
-    address: 'HCMC, Vietnam',
-    dateOfBirth: new Date('1988-08-10'),
+    address: "HCMC, Vietnam",
+    dateOfBirth: new Date("1988-08-10"),
     positiveRatings: 50,
     negativeRatings: 0,
   });
@@ -255,7 +244,7 @@ const seed = async () => {
       name: `Bidder ${String.fromCharCode(64 + i)}`,
       email: `bidder${i}@gmail.com`,
       password: commonPassword,
-      role: 'bidder',
+      role: "bidder",
       address: `Street ${i}, City`,
       dateOfBirth: new Date(1990 + i, i % 12, ((i * 5) % 28) + 1),
       contactEmail: i % 2 === 0 ? `bidder${i}.contact@gmail.com` : undefined,
@@ -266,29 +255,29 @@ const seed = async () => {
     bidders.push(bidder);
   }
 
-  console.log('📂 Creating Categories...');
+  console.log("📂 Creating Categories...");
   // Cấp 1
-  const electronics = await Category.create({ name: 'Electronics' });
-  const fashion = await Category.create({ name: 'Fashion' });
-  const home = await Category.create({ name: 'Home & Living' });
-  const sports = await Category.create({ name: 'Sports' });
+  const electronics = await Category.create({ name: "Electronics" });
+  const fashion = await Category.create({ name: "Fashion" });
+  const home = await Category.create({ name: "Home & Living" });
+  const sports = await Category.create({ name: "Sports" });
 
   // Cấp 2
   const phones = await Category.create({
-    name: 'Mobile Phones',
+    name: "Mobile Phones",
     parent: electronics._id,
   });
   const laptops = await Category.create({
-    name: 'Laptops',
+    name: "Laptops",
     parent: electronics._id,
   });
-  const shoes = await Category.create({ name: 'Shoes', parent: fashion._id });
+  const shoes = await Category.create({ name: "Shoes", parent: fashion._id });
   const watches = await Category.create({
-    name: 'Watches',
+    name: "Watches",
     parent: fashion._id,
   });
   const furniture = await Category.create({
-    name: 'Furniture',
+    name: "Furniture",
     parent: home._id,
   });
 
@@ -301,7 +290,7 @@ const seed = async () => {
     Furniture: furniture._id,
   };
 
-  console.log('📦 Creating Products & Bids...');
+  console.log("📦 Creating Products & Bids...");
 
   let totalProducts = 0;
   let totalBids = 0;
@@ -312,7 +301,7 @@ const seed = async () => {
     const items = PRODUCT_CATALOG[catKey];
     if (!items) return;
 
-    const isTech = ['Phones', 'Laptops'].includes(catKey);
+    const isTech = ["Phones", "Laptops"].includes(catKey);
     const subImages = isTech ? TECH_SUB_IMAGES : FASHION_SUB_IMAGES;
     const targetCount = 10; // 10 products per category for volume
 
@@ -332,9 +321,10 @@ const seed = async () => {
 
       const isEnded = scenarioType !== 4;
       const isEndingSoon = !isEnded && Math.random() > 0.5;
-
       const now = new Date();
-      const startTime = new Date(now.getTime() - randomInt(2, 7) * 24 * 60 * 60 * 1000);
+      const startTime = new Date(
+        now.getTime() - randomInt(2, 7) * 24 * 60 * 60 * 1000
+      );
 
       let endTime;
       if (isEnded) {
@@ -342,7 +332,9 @@ const seed = async () => {
       } else if (isEndingSoon) {
         endTime = new Date(now.getTime() + randomInt(10, 180) * 60 * 1000);
       } else {
-        endTime = new Date(now.getTime() + randomInt(1, 5) * 24 * 60 * 60 * 1000);
+        endTime = new Date(
+          now.getTime() + randomInt(1, 5) * 24 * 60 * 60 * 1000
+        );
       }
 
       // Logic bước giá
@@ -367,12 +359,13 @@ const seed = async () => {
         bidCount: 0,
         descriptionHistory: [],
         rejectedBidders: [],
+        allowUnratedBidders: true,
       });
 
       // Lịch sử mô tả (Ngẫu nhiên)
       if (Math.random() > 0.7) {
         product.descriptionHistory?.push({
-          content: 'Added details about the battery life.',
+          content: "Added details about the battery life.",
           updatedAt: new Date(startTime.getTime() + 24 * 60 * 60 * 1000),
         } as any);
       }
@@ -389,39 +382,107 @@ const seed = async () => {
       let currentPrice = item.price;
 
       if (shouldHaveBids) {
-        bidCount = randomInt(3, 8);
+        // Select 2 distinctive bidders for Auto Bid
+        const shuffledBidders = [...bidders].sort(() => 0.5 - Math.random());
+        const participantBidders = shuffledBidders.slice(0, 2);
 
-        for (let k = 0; k < bidCount; k++) {
-          const bidder = bidders[randomInt(0, bidders.length - 1)]!;
-          const increment = stepPrice + randomInt(0, 5) * 10000;
-          currentPrice += increment;
+        if (participantBidders.length === 2) {
+          const bidderA = participantBidders[0]!;
+          const bidderB = participantBidders[1]!;
 
-          const nextTime = new Date(lastBidTime.getTime() + randomInt(10, 60) * 60 * 1000);
-          if (nextTime > now || (isEnded && nextTime > endTime)) break;
-          lastBidTime = nextTime;
+          // Đảm bảo giá cao nhất thấp hơn giá mua ngay
+          const safeMax = item.price * 1.4;
 
-          await Bid.create({
+          let maxPriceA = item.price + randomInt(10, 50) * stepPrice;
+          if (maxPriceA >= safeMax) maxPriceA = safeMax;
+
+          let maxPriceB = item.price + randomInt(5, 30) * stepPrice;
+          if (maxPriceB >= maxPriceA) maxPriceB = maxPriceA - stepPrice;
+
+          // Tạo AutoBid
+          await AutoBid.create({
+            user: bidderA._id,
             product: product._id,
-            bidder: bidder._id,
-            price: currentPrice,
-            createdAt: lastBidTime,
+            maxPrice: maxPriceA,
+            stepPrice: 0,
+            createdAt: startTime,
           });
 
-          secondToLastBidder = lastBidder;
-          lastBidder = bidder;
-          totalBids++;
+          await AutoBid.create({
+            user: bidderB._id,
+            product: product._id,
+            maxPrice: maxPriceB,
+            stepPrice: 0,
+            createdAt: startTime,
+          });
+
+          let currentBidPrice = item.price;
+          let timeOffset = 0;
+
+          // Tạo một vài bước
+          // Bidder B bắt đầu
+          currentBidPrice += stepPrice;
+          await Bid.create({
+            product: product._id,
+            bidder: bidderB._id,
+            price: currentBidPrice,
+            createdAt: new Date(startTime.getTime() + (timeOffset += 10000)),
+          });
+          lastBidder = bidderB;
+
+          // Vòng đấu giữa AutoBid
+          while (currentBidPrice < maxPriceB) {
+            // A counters
+            if (currentBidPrice + stepPrice <= maxPriceA) {
+              currentBidPrice += stepPrice;
+              await Bid.create({
+                product: product._id,
+                bidder: bidderA._id,
+                price: currentBidPrice,
+                createdAt: new Date(
+                  startTime.getTime() + (timeOffset += 10000)
+                ),
+              });
+              lastBidder = bidderA;
+            } else {
+              break;
+            }
+
+            // B ra giá cao hơn
+            if (currentBidPrice + stepPrice <= maxPriceB) {
+              currentBidPrice += stepPrice;
+              await Bid.create({
+                product: product._id,
+                bidder: bidderB._id,
+                price: currentBidPrice,
+                createdAt: new Date(
+                  startTime.getTime() + (timeOffset += 10000)
+                ),
+              });
+              lastBidder = bidderB;
+            } else {
+              break;
+            }
+          }
+
+          // Cập nhật trạng thái hiện tại
+          currentPrice = currentBidPrice;
+          bidCount = Math.floor((currentBidPrice - item.price) / stepPrice);
+          totalBids += bidCount;
         }
 
         product.currentPrice = currentPrice;
-        product.currentBidder = (lastBidder ? lastBidder._id : undefined) as any;
+        product.currentBidder = (
+          lastBidder ? lastBidder._id : undefined
+        ) as any;
         product.bidCount = bidCount;
 
         if (Math.random() > 0.5 && bidCount > 0) {
           product.questions.push({
-            question: 'Is this product authentic?',
+            question: "Is this product authentic?",
             questioner: bidders[0]!._id,
             askedAt: new Date(startTime.getTime() + 100000),
-            answer: 'Yes, 100% authentic with invoice.',
+            answer: "Yes, 100% authentic with invoice.",
             answeredAt: new Date(startTime.getTime() + 200000),
             answerer: sellerId,
           } as any);
@@ -441,7 +502,7 @@ const seed = async () => {
             product.currentBidder = (secondToLastBidder as any)._id as any;
             product.currentPrice -= stepPrice + randomInt(0, 2) * 10000;
             await product.save();
-            console.log(`❌ Đã hủy & Từ chối người thắng cho ${productName}`);
+            console.log(`❌ Rejected Winner for Product ${productName}`);
             continue;
           }
 
@@ -468,7 +529,8 @@ const seed = async () => {
               },
               {
                 sender: sellerId as any,
-                content: "Congrats bro! I'll send it right away when payment is confirmed.",
+                content:
+                  "Congrats bro! I'll send it right away when payment is confirmed.",
                 timestamp: new Date(lastBidTime.getTime() + 60000),
               },
             ],
@@ -481,7 +543,7 @@ const seed = async () => {
               order.status = OrderStatus.PAID_CONFIRMED;
               order.step = 2;
               order.shippingAddress = (lastBidder as any).address;
-              order.paymentProof = 'https://picsum.photos/300/600';
+              order.paymentProof = "https://picsum.photos/300/600";
               chat.messages.push({
                 sender: (lastBidder as any)._id,
                 content: "I've paid the amount! Waiting for confirmation.",
@@ -499,7 +561,7 @@ const seed = async () => {
             const buyerScore = 1;
             order.ratingByBuyer = {
               score: buyerScore,
-              comment: 'This seller guy is awesome!',
+              comment: "This seller guy is awesome!",
               updatedAt: new Date(),
             };
             try {
@@ -507,20 +569,20 @@ const seed = async () => {
                 rater: (lastBidder as any)._id,
                 ratee: sellerId,
                 product: product._id,
-                type: 'seller',
+                type: "seller",
                 score: buyerScore,
                 comment: order.ratingByBuyer.comment,
               });
             } catch (error: any) {
               if (error.code !== 11000) {
-                console.error('Failed to create buyer rating:', error);
+                console.error("Failed to create buyer rating:", error);
               }
             }
 
             const sellerScore = 1;
             order.ratingBySeller = {
               score: sellerScore,
-              comment: 'This buyer guy is awesome with fast payment!',
+              comment: "This buyer guy is awesome with fast payment!",
               updatedAt: new Date(),
             };
             try {
@@ -528,13 +590,13 @@ const seed = async () => {
                 rater: sellerId,
                 ratee: (lastBidder as any)._id,
                 product: product._id,
-                type: 'bidder',
+                type: "bidder",
                 score: sellerScore,
                 comment: order.ratingBySeller.comment,
               });
             } catch (error: any) {
               if (error.code !== 11000) {
-                console.error('Failed to create seller rating:', error);
+                console.error("Failed to create seller rating:", error);
               }
             }
           }
@@ -548,13 +610,69 @@ const seed = async () => {
     }
   };
 
-  await processCatalog('Phones', seller1._id);
-  await processCatalog('Laptops', seller1._id);
-  await processCatalog('Shoes', seller2._id);
-  await processCatalog('Watches', seller2._id);
-  await processCatalog('Furniture', seller2._id);
+  await processCatalog("Phones", seller1._id);
+  await processCatalog("Laptops", seller1._id);
+  await processCatalog("Shoes", seller2._id);
+  await processCatalog("Watches", seller2._id);
+  await processCatalog("Furniture", seller2._id);
 
-  console.log('-----------------------------------------');
+  try {
+    console.log("🆕 Creating Zero-Bid Low-Step Products...");
+    const zeroBidItems = [
+      {
+        item: PRODUCT_CATALOG.Watches![0], // Rolex
+        cat: "Watches",
+        seller: seller2Id,
+        step: 50000,
+      },
+      {
+        item: PRODUCT_CATALOG.Phones![0], // iPhone
+        cat: "Phones",
+        seller: seller1Id,
+        step: 20000,
+      },
+      {
+        item: PRODUCT_CATALOG.Shoes![0], // Nike
+        cat: "Shoes",
+        seller: seller2Id,
+        step: 10000,
+      },
+    ];
+
+    for (const { item, cat, seller, step } of zeroBidItems) {
+      const productName = `${item.name} #ZeroBid`;
+      const isTech = ["Phones", "Laptops"].includes(cat);
+      const subImages = isTech ? TECH_SUB_IMAGES : FASHION_SUB_IMAGES;
+
+      const product = new Product({
+        name: productName,
+        category: catMap[cat],
+        seller: seller,
+        mainImage: item.img,
+        subImages: subImages,
+        description: generateDescription(item.name, cat),
+        startTime: new Date(),
+        endTime: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+        startingPrice: item.price,
+        stepPrice: step, // Explicitly low step
+        buyNowPrice: item.price * 1.5,
+        autoExtends: true,
+        currentPrice: item.price,
+        winnerConfirmed: false,
+        bidCount: 0,
+        descriptionHistory: [],
+        rejectedBidders: [],
+        allowUnratedBidders: true,
+      });
+
+      await product.save();
+      totalProducts++;
+    }
+  } catch (error) {
+    console.error("❌ FAILED TO CREATE ZERO BID ITEMS:", error);
+  }
+
+  console.log("-----------------------------------------");
   console.log(`✅ Seeding Complete!`);
   console.log(`📊 Stats:`);
   console.log(`   - Users: ${3 + NUM_BIDDERS}`);
@@ -562,7 +680,7 @@ const seed = async () => {
   console.log(`   - Products: ${totalProducts}`);
   console.log(`   - Bids: ${totalBids}`);
   console.log(`   - Orders: ${totalOrders}`);
-  console.log('-----------------------------------------');
+  console.log("-----------------------------------------");
 
   process.exit(0);
 };

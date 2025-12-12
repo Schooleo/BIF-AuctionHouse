@@ -111,7 +111,9 @@ const PopUpWindow: React.FC<PopUpWindowProps> = ({
       >
         {/* Header */}
         <div className="flex justify-between items-center p-4 bg-primary-blue text-white">
-          <h3 className="text-lg font-bold">{title}</h3>
+          <h3 className="text-lg font-bold truncate pr-4" title={title}>
+            {title}
+          </h3>
           <button
             onClick={onClose}
             disabled={isLoading}

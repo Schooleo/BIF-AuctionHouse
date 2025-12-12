@@ -1,20 +1,21 @@
-import { z } from 'zod';
+import { z } from "zod";
 
 export const placeBidSchema = z.object({
-  productId: z.string().length(24, 'Invalid product ID'),
-  price: z.number().positive('Price must be a positive'),
+  productId: z.string().length(24, "Invalid product ID"),
+  maxPrice: z.number().positive("Max price must be a positive number"),
+  stepPrice: z.number().nonnegative().optional(),
 });
 
 export const bidHistoryQuerySchema = z.object({
   page: z
     .string()
     .optional()
-    .transform((val) => parseInt(val || '1')),
+    .transform((val) => parseInt(val || "1")),
   limit: z
     .string()
     .optional()
     .transform((val) => {
-      const num = parseInt(val || '20');
+      const num = parseInt(val || "20");
       return num > 100 ? 100 : num; // Max 100
     }),
 });
@@ -26,7 +27,7 @@ export const updateProfileSchema = z.object({
     .string()
     .optional()
     .transform((val) => (val ? new Date(val) : undefined)),
-  contactEmail: z.string().email().optional().or(z.literal('')),
+  contactEmail: z.email().optional().or(z.literal("")),
 });
 
 export const changePasswordSchema = z.object({
