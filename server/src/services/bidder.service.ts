@@ -1,17 +1,48 @@
-import { Watchlist } from '../models/watchlist.model';
-import { Product } from '../models/product.model';
-import { User, SystemConfig } from '../models/index.model';
-import { Bid } from '../models/bid.model';
-import { Rating } from '../models/rating.model';
-import { UpgradeRequest } from '../models/upgradeRequest.model';
-import { BidMessages, BidderMessages, WatchlistMessages, AuthMessages, ProductMessages } from '../constants/messages';
+import { Watchlist } from "../models/watchlist.model";
+import { Product } from "../models/product.model";
+import {
+  User,
+  SystemConfig,
+  Bid,
+  Rating,
+  AutoBid,
+} from "../models/index.model";
+import { UpgradeRequest } from "../models/upgradeRequest.model";
+import {
+  BidMessages,
+  BidderMessages,
+  WatchlistMessages,
+  AuthMessages,
+  ProductMessages,
+} from "../constants/messages";
 import {
   sendQuestionEmail,
   sendBidNotificationToSeller,
   sendBidConfirmationToBidder,
   sendOutbidNotificationToBidders,
-} from '../utils/email.util';
-import { checkInWatchlist } from '../controllers/bidder.controller';
+} from "../utils/email.util";
+import { getIO } from "../socket";
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+// Queue to serialize processing per product to avoid race conditions
+const productQueues = new Map<string, Promise<void>>();
+
+const enqueueProductTask = (productId: string, task: () => Promise<void>) => {
+  const currentQueue = productQueues.get(productId) || Promise.resolve();
+
+  const nextTask = currentQueue
+    .then(task)
+    .catch((err) => console.error(`Queue error for product ${productId}:`, err))
+    .finally(() => {
+      // Cleanup: If this was the last task, remove the queue entry
+      if (productQueues.get(productId) === nextTask) {
+        productQueues.delete(productId);
+      }
+    });
+
+  productQueues.set(productId, nextTask);
+};
 
 export const bidderService = {
   async addToWatchlist(bidderId: string, productId: string) {
@@ -91,16 +122,47 @@ export const bidderService = {
     // Tính giá đề xuất
     const suggestedPrice = product.currentPrice + product.stepPrice;
 
+    // Kiểm tra xem user có đang auto bid không
+    const myAutoBid = await AutoBid.findOne({
+      user: bidderId,
+      product: productId,
+    });
+
     return {
       suggestedPrice: suggestedPrice,
       currentPrice: product.currentPrice,
       stepPrice: product.stepPrice,
       minValidPrice: suggestedPrice,
+      buyNowPrice: product.buyNowPrice,
+      myAutoBidMaxPrice: myAutoBid?.maxPrice,
+      myAutoBidStepPrice: myAutoBid?.stepPrice,
+      myAutoBidLastViewedBidCount: myAutoBid?.lastViewedBidCount,
     };
   },
 
-  async placeBid(bidderId: string, productId: string, price: number) {
-    const product = await Product.findById(productId).populate('seller', 'email name');
+  async acknowledgeAutoBid(userId: string, productId: string) {
+    const product = await Product.findById(productId);
+    if (!product) {
+      throw new Error("Product not found");
+    }
+
+    const autoBid = await AutoBid.findOne({ user: userId, product: productId });
+    if (!autoBid) {
+      return false;
+    }
+
+    autoBid.lastViewedBidCount = product.bidCount;
+    await autoBid.save();
+    return true;
+  },
+
+  async createOrUpdateAutoBid(
+    bidderId: string,
+    productId: string,
+    maxPrice: number,
+    stepPrice: number = 0
+  ) {
+    const product = await Product.findById(productId);
     if (!product) {
       throw new Error(BidMessages.PRODUCT_NOT_FOUND);
     }
@@ -110,7 +172,11 @@ export const bidderService = {
       throw new Error(AuthMessages.USER_NOT_FOUND);
     }
 
-    if (product.rejectedBidders && product.rejectedBidders.some((id: any) => id.toString() === bidderId)) {
+    // Validation (re-use logic)
+    if (
+      product.rejectedBidders &&
+      product.rejectedBidders.some((id: any) => id.toString() === bidderId)
+    ) {
       throw new Error(BidMessages.BIDDER_REJECTED);
     }
 
@@ -126,36 +192,209 @@ export const bidderService = {
       }
     }
 
-    const minValidPrice = product.currentPrice + product.stepPrice;
-    if (price < minValidPrice) {
-      throw new Error(BidMessages.BID_TOO_LOW);
+    // Validate Max Price (must be at least current + step)
+    const minValidPrice = product.currentPrice + (product.stepPrice || 0);
+    // Only check if product is active
+    if (new Date() < product.endTime && maxPrice < minValidPrice) {
+      // If auction ended, we don't care, but for active:
+      throw new Error(`Max price must be at least ${minValidPrice}`);
     }
 
+    // Validate stepPrice (must be multiple of product.stepPrice)
+    if (stepPrice > 0 && product.stepPrice > 0) {
+      if (stepPrice % product.stepPrice !== 0) {
+        throw new Error(
+          `Step price must be a multiple of ${product.stepPrice}`
+        );
+      }
+    }
+
+    // Upsert AutoBid
+    // Note: If maxPrice is less than current price + step, we still save it?
+    // Maybe user wants to lower it? But it won't trigger anything.
+    // We'll save it.
+
+    await AutoBid.findOneAndUpdate(
+      { user: bidderId, product: productId },
+      {
+        maxPrice,
+        stepPrice: stepPrice || product.stepPrice, // Store actual preference
+        user: bidderId,
+        product: productId,
+      },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
+
+    // Trigger processing (Serialized via Queue)
+    enqueueProductTask(productId, () => this.processAutoBids(productId));
+
+    return { message: "Auto bid set successfully" };
+  },
+
+  // Legacy support for manual placement (just sets auto bid)
+  async placeBid(bidderId: string, productId: string, price: number) {
+    // Use standard step price by default for manual bids
+    return this.createOrUpdateAutoBid(bidderId, productId, price, 0);
+  },
+
+  async processAutoBids(productId: string) {
+    let product = await Product.findById(productId).populate(
+      "seller",
+      "email name"
+    );
+    if (!product) return;
+
+    if (new Date() > product.endTime && !product.autoExtends) return;
+
+    // Increased limit to allow for granular bid wars
+    const config = await SystemConfig.findOne();
+    let delay = 1000;
+    if (config) {
+      delay = config.autoBidDelay === 0 ? 0 : config.autoBidDelay;
+    }
+
+    for (let i = 0; i < 100; i++) {
+      // Refresh auto bids
+      const autoBids = await AutoBid.find({ product: productId })
+        .populate("user")
+        .sort({ maxPrice: -1, createdAt: 1 });
+
+      if (autoBids.length === 0) {
+        break;
+      }
+
+      // Add delay between auto bids
+      if (i > 0 && delay > 0) await sleep(delay);
+
+      const winnerAutoBid = autoBids[0]!;
+      const runnerUpAutoBid = autoBids[1];
+
+      const currentBidderId = product.currentBidder?.toString();
+      const currentPrice = product.currentPrice;
+
+      // Stop if Buy Now reached
+      if (product.buyNowPrice && currentPrice >= product.buyNowPrice) {
+        break;
+      }
+
+      // 2. Determine who needs to bid
+      let nextBidder: any = null;
+      let nextPrice = 0;
+
+      const winnerIsCurrent =
+        currentBidderId === winnerAutoBid.user._id.toString();
+
+      if (winnerIsCurrent) {
+        // Winner is holding the bid.
+        // Check if RunnerUp pushes it.
+        if (runnerUpAutoBid && runnerUpAutoBid.maxPrice > currentPrice) {
+          // RunnerUp challenges incrementally
+          nextBidder = runnerUpAutoBid.user;
+          const minStep = runnerUpAutoBid.stepPrice || product.stepPrice;
+          let target = currentPrice + minStep;
+
+          // Cap at RunnerUp Max
+          if (target > runnerUpAutoBid.maxPrice) {
+            target = runnerUpAutoBid.maxPrice;
+          }
+
+          // Cap at Buy Now
+          if (product.buyNowPrice && target > product.buyNowPrice) {
+            target = product.buyNowPrice;
+          }
+
+          // Special Case: Priority logic (omitted debug strict detail for brevity)
+          if (
+            product.buyNowPrice &&
+            target >= product.buyNowPrice &&
+            winnerAutoBid.maxPrice >= product.buyNowPrice
+          ) {
+            const safeCap = product.buyNowPrice - (product.stepPrice || 0);
+            if (target > safeCap) target = safeCap;
+            if (target <= currentPrice) {
+              console.log(
+                `[AutoBid] Challenger constrained by BuyNow protection.`
+              );
+              break;
+            }
+          }
+
+          nextPrice = target;
+        } else {
+          // Stable
+          break;
+        }
+      } else {
+        // Winner needs to bid
+        nextBidder = winnerAutoBid.user;
+        const minStep = winnerAutoBid.stepPrice || product.stepPrice;
+        let target = currentPrice + minStep;
+
+        // Cap at Max
+        if (target > winnerAutoBid.maxPrice) {
+          target = winnerAutoBid.maxPrice;
+        }
+
+        // Cap at Buy Now
+        if (product.buyNowPrice && target > product.buyNowPrice) {
+          target = product.buyNowPrice;
+        }
+
+        if (target <= currentPrice) {
+          console.log(
+            `[AutoBid] Winner cannot beat current price ${currentPrice} (Max ${winnerAutoBid.maxPrice}).`
+          );
+          break;
+        }
+        nextPrice = target;
+      }
+
+      // Execute Bid
+      if (nextBidder && nextPrice > currentPrice) {
+        await this._executeBid(product, nextBidder, nextPrice);
+      } else {
+        break;
+      }
+    }
+  },
+
+  async _executeBid(product: any, bidder: any, price: number) {
     const bid = await Bid.create({
-      product: productId,
-      bidder: bidderId,
+      product: product._id,
+      bidder: bidder._id,
       price: price,
     });
 
     product.currentPrice = price;
-    product.currentBidder = bidderId as any;
+    product.currentBidder = bidder._id;
     product.bidCount += 1;
 
-    // --- AUTO EXTENSION LOGIC ---
-    if (product.autoExtends) {
+    // --- LOGIC MUA NGAY ---
+    if (product.buyNowPrice && price >= product.buyNowPrice) {
+      product.endTime = new Date();
+      product.winnerConfirmed = false;
+      product.transactionCompleted = false;
+    }
+    // ---------------------
+
+    // --- LOGIC TỰ ĐỘNG GIA HẠN ---
+    // Chỉ gia hạn nếu KHÔNG PHẢI Mua Ngay
+    if (
+      product.autoExtends &&
+      (!product.buyNowPrice || price < product.buyNowPrice)
+    ) {
       const systemConfig = await SystemConfig.findOne();
       if (systemConfig) {
         const now = new Date();
         const endTime = new Date(product.endTime);
-        const timeRemainingMinutes = (endTime.getTime() - now.getTime()) / 1000 / 60;
+        const timeRemainingMinutes =
+          (endTime.getTime() - now.getTime()) / 1000 / 60;
 
         if (timeRemainingMinutes <= systemConfig.auctionExtensionWindow) {
-          // Thêm thời gian extension vào thời gian kết thúc
-          const newEndTime = new Date(endTime.getTime() + systemConfig.auctionExtensionTime * 60 * 1000);
-          product.endTime = newEndTime;
-          console.log(
-            `Auction ${product._id} extended by ${systemConfig.auctionExtensionTime} minutes. New end time: ${newEndTime}`
+          const newEndTime = new Date(
+            endTime.getTime() + systemConfig.auctionExtensionTime * 60 * 1000
           );
+          product.endTime = newEndTime;
         }
       }
     }
@@ -163,47 +402,63 @@ export const bidderService = {
 
     await product.save();
 
+    // Phát sự kiện Socket
     try {
-      // 1. Lấy danh sách bidders đã tham gia (loại trừ bidder hiện tại)
+      const io = getIO();
+      io.to(`product_${product._id}`).emit("new_bid", {
+        currentPrice: price,
+        bidCount: product.bidCount,
+        currentBidder: maskBidderName(bidder.name),
+        currentBidderRating: bidder.rating,
+        endTime: product.endTime,
+        time: new Date().toISOString(),
+      });
+    } catch (err: any) {
+      if (err.message !== "Socket.io not initialized!") {
+        console.error("Socket emit error", err);
+      }
+    }
+
+    // Logic gửi Email (Bất đồng bộ)
+    this._sendBidEmails(product, bidder, price);
+
+    return { bid, product };
+  },
+
+  async _sendBidEmails(product: any, bidder: any, price: number) {
+    try {
       const participatingBidderIds = await Bid.find({
-        product: productId,
-        bidder: { $ne: bidderId },
-      }).distinct('bidder');
+        product: product._id,
+        bidder: { $ne: bidder._id },
+      }).distinct("bidder");
 
       const participatingBidders = await User.find({
         _id: { $in: participatingBidderIds },
-      }).select('email name');
+      }).select("email name");
 
-      // 2. Chuẩn bị dữ liệu email
       const seller = product.seller as any;
       const nextMinPrice = price + product.stepPrice;
       const maskedBidderName = maskBidderName(bidder.name);
 
-      // 3. Gửi emails song song (không chờ, không block response)
       Promise.allSettled([
-        // Email cho seller
         sendBidNotificationToSeller(
           seller.email,
           seller.name,
           product.name,
-          productId,
+          product._id,
           maskedBidderName,
           price,
-          price // currentHighestPrice = price vừa bid
+          price
         ),
-
-        // Email xác nhận cho bidder hiện tại
         sendBidConfirmationToBidder(
           bidder.email,
           bidder.name,
           product.name,
-          productId,
+          product._id,
           price,
           nextMinPrice,
           product.endTime
         ),
-
-        // Email cho các bidder khác (nếu có)
         participatingBidders.length > 0
           ? sendOutbidNotificationToBidders(
               participatingBidders.map((b) => ({
@@ -211,32 +466,17 @@ export const bidderService = {
                 name: b.name,
               })),
               product.name,
-              productId,
+              product._id,
               price,
               nextMinPrice
             )
-          : Promise.resolve(), // Không làm gì nếu không có bidder khác
+          : Promise.resolve(),
       ]).catch((err) => {
-        // Log error nhưng không throw (để không ảnh hưởng response)
-        console.error('Error sending bid notification emails:', err);
+        console.error("Error sending bid notification emails:", err);
       });
     } catch (emailError) {
-      // Log lỗi nhưng không throw (email fail không nên fail toàn bộ bid)
-      console.error('Failed to send bid notification emails:', emailError);
+      console.error("Failed to send bid notification emails:", emailError);
     }
-
-    return {
-      bid: bid,
-      product: {
-        currentPrice: product.currentPrice,
-        currentBidder: {
-          _id: bidder._id,
-          name: bidder.name,
-          rating: (bidder.positiveRatings / (bidder.positiveRatings + bidder.negativeRatings)) * 5 || 0,
-        },
-        bidCount: product.bidCount,
-      },
-    };
   },
 
   async getBidHistory(productId: string, page: number = 1, limit: number = 20) {
@@ -249,7 +489,7 @@ export const bidderService = {
     const skip = (page - 1) * limit;
 
     const bids = await Bid.find({ product: productId })
-      .populate('bidder', 'name') // Lấy tên bidder
+      .populate("bidder", "name") // Lấy tên bidder
       .sort({ createdAt: -1 }) // Mới nhất trước
       .skip(skip)
       .limit(limit);
@@ -279,14 +519,14 @@ export const bidderService = {
     bidderId: string,
     page: number = 1,
     limit: number = 10,
-    sortBy: 'endTime' | 'price' | 'bidCount' = 'endTime',
-    sortOrder: 'asc' | 'desc' = 'desc',
-    status?: 'active' | 'awaiting' | 'processing' | 'all'
+    sortBy: "endTime" | "price" | "bidCount" = "endTime",
+    sortOrder: "asc" | "desc" = "desc",
+    status?: "active" | "awaiting" | "processing" | "all"
   ) {
     const now = new Date();
 
     // Lấy danh sách product IDs mà bidder đã bid
-    const bids = await Bid.find({ bidder: bidderId }).distinct('product');
+    const bids = await Bid.find({ bidder: bidderId }).distinct("product");
 
     const queries = {
       active: {
@@ -314,29 +554,34 @@ export const bidderService = {
     ]);
 
     const populateFields = [
-      { path: 'seller', select: 'name email' },
-      { path: 'category', select: 'name' },
-      { path: 'currentBidder', select: 'name email' },
+      { path: "seller", select: "name email" },
+      { path: "category", select: "name" },
+      { path: "currentBidder", select: "name email" },
     ];
 
     const enrichProduct = (product: any) => {
-      const isCurrentBidder = product.currentBidder?._id?.toString() === bidderId;
+      const isCurrentBidder =
+        product.currentBidder?._id?.toString() === bidderId;
 
       if (product.winnerConfirmed && !product.transactionCompleted) {
         return {
           ...product,
           isEnded: true,
           isWinning: true,
-          bidStatus: 'processing' as const,
+          bidStatus: "processing" as const,
           awaitingConfirmation: false,
           inProcessing: true,
         };
-      } else if (product.endTime < now && !product.winnerConfirmed && isCurrentBidder) {
+      } else if (
+        product.endTime < now &&
+        !product.winnerConfirmed &&
+        isCurrentBidder
+      ) {
         return {
           ...product,
           isEnded: true,
           isWinning: false,
-          bidStatus: 'awaiting' as const,
+          bidStatus: "awaiting" as const,
           awaitingConfirmation: true,
           inProcessing: false,
         };
@@ -345,7 +590,7 @@ export const bidderService = {
           ...product,
           isEnded: false,
           isWinning: isCurrentBidder,
-          bidStatus: 'active' as const,
+          bidStatus: "active" as const,
           awaitingConfirmation: false,
           inProcessing: false,
         };
@@ -355,20 +600,20 @@ export const bidderService = {
     let enrichedProducts: any[];
     let totalForFilter: number;
 
-    if (sortBy === 'endTime' && (!status || status === 'all')) {
-      let groupOrder: Array<'processing' | 'awaiting' | 'active'>;
+    if (sortBy === "endTime" && (!status || status === "all")) {
+      let groupOrder: Array<"processing" | "awaiting" | "active">;
 
-      if (sortOrder === 'desc') {
-        groupOrder = ['processing', 'awaiting', 'active'];
+      if (sortOrder === "desc") {
+        groupOrder = ["processing", "awaiting", "active"];
       } else {
-        groupOrder = ['active', 'awaiting', 'processing'];
+        groupOrder = ["active", "awaiting", "processing"];
       }
 
       const startIndex = (page - 1) * limit;
       const endIndex = page * limit;
 
       interface FetchPlan {
-        group: 'active' | 'awaiting' | 'processing';
+        group: "active" | "awaiting" | "processing";
         skip: number;
         limit: number;
       }
@@ -390,7 +635,10 @@ export const bidderService = {
         if (startIndex < groupEnd && endIndex > groupStart) {
           const skip = Math.max(0, startIndex - groupStart);
           const alreadyFetched = fetchPlan.reduce((sum, p) => sum + p.limit, 0);
-          const take = Math.min(limit - alreadyFetched, groupEnd - Math.max(startIndex, groupStart));
+          const take = Math.min(
+            limit - alreadyFetched,
+            groupEnd - Math.max(startIndex, groupStart)
+          );
 
           if (take > 0) {
             fetchPlan.push({ group, skip, limit: take });
@@ -400,11 +648,13 @@ export const bidderService = {
         cumulativeTotal = groupEnd;
       }
 
-      const getSortFieldForGroup = (group: string) => {
-        if (group === 'processing') {
-          return { updatedAt: sortOrder === 'asc' ? 1 : -1 };
+      const getSortFieldForGroup = (
+        group: string
+      ): { [key: string]: 1 | -1 } => {
+        if (group === "processing") {
+          return { updatedAt: sortOrder === "asc" ? 1 : -1 };
         }
-        return { endTime: sortOrder === 'asc' ? 1 : -1 };
+        return { endTime: sortOrder === "asc" ? 1 : -1 };
       };
 
       const results = await Promise.all(
@@ -418,7 +668,9 @@ export const bidderService = {
         )
       );
 
-      enrichedProducts = results.flatMap((products) => products.map((p) => enrichProduct(p)));
+      enrichedProducts = results.flatMap((products) =>
+        products.map((p) => enrichProduct(p))
+      );
 
       totalForFilter = activeTotal + awaitingTotal + processingTotal;
     } else {
@@ -426,19 +678,19 @@ export const bidderService = {
       let sortField: any = {};
 
       switch (sortBy) {
-        case 'price':
-          sortField = { currentPrice: sortOrder === 'asc' ? 1 : -1 };
+        case "price":
+          sortField = { currentPrice: sortOrder === "asc" ? 1 : -1 };
           break;
-        case 'bidCount':
-          sortField = { bidCount: sortOrder === 'asc' ? 1 : -1 };
+        case "bidCount":
+          sortField = { bidCount: sortOrder === "asc" ? 1 : -1 };
           break;
-        case 'endTime':
+        case "endTime":
         default:
-          sortField = { endTime: sortOrder === 'asc' ? 1 : -1 };
+          sortField = { endTime: sortOrder === "asc" ? 1 : -1 };
           break;
       }
 
-      if (!status || status === 'all') {
+      if (!status || status === "all") {
         queryFilter = {
           _id: { $in: bids },
           $or: [
@@ -458,7 +710,12 @@ export const bidderService = {
         totalForFilter = activeTotal + awaitingTotal + processingTotal;
       } else {
         queryFilter = queries[status];
-        totalForFilter = status === 'active' ? activeTotal : status === 'awaiting' ? awaitingTotal : processingTotal;
+        totalForFilter =
+          status === "active"
+            ? activeTotal
+            : status === "awaiting"
+            ? awaitingTotal
+            : processingTotal;
       }
 
       const skip = (page - 1) * limit;
@@ -489,7 +746,7 @@ export const bidderService = {
   },
 
   async askQuestion(productId: string, bidderId: string, question: string) {
-    const product = await Product.findById(productId).populate('seller');
+    const product = await Product.findById(productId).populate("seller");
     if (!product) {
       throw new Error(ProductMessages.PRODUCT_NOT_FOUND);
     }
@@ -512,7 +769,14 @@ export const bidderService = {
     const seller = product.seller as any;
 
     // Gửi email thông báo cho seller
-    await sendQuestionEmail(seller.email, seller.name, product.name, productId, bidder.name, question);
+    await sendQuestionEmail(
+      seller.email,
+      seller.name,
+      product.name,
+      productId,
+      bidder.name,
+      question
+    );
 
     return {
       message: ProductMessages.QUESTION_SENT,
@@ -534,9 +798,18 @@ export const bidderService = {
 
   async updateProfile(
     bidderId: string,
-    updates: { name?: string; address?: string; dateOfBirth?: Date; contactEmail?: string }
+    updates: {
+      name?: string;
+      address?: string;
+      dateOfBirth?: Date;
+      contactEmail?: string;
+    }
   ) {
-    const bidder = await User.findByIdAndUpdate(bidderId, { $set: updates }, { new: true, runValidators: true });
+    const bidder = await User.findByIdAndUpdate(
+      bidderId,
+      { $set: updates },
+      { new: true, runValidators: true }
+    );
 
     if (!bidder) {
       throw new Error(BidderMessages.USER_NOT_FOUND);
@@ -546,9 +819,13 @@ export const bidderService = {
   },
 
   //Đổi mật khẩu
-  async changePassword(bidderId: string, currentPassword: string, newPassword: string) {
+  async changePassword(
+    bidderId: string,
+    currentPassword: string,
+    newPassword: string
+  ) {
     // Lấy user với password field
-    const bidder = await User.findById(bidderId).select('+password');
+    const bidder = await User.findById(bidderId).select("+password");
     if (!bidder) {
       throw new Error(BidderMessages.USER_NOT_FOUND);
     }
@@ -568,16 +845,20 @@ export const bidderService = {
   },
 
   //Lấy danh sách đánh giá mà bidder nhận được (type='bidder')
-  async getReceivedRatings(bidderId: string, page: number = 1, limit: number = 10) {
+  async getReceivedRatings(
+    bidderId: string,
+    page: number = 1,
+    limit: number = 10
+  ) {
     const skip = (page - 1) * limit;
 
     const [ratings, total] = await Promise.all([
-      Rating.find({ type: 'bidder', ratee: bidderId })
-        .populate('rater', 'name email')
+      Rating.find({ type: "bidder", ratee: bidderId })
+        .populate("rater", "name email")
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit),
-      Rating.countDocuments({ type: 'bidder', ratee: bidderId }),
+      Rating.countDocuments({ type: "bidder", ratee: bidderId }),
     ]);
 
     return {
@@ -592,13 +873,18 @@ export const bidderService = {
   },
 
   //Đánh giá seller (chỉ khi bidder đã thắng ít nhất 1 auction của seller đó)
-  async rateSeller(bidderId: string, sellerId: string, score: 1 | -1, comment: string) {
+  async rateSeller(
+    bidderId: string,
+    sellerId: string,
+    score: 1 | -1,
+    comment: string
+  ) {
     // Kiểm tra seller tồn tại và có role là seller
     const seller = await User.findById(sellerId);
     if (!seller) {
       throw new Error(BidderMessages.SELLER_NOT_FOUND);
     }
-    if (seller.role !== 'seller') {
+    if (seller.role !== "seller") {
       throw new Error(BidderMessages.NOT_SELLER);
     }
 
@@ -615,7 +901,7 @@ export const bidderService = {
 
     // Tạo rating mới (unique index sẽ tự động ngăn duplicate)
     const rating = await Rating.create({
-      type: 'seller',
+      type: "seller",
       rater: bidderId,
       ratee: sellerId,
       score,
@@ -626,10 +912,15 @@ export const bidderService = {
   },
 
   //Cập nhật đánh giá seller (xóa điểm cũ, thêm điểm mới)
-  async updateSellerRating(bidderId: string, sellerId: string, newScore: 1 | -1, newComment: string) {
+  async updateSellerRating(
+    bidderId: string,
+    sellerId: string,
+    newScore: 1 | -1,
+    newComment: string
+  ) {
     // Tìm rating hiện tại
     const existingRating = await Rating.findOne({
-      type: 'seller',
+      type: "seller",
       rater: bidderId,
       ratee: sellerId,
     });
@@ -648,13 +939,13 @@ export const bidderService = {
       }
 
       // Giảm điểm cũ
-      const oldField = oldScore === 1 ? 'positiveRatings' : 'negativeRatings';
+      const oldField = oldScore === 1 ? "positiveRatings" : "negativeRatings";
       await User.findByIdAndUpdate(sellerId, {
         $inc: { [oldField]: -1 },
       });
 
       // Tăng điểm mới
-      const newField = newScore === 1 ? 'positiveRatings' : 'negativeRatings';
+      const newField = newScore === 1 ? "positiveRatings" : "negativeRatings";
       await User.findByIdAndUpdate(sellerId, {
         $inc: { [newField]: 1 },
       });
@@ -671,7 +962,7 @@ export const bidderService = {
   //Xóa đánh giá seller (hook sẽ tự động giảm reputation)
   async deleteSellerRating(bidderId: string, sellerId: string) {
     const rating = await Rating.findOneAndDelete({
-      type: 'seller',
+      type: "seller",
       rater: bidderId,
       ratee: sellerId,
     });
@@ -688,27 +979,27 @@ export const bidderService = {
     bidderId: string,
     page: number = 1,
     limit: number = 10,
-    sortBy: 'createdAt' | 'endTime' | 'currentPrice' = 'createdAt',
-    sortOrder: 'asc' | 'desc' = 'desc'
+    sortBy: "createdAt" | "endTime" | "currentPrice" = "createdAt",
+    sortOrder: "asc" | "desc" = "desc"
   ) {
     const skip = (page - 1) * limit;
-    const sortDirection = sortOrder === 'asc' ? 1 : -1;
+    const sortDirection = sortOrder === "asc" ? 1 : -1;
 
-    if (sortBy === 'createdAt') {
+    if (sortBy === "createdAt") {
       const [watchlistItems, total] = await Promise.all([
         Watchlist.find({ user: bidderId })
           .populate({
-            path: 'product',
+            path: "product",
             populate: {
-              path: 'seller',
-              select: 'name email',
+              path: "seller",
+              select: "name email",
             },
           })
           .populate({
-            path: 'product',
+            path: "product",
             populate: {
-              path: 'currentBidder',
-              select: 'name',
+              path: "currentBidder",
+              select: "name",
             },
           })
           .sort({ createdAt: sortDirection })
@@ -731,32 +1022,35 @@ export const bidderService = {
     const [allWatchlistItems, total] = await Promise.all([
       Watchlist.find({ user: bidderId })
         .populate({
-          path: 'product',
+          path: "product",
           populate: {
-            path: 'seller',
-            select: 'name email',
+            path: "seller",
+            select: "name email",
           },
         })
         .populate({
-          path: 'product',
+          path: "product",
           populate: {
-            path: 'currentBidder',
-            select: 'name',
+            path: "currentBidder",
+            select: "name",
           },
         }),
       Watchlist.countDocuments({ user: bidderId }),
     ]);
 
     const sortedItems = allWatchlistItems.sort((a: any, b: any) => {
-      const aValue = sortBy === 'endTime' ? a.product?.endTime : a.product?.currentPrice;
-      const bValue = sortBy === 'endTime' ? b.product?.endTime : b.product?.currentPrice;
+      const aValue =
+        sortBy === "endTime" ? a.product?.endTime : a.product?.currentPrice;
+      const bValue =
+        sortBy === "endTime" ? b.product?.endTime : b.product?.currentPrice;
 
       if (!aValue && !bValue) return 0;
       if (!aValue) return 1;
       if (!bValue) return -1;
 
       const comparison = aValue > bValue ? 1 : aValue < bValue ? -1 : 0;
-      const actualDirection = sortBy === 'endTime' ? -sortDirection : sortDirection;
+      const actualDirection =
+        sortBy === "endTime" ? -sortDirection : sortDirection;
       return comparison * actualDirection;
     });
 
@@ -774,12 +1068,16 @@ export const bidderService = {
   },
 
   //Lấy danh sách auction đang tham gia (có bid và chưa kết thúc)
-  async getParticipatingAuctions(bidderId: string, page: number = 1, limit: number = 10) {
+  async getParticipatingAuctions(
+    bidderId: string,
+    page: number = 1,
+    limit: number = 10
+  ) {
     const skip = (page - 1) * limit;
     const now = new Date();
 
     // Lấy danh sách product IDs mà bidder đã bid
-    const bids = await Bid.find({ bidder: bidderId }).distinct('product');
+    const bids = await Bid.find({ bidder: bidderId }).distinct("product");
 
     // Lấy các product chưa kết thúc
     const [products, total] = await Promise.all([
@@ -787,8 +1085,8 @@ export const bidderService = {
         _id: { $in: bids },
         endTime: { $gt: now },
       })
-        .populate('seller', 'name email')
-        .populate('category', 'name')
+        .populate("seller", "name email")
+        .populate("category", "name")
         .sort({ endTime: 1 })
         .skip(skip)
         .limit(limit),
@@ -820,8 +1118,8 @@ export const bidderService = {
         endTime: { $lt: now },
         winnerConfirmed: { $eq: true },
       })
-        .populate('seller', 'name email role')
-        .populate('category', 'name')
+        .populate("seller", "name email role")
+        .populate("category", "name")
         .sort({ endTime: -1 })
         .skip(skip)
         .limit(limit)
@@ -837,7 +1135,7 @@ export const bidderService = {
     const ratings = await Rating.find({
       rater: bidderId,
       ratee: { $in: sellerIds },
-      type: 'seller',
+      type: "seller",
     }).lean();
 
     const ratingMap = new Map(ratings.map((r) => [r.ratee.toString(), r]));
@@ -865,8 +1163,7 @@ export const bidderService = {
     };
   },
 
-  //Gửi yêu cầu nâng cấp lên Seller
-
+  // Gửi yêu cầu nâng cấp lên Seller
   async requestSellerUpgrade(bidderId: string) {
     // Kiểm tra bidder tồn tại
     const bidder = await User.findById(bidderId);
@@ -875,11 +1172,11 @@ export const bidderService = {
     }
 
     // Kiểm tra đã là seller hoặc không phải bidder
-    if (bidder.role === 'seller') {
+    if (bidder.role === "seller") {
       throw new Error(BidderMessages.ALREADY_SELLER);
     }
 
-    if (bidder.role !== 'bidder') {
+    if (bidder.role !== "bidder") {
       throw new Error(BidderMessages.USER_NOT_FOUND);
     }
 
@@ -888,7 +1185,7 @@ export const bidderService = {
     // Kiểm tra có request pending còn hợp lệ không (chưa hết hạn)
     const pendingRequest = await UpgradeRequest.findOne({
       user: bidderId,
-      status: 'pending',
+      status: "pending",
       expiresAt: { $gt: now },
     });
 
@@ -899,17 +1196,23 @@ export const bidderService = {
     // Kiểm tra request bị reject gần nhất
     const lastRejectedRequest = await UpgradeRequest.findOne({
       user: bidderId,
-      status: 'rejected',
+      status: "rejected",
     }).sort({ rejectedAt: -1 });
 
     if (lastRejectedRequest && lastRejectedRequest.rejectedAt) {
       const daysSinceRejection = Math.floor(
-        (now.getTime() - lastRejectedRequest.rejectedAt.getTime()) / (1000 * 60 * 60 * 24)
+        (now.getTime() - lastRejectedRequest.rejectedAt.getTime()) /
+          (1000 * 60 * 60 * 24)
       );
 
       if (daysSinceRejection < 7) {
         const daysRemaining = 7 - daysSinceRejection;
-        throw new Error(BidderMessages.MUST_WAIT_DAYS.replace('{days}', daysRemaining.toString()));
+        throw new Error(
+          BidderMessages.MUST_WAIT_DAYS.replace(
+            "{days}",
+            daysRemaining.toString()
+          )
+        );
       }
     }
 
@@ -918,7 +1221,7 @@ export const bidderService = {
 
     const upgradeRequest = await UpgradeRequest.create({
       user: bidderId,
-      status: 'pending',
+      status: "pending",
       expiresAt,
     });
 
@@ -934,10 +1237,13 @@ export const bidderService = {
     // Lấy request gần nhất (pending chưa hết hạn hoặc approved/rejected)
     const request = await UpgradeRequest.findOne({
       user: bidderId,
-      $or: [{ status: { $in: ['approved', 'rejected'] } }, { status: 'pending', expiresAt: { $gt: now } }],
+      $or: [
+        { status: { $in: ["approved", "rejected"] } },
+        { status: "pending", expiresAt: { $gt: now } },
+      ],
     })
       .sort({ createdAt: -1 })
-      .populate('reviewedBy', 'name email');
+      .populate("reviewedBy", "name email");
 
     return request;
   },
@@ -945,13 +1251,13 @@ export const bidderService = {
 
 // Hàm để mask tên bidder
 function maskBidderName(fullName: string): string {
-  const nameParts = fullName.trim().split(' ');
+  const nameParts = fullName.trim().split(" ");
 
   if (nameParts.length === 1) {
     // Chỉ có 1 từ → mask một nửa
     const name = nameParts[0]!;
     const maskLength = Math.ceil(name.length / 2);
-    return '*'.repeat(maskLength) + name.slice(maskLength);
+    return "*".repeat(maskLength) + name.slice(maskLength);
   }
 
   // Lấy tên cuối cùng (phần tử cuối mảng)
@@ -959,7 +1265,10 @@ function maskBidderName(fullName: string): string {
 
   // Mask phần họ và tên đệm (tất cả trừ tên cuối)
   const firstNames = nameParts.slice(0, -1);
-  const totalMaskLength = firstNames.reduce((sum, part) => sum + part.length, 0);
+  const totalMaskLength = firstNames.reduce(
+    (sum, part) => sum + part.length,
+    0
+  );
 
-  return '*'.repeat(totalMaskLength + firstNames.length - 1) + ' ' + lastName;
+  return "*".repeat(totalMaskLength + firstNames.length - 1) + " " + lastName;
 }

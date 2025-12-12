@@ -8,7 +8,8 @@
     "build": "npm run clean && tsc",
     "start": "node dist/server.js",
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
-    "seed": "ts-node src/scripts/seed.ts"
+    "seed": "ts-node src/scripts/seed.ts",
+    "stress": "ts-node src/scripts/stress_test_autobid.ts"
   },
   "keywords": [
     "express",
@@ -40,6 +41,7 @@
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
     "passport-local": "^1.0.0",
+    "socket.io": "^4.8.1",
     "zod": "^4.1.12"
   },
   "devDependencies": {

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import type { Product } from "@interfaces/product";
 import {
   formatPostedTime,
@@ -9,11 +9,14 @@ import {
 import { Heart, Star, ArrowRight } from "lucide-react";
 import { orderApi } from "@services/order.api";
 import Spinner from "@components/ui/Spinner";
-import BidModal from "./BidModal";
+import AutoBidModal from "./AutoBidModal";
 import { bidderApi } from "@services/bidder.api";
 import { useAuthStore } from "@stores/useAuthStore";
 import BidHistoryModal from "./BidHistoryModal";
 import { useAlertStore } from "@stores/useAlertStore";
+import { useSocket } from "@contexts/SocketContext";
+import DOMPurify from "dompurify";
+import { Link, useNavigate } from "react-router-dom";
 
 interface ProductInfoCardProps {
   product: Product;
@@ -21,8 +24,13 @@ interface ProductInfoCardProps {
   onUpdateProduct?: (updatedProduct: Product) => void;
 }
 
-import DOMPurify from "dompurify";
-import { Link, useNavigate } from "react-router-dom";
+interface BidUpdateData {
+  currentPrice: number;
+  bidCount: number;
+  currentBidder: string;
+  currentBidderRating: number;
+  endTime: string;
+}
 
 const ExpandableText = ({
   content,
@@ -33,9 +41,9 @@ const ExpandableText = ({
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [shouldShowButton, setShouldShowButton] = useState(false);
-  const contentRef = React.useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (contentRef.current) {
       setShouldShowButton(contentRef.current.scrollHeight > maxHeight);
     }
@@ -71,19 +79,99 @@ const ExpandableText = ({
 };
 
 const ProductInfoCard: React.FC<ProductInfoCardProps> = ({
-  product,
+  product: initialProduct,
   isGuest,
   onUpdateProduct,
 }) => {
-  const [isBidModalOpen, setIsBidModalOpen] = useState(false);
+  const [product, setProduct] = useState(initialProduct);
+  const [isAutoBidModalOpen, setIsAutoBidModalOpen] = useState(false);
   const [isInWatchlist, setIsInWatchlist] = useState(false);
   const [isAddingToWatchlist, setIsAddingToWatchlist] = useState(false);
   const [isBidHistoryOpen, setIsBidHistoryOpen] = useState(false);
   const [isCreatingOrder, setIsCreatingOrder] = useState(false);
-  const addAlert = useAlertStore((state) => state.addAlert);
+  const [myAutoBidMax, setMyAutoBidMax] = useState<number | null>(null);
 
-  const { token } = useAuthStore();
+  // Realtime state
+  const [newBidsCount, setNewBidsCount] = useState(0);
+  const [highlightBadge, setHighlightBadge] = useState(false);
+
+  const addAlert = useAlertStore((state) => state.addAlert);
+  const { token, user } = useAuthStore();
+  const currentUserId = user?.id || "guest";
   const navigate = useNavigate();
+  const { socket, joinProductRoom, leaveProductRoom } = useSocket();
+
+  useEffect(() => {
+    setProduct(initialProduct);
+  }, [initialProduct]);
+
+  // Load new bids count from localStorage on mount
+  useEffect(() => {
+    if (!product._id) return;
+    const key = `lastAcknowledgedBidCount_${currentUserId}_${product._id}`;
+    const stored = localStorage.getItem(key);
+    if (stored) {
+      const lastCount = parseInt(stored, 10);
+      const diff = product.bidCount - lastCount;
+      if (diff > 0) {
+        setNewBidsCount(diff);
+      } else if (diff < 0) {
+        // Data reset or weird state, reset storage
+        localStorage.setItem(key, product.bidCount.toString());
+        setNewBidsCount(0);
+      } else {
+        setNewBidsCount(0);
+      }
+    } else {
+      // First visit, mark current as acknowledged
+      localStorage.setItem(key, product.bidCount.toString());
+      setNewBidsCount(0);
+    }
+  }, [product._id, product.bidCount, currentUserId]);
+
+  // Socket Integration
+  useEffect(() => {
+    if (product._id) {
+      joinProductRoom(product._id);
+
+      if (socket) {
+        socket.on("new_bid", (data: BidUpdateData) => {
+          setProduct((prev) => ({
+            ...prev,
+            currentPrice: data.currentPrice,
+            bidCount: data.bidCount,
+            endTime: data.endTime,
+            currentBidder: {
+              ...prev.currentBidder,
+              _id: "socket-update", // Dummy ID as we don't have it
+              name: data.currentBidder, // Already masked
+              rating: data.currentBidderRating,
+              email: "",
+              role: "bidder",
+              isVerified: true,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            },
+            highestBidder: undefined, // Clear highestBidder to prioritize currentBidder
+          }));
+
+          setHighlightBadge(true);
+          setTimeout(() => setHighlightBadge(false), 500); // Animation duration
+        });
+      }
+
+      return () => {
+        leaveProductRoom(product._id);
+        if (socket) socket.off("new_bid");
+      };
+    }
+  }, [
+    product._id,
+    socket,
+    joinProductRoom,
+    leaveProductRoom,
+    isBidHistoryOpen,
+  ]);
 
   const handleCompleteOrder = async () => {
     setIsCreatingOrder(true);
@@ -101,9 +189,11 @@ const ProductInfoCard: React.FC<ProductInfoCardProps> = ({
   // Compute auction state
   const now = new Date();
   const endTime = new Date(product.endTime);
-  const isAuctionEnded = now > endTime;
+  const isBuyNowReached =
+    !!product.buyNowPrice &&
+    Math.round(product.currentPrice) >= Math.round(product.buyNowPrice);
+  const isAuctionEnded = now > endTime || isBuyNowReached;
   const isWinnerConfirmed = product.winnerConfirmed === true;
-  const currentUserId = useAuthStore.getState().user?.id;
   const winnerId = product.currentBidder?._id || product.highestBidder?._id;
   const isCurrentUserWinner = isWinnerConfirmed && currentUserId === winnerId;
 
@@ -126,6 +216,30 @@ const ProductInfoCard: React.FC<ProductInfoCardProps> = ({
 
     checkWatchlistStatus();
   }, [product._id, isGuest, token]);
+
+  const checkAutoBidStatus = useCallback(async () => {
+    if (isGuest || !token) {
+      setMyAutoBidMax(null);
+      return;
+    }
+
+    try {
+      const data = await bidderApi.getSuggestedPrice(product._id, token);
+      setMyAutoBidMax(data.myAutoBidMaxPrice || null);
+
+      // If user has auto-bid, trust the server's lastViewedBidCount
+      if (typeof data.myAutoBidLastViewedBidCount === "number") {
+        const diff = product.bidCount - data.myAutoBidLastViewedBidCount;
+        setNewBidsCount(Math.max(0, diff));
+      }
+    } catch (error) {
+      console.error("Failed to check auto bid status", error);
+    }
+  }, [isGuest, token, product._id, product.bidCount]);
+
+  useEffect(() => {
+    checkAutoBidStatus();
+  }, [checkAutoBidStatus]);
 
   const handleAddToWatchlist = async () => {
     setIsAddingToWatchlist(true);
@@ -168,8 +282,11 @@ const ProductInfoCard: React.FC<ProductInfoCardProps> = ({
       setIsInWatchlist(false);
 
       addAlert("success", "Removed from watchlist successfully!");
-    } catch (error: any) {
-      const message = error.message || "Failed to remove from watchlist.";
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Failed to remove from watchlist.";
       addAlert("error", message);
     } finally {
       setIsAddingToWatchlist(false);
@@ -177,14 +294,14 @@ const ProductInfoCard: React.FC<ProductInfoCardProps> = ({
   };
 
   return (
-    <div className="flex flex-col gap-4 max-w-xl">
-      <h1 className="text-3xl font-bold">{product.name}</h1>
-      <p className="text-gray-500">
+    <div className="flex flex-col gap-4 max-w-full md:max-w-xl mx-auto md:mx-0">
+      <h1 className="text-2xl md:text-3xl font-bold">{product.name}</h1>
+      <p className="text-gray-500 text-sm md:text-base">
         Posted Time: {formatPostedTime(product.startTime)}
       </p>
       {isAuctionEnded ? (
         <div className="flex items-center gap-2">
-          <span className="px-3 py-1 bg-gray-200 text-gray-700 rounded-full text-sm font-bold uppercase">
+          <span className="px-3 py-1 bg-gray-200 text-gray-700 rounded-full text-xs md:text-sm font-bold uppercase">
             Auction Ended
           </span>
           <p className="text-gray-600 text-sm">
@@ -192,14 +309,24 @@ const ProductInfoCard: React.FC<ProductInfoCardProps> = ({
           </p>
         </div>
       ) : (
-        <p className="text-red-600 font-semibold">
+        <p className="text-red-600 font-semibold text-base md:text-lg">
           Time Remaining: {timeRemaining(product.endTime)}
         </p>
       )}
-      <p className="text-xl font-semibold">
-        {isAuctionEnded ? "Final Price" : "Current Price"}:{" "}
-        {formatPrice(product.currentPrice)}
-      </p>
+      <div className="flex flex-wrap items-center gap-2">
+        <p className="text-lg md:text-xl font-semibold">
+          {isAuctionEnded ? "Final Price" : "Current Price"}:{" "}
+          {formatPrice(product.currentPrice)}
+        </p>
+        {newBidsCount > 0 && (
+          <span
+            className={`px-2 py-0.5 rounded-full bg-red-500 text-white text-xs font-bold transition-transform duration-200 ${highlightBadge ? "scale-125" : "scale-100"}`}
+          >
+            {newBidsCount} New bids
+          </span>
+        )}
+      </div>
+
       {product.buyNowPrice && (
         <p className="text-lg text-green-600">
           Buy Now Price: {formatPrice(product.buyNowPrice)}
@@ -208,14 +335,18 @@ const ProductInfoCard: React.FC<ProductInfoCardProps> = ({
       <p className="text-gray-700">
         Seller - {product.seller?.name || "Seller"} •{" "}
         <span className="text-yellow-500 inline-flex items-center gap-0.5">
-          {Array.from({ length: Math.round(product.seller?.rating || 0) }).map((_, i) => (
-            <Star key={i} className="w-4 h-4 fill-yellow-500" />
-          ))}{" "}
-          <span className="ml-1">{product.seller?.rating?.toFixed(1) || "N/A"}</span>
+          {Array.from({ length: Math.round(product.seller?.rating || 0) }).map(
+            (_, i) => (
+              <Star key={i} className="w-4 h-4 fill-yellow-500" />
+            )
+          )}{" "}
+          <span className="ml-1">
+            {product.seller?.rating?.toFixed(1) || "N/A"}
+          </span>
         </span>
       </p>
       {isAuctionEnded ? (
-        <div className="border-l-4 border-green-500 bg-green-50 px-4 py-3 rounded-md">
+        <div className="border-l-4 border-green-500 bg-green-50 px-4 py-3 rounded-md text-left">
           {isWinnerConfirmed ? (
             isCurrentUserWinner ? (
               <div>
@@ -306,17 +437,36 @@ const ProductInfoCard: React.FC<ProductInfoCardProps> = ({
         </p>
       )}
       {/* Button Area */}
-      <div className="flex flex-col gap-4 mt-6 max-w-sm">
+      <div className="flex flex-col gap-4 mt-6 max-w-sm w-full">
         {/* Bid History & Watchlist (Logged in) */}
         {!isGuest && (
-          <div className="flex justify-center items-center gap-4 text-white mb-2">
+          <div className="flex items-center gap-4 text-white mb-2 w-full">
             {/* Bid History Link */}
             <button
               type="button"
-              onClick={() => setIsBidHistoryOpen(true)}
-              className="bg-primary-blue rounded-2xl hover:scale-105 transition-transform duration-150 px-4 py-2 hover:cursor-pointer"
+              onClick={() => {
+                setIsBidHistoryOpen(true);
+                setNewBidsCount(0);
+
+                // Update Local Storage (Fallback)
+                localStorage.setItem(
+                  `lastAcknowledgedBidCount_${currentUserId}_${product._id}`,
+                  product.bidCount.toString()
+                );
+
+                // Update Server (Auto Bidder)
+                if (token && myAutoBidMax) {
+                  bidderApi
+                    .acknowledgeAutoBid(product._id, token)
+                    .catch(console.error);
+                }
+              }}
+              className="relative bg-primary-blue rounded-2xl hover:scale-105 transition-transform duration-150 px-4 py-2 hover:cursor-pointer text-sm font-medium"
             >
               View Bid History
+              {newBidsCount > 0 && (
+                <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white animate-pulse" />
+              )}
             </button>
 
             {/* Gạch giữa */}
@@ -335,7 +485,7 @@ const ProductInfoCard: React.FC<ProductInfoCardProps> = ({
                   : isInWatchlist
                     ? "bg-gray-600 hover:scale-105"
                     : "bg-red-500 hover:scale-105"
-              } rounded-2xl transition-transform duration-150 px-4 py-3 flex items-center gap-2`}
+              } rounded-2xl transition-transform duration-150 px-4 py-3 flex items-center gap-2 text-sm font-medium`}
               title={
                 isAuctionEnded
                   ? "Cannot modify watchlist for ended auctions"
@@ -350,7 +500,7 @@ const ProductInfoCard: React.FC<ProductInfoCardProps> = ({
               ) : isInWatchlist ? (
                 <>
                   <Heart className="w-8 h-8" />
-                  <span>Remove from Watchlist</span>
+                  <span>Remove Watchlist</span>
                 </>
               ) : (
                 <>
@@ -401,17 +551,28 @@ const ProductInfoCard: React.FC<ProductInfoCardProps> = ({
           )
         ) : (
           <button
-            onClick={() => setIsBidModalOpen(true)}
-            className="text-xl font-semibold w-full px-6 py-3 rounded-2xl shadow-md bg-primary-blue text-white hover:scale-105 transition-transform duration-200 cursor-pointer"
+            onClick={() => setIsAutoBidModalOpen(true)}
+            className={`text-xl font-semibold w-full px-6 py-3 rounded-2xl shadow-md ${
+              myAutoBidMax &&
+              Math.round(myAutoBidMax) > Math.round(product.currentPrice)
+                ? "bg-green-600 hover:bg-green-700"
+                : "bg-primary-blue hover:scale-105"
+            } text-white transition-all duration-200 cursor-pointer flex items-center justify-center gap-2`}
           >
-            Place a bid
+            {myAutoBidMax &&
+            Math.round(myAutoBidMax) > Math.round(product.currentPrice)
+              ? "Auto Bidding..."
+              : "Set Auto Bid"}
           </button>
         )}
       </div>
 
-      <BidModal
-        isOpen={isBidModalOpen}
-        onClose={() => setIsBidModalOpen(false)}
+      <AutoBidModal
+        isOpen={isAutoBidModalOpen}
+        onClose={() => {
+          setIsAutoBidModalOpen(false);
+          checkAutoBidStatus();
+        }}
         productId={product._id}
         productName={product.name}
         onUpdateProduct={onUpdateProduct}
@@ -424,7 +585,6 @@ const ProductInfoCard: React.FC<ProductInfoCardProps> = ({
         productName={product.name}
       />
 
-      {/* Product Description - Move down to appear after all primary info/actions */}
       <div className="mt-6">
         <h2 className="text-2xl font-semibold mb-2">Description</h2>
         <div className="text-gray-700 p-0 prose prose-sm max-w-none wrap-break-word overflow-hidden">

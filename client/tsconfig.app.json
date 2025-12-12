@@ -28,6 +28,7 @@
       "@interfaces/*": ["interfaces/*"],
       "@components/*": ["components/*"],
       "@containers/*": ["containers/*"],
+      "@contexts/*": ["contexts/*"],
       "@layouts/*": ["layouts/*"],
       "@pages/*": ["pages/*"],
       "@utils/*": ["utils/*"],

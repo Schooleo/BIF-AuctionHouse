@@ -10,15 +10,15 @@ import type {
   RateSellerDto,
   UpgradeRequestStatus,
   GetMyBidsResponse,
-} from '@interfaces/bidder';
-import type { IPaginatedResponse } from '@interfaces/ui';
+} from "@interfaces/bidder";
+import type { IPaginatedResponse } from "@interfaces/ui";
 
 const API_BASE = import.meta.env.VITE_APP_API_URL || "";
 
 const getAuthHeaders = () => {
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem("token");
   return {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
     Authorization: `Bearer ${token}`,
   };
 };
@@ -27,6 +27,10 @@ interface SuggestedPriceResponse {
   suggestedPrice: number;
   currentPrice: number;
   stepPrice: number;
+  buyNowPrice?: number;
+  myAutoBidMaxPrice?: number;
+  myAutoBidStepPrice?: number;
+  myAutoBidLastViewedBidCount?: number;
 }
 
 interface PlaceBidResponse {
@@ -103,9 +107,26 @@ export const bidderApi = {
     return handleResponse(res);
   },
 
-  placeBid: async (
+  acknowledgeAutoBid: async (
     productId: string,
-    price: number,
+    token: string
+  ): Promise<{ success: boolean }> => {
+    const url = `${API_BASE}/api/bidder/bid/acknowledge-auto-bid`;
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ productId }),
+    });
+    return handleResponse(res);
+  },
+
+  setAutoBid: async (
+    productId: string,
+    maxPrice: number,
+    stepPrice: number,
     token: string
   ): Promise<PlaceBidResponse> => {
     const url = `${API_BASE}/api/bidder/bid`;
@@ -118,11 +139,21 @@ export const bidderApi = {
       },
       body: JSON.stringify({
         productId,
-        price,
+        maxPrice,
+        stepPrice,
       }),
     });
 
     return handleResponse(res);
+  },
+
+  placeBid: async (
+    productId: string,
+    price: number, // Legacy param name, mapped to maxPrice
+    token: string
+  ): Promise<PlaceBidResponse> => {
+    // Legacy support: manual bid is just auto bid with 0 step (default)
+    return bidderApi.setAutoBid(productId, price, 0, token);
   },
 
   addToWatchlist: async (
@@ -164,10 +195,10 @@ export const bidderApi = {
   getMyBids: async (
     page: number = 1,
     limit: number = 10,
-    sortBy: 'endTime' | 'price' | 'bidCount' = 'endTime',
-    sortOrder: 'asc' | 'desc' = 'desc',
-    status?: 'active' | 'awaiting' | 'processing' | 'all'
-  ) : Promise<GetMyBidsResponse> => {
+    sortBy: "endTime" | "price" | "bidCount" = "endTime",
+    sortOrder: "asc" | "desc" = "desc",
+    status?: "active" | "awaiting" | "processing" | "all"
+  ): Promise<GetMyBidsResponse> => {
     const params = new URLSearchParams({
       page: page.toString(),
       limit: limit.toString(),
@@ -175,8 +206,8 @@ export const bidderApi = {
       sortOrder,
     });
 
-    if (status && status !== 'all') {
-      params.append('status', status);
+    if (status && status !== "all") {
+      params.append("status", status);
     }
 
     const url = `${API_BASE}/api/bidder/my-bids?${params}`;
@@ -184,7 +215,7 @@ export const bidderApi = {
       method: "GET",
       headers: getAuthHeaders(),
     });
-    
+
     return handleResponse(res);
   },
 
@@ -263,7 +294,7 @@ export const bidderApi = {
   // Profile Management
   getProfile: async (): Promise<BidderProfile> => {
     const res = await fetch(`${API_BASE}/api/bidder/profile`, {
-      method: 'GET',
+      method: "GET",
       headers: getAuthHeaders(),
     });
     return handleResponse(res);
@@ -271,16 +302,18 @@ export const bidderApi = {
 
   updateProfile: async (data: UpdateProfileDto): Promise<BidderProfile> => {
     const res = await fetch(`${API_BASE}/api/bidder/profile`, {
-      method: 'PUT',
+      method: "PUT",
       headers: getAuthHeaders(),
       body: JSON.stringify(data),
     });
     return handleResponse(res);
   },
 
-  changePassword: async (data: ChangePasswordDto): Promise<{ message: string }> => {
+  changePassword: async (
+    data: ChangePasswordDto
+  ): Promise<{ message: string }> => {
     const res = await fetch(`${API_BASE}/api/bidder/profile/password`, {
-      method: 'PUT',
+      method: "PUT",
       headers: getAuthHeaders(),
       body: JSON.stringify(data),
     });
@@ -288,74 +321,103 @@ export const bidderApi = {
   },
 
   // Ratings
-  getReceivedRatings: async (page: number = 1, limit: number = 10): Promise<IPaginatedResponse<RatingReceived>> => {
-    const res = await fetch(`${API_BASE}/api/bidder/profile/ratings?page=${page}&limit=${limit}`, {
-      method: 'GET',
-      headers: getAuthHeaders(),
-    });
+  getReceivedRatings: async (
+    page: number = 1,
+    limit: number = 10
+  ): Promise<IPaginatedResponse<RatingReceived>> => {
+    const res = await fetch(
+      `${API_BASE}/api/bidder/profile/ratings?page=${page}&limit=${limit}`,
+      {
+        method: "GET",
+        headers: getAuthHeaders(),
+      }
+    );
     return handleResponse(res);
   },
 
   // Auctions
-  getParticipatingAuctions: async (page: number = 1, limit: number = 10): Promise<IPaginatedResponse<AuctionItem>> => {
-    const res = await fetch(`${API_BASE}/api/bidder/participating-auctions?page=${page}&limit=${limit}`, {
-      method: 'GET',
-      headers: getAuthHeaders(),
-    });
+  getParticipatingAuctions: async (
+    page: number = 1,
+    limit: number = 10
+  ): Promise<IPaginatedResponse<AuctionItem>> => {
+    const res = await fetch(
+      `${API_BASE}/api/bidder/participating-auctions?page=${page}&limit=${limit}`,
+      {
+        method: "GET",
+        headers: getAuthHeaders(),
+      }
+    );
     return handleResponse(res);
   },
 
-  getWonAuctions: async (page: number = 1, limit: number = 10): Promise<IPaginatedResponse<AuctionItem>> => {
-    const res = await fetch(`${API_BASE}/api/bidder/won-auctions?page=${page}&limit=${limit}`, {
-      method: 'GET',
-      headers: getAuthHeaders(),
-    });
+  getWonAuctions: async (
+    page: number = 1,
+    limit: number = 10
+  ): Promise<IPaginatedResponse<AuctionItem>> => {
+    const res = await fetch(
+      `${API_BASE}/api/bidder/won-auctions?page=${page}&limit=${limit}`,
+      {
+        method: "GET",
+        headers: getAuthHeaders(),
+      }
+    );
     return handleResponse(res);
   },
 
   // Rate Seller
-  rateSeller: async (sellerId: string, data: RateSellerDto): Promise<{ rating: RatingReceived }> => {
+  rateSeller: async (
+    sellerId: string,
+    data: RateSellerDto
+  ): Promise<{ rating: RatingReceived }> => {
     const res = await fetch(`${API_BASE}/api/bidder/rate-seller/${sellerId}`, {
-      method: 'POST',
+      method: "POST",
       headers: getAuthHeaders(),
       body: JSON.stringify(data),
     });
     return handleResponse(res);
   },
 
-  updateSellerRating: async (sellerId: string, data: RateSellerDto): Promise<{ rating: RatingReceived }> => {
+  updateSellerRating: async (
+    sellerId: string,
+    data: RateSellerDto
+  ): Promise<{ rating: RatingReceived }> => {
     const res = await fetch(`${API_BASE}/api/bidder/rate-seller/${sellerId}`, {
-      method: 'PUT',
+      method: "PUT",
       headers: getAuthHeaders(),
       body: JSON.stringify(data),
     });
     return handleResponse(res);
   },
 
-  deleteSellerRating: async (sellerId: string): Promise<{ message: string }> => {
+  deleteSellerRating: async (
+    sellerId: string
+  ): Promise<{ message: string }> => {
     const res = await fetch(`${API_BASE}/api/bidder/rate-seller/${sellerId}`, {
-      method: 'DELETE',
+      method: "DELETE",
       headers: getAuthHeaders(),
     });
     return handleResponse(res);
   },
 
   // Upgrade Request
-  requestSellerUpgrade: async (reason: string): Promise<{ request: UpgradeRequestStatus }> => {
+  requestSellerUpgrade: async (
+    reason: string
+  ): Promise<{ request: UpgradeRequestStatus }> => {
     const res = await fetch(`${API_BASE}/api/bidder/request-seller-upgrade`, {
-      method: 'POST',
+      method: "POST",
       headers: getAuthHeaders(),
       body: JSON.stringify({ reason }),
     });
     return handleResponse(res);
   },
 
-  getUpgradeRequestStatus: async (): Promise<{ request: UpgradeRequestStatus | null }> => {
+  getUpgradeRequestStatus: async (): Promise<{
+    request: UpgradeRequestStatus | null;
+  }> => {
     const res = await fetch(`${API_BASE}/api/bidder/upgrade-request-status`, {
-      method: 'GET',
+      method: "GET",
       headers: getAuthHeaders(),
     });
     return handleResponse(res);
-  }
-
+  },
 };

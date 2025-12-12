@@ -20,6 +20,7 @@ import {
   updateRating,
   deleteRating,
   viewMyBids,
+  acknowledgeAutoBid,
 } from "../controllers/bidder.controller";
 import { protect } from "../middleware/auth.middleware";
 import { validate } from "../middleware/validate";
@@ -44,6 +45,7 @@ router.delete("/watchlist/:productId", removeFromWatchlist);
 router.get("/watchlist/check/:productId", checkInWatchlist);
 router.get("/bid/suggest/:productId", getSuggestedPrice);
 router.post("/bid", validate(placeBidSchema, "body"), placeBid);
+router.post("/bid/acknowledge-auto-bid", acknowledgeAutoBid);
 router.get(
   "/bid-history/:productId",
   validate(bidHistoryQuerySchema, "query"),
