@@ -36,7 +36,7 @@ const EmailCard: React.FC<EmailCardProps> = ({
     setError(null);
     setSuccess(null);
 
-    const emailValidationError = validateEmail(value);
+    const emailValidationError = validateEmail(value!);
     if (emailValidationError) {
       setError(emailValidationError);
       return;
@@ -58,7 +58,7 @@ const EmailCard: React.FC<EmailCardProps> = ({
     const from = label === "register" ? "register" : "reset-password";
 
     try {
-      const payload: RequestOtpDto = { email: value, from };
+      const payload: RequestOtpDto = { email: value!, from };
       const response = await authApi.requestOtp(payload);
       setSuccess(
         response.message || "OTP sent successfully! Check your email."

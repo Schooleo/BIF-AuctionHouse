@@ -45,7 +45,7 @@ passport.use(
             return done(
               null,
               false,
-              { message: "Email already registered with password" } as any
+              { message: "This email is already registered with password. Please login using your email and password." } as any
             );
           }
           // Nếu đã có googleId -> Login thành công

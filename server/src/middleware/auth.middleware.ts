@@ -31,9 +31,11 @@ export const googleAuthMiddleware = (
   res: Response,
   next: NextFunction
 ) => {
-  passport.authenticate("google", { session: false }, (err: any, user: any) => {
+  passport.authenticate("google", { session: false }, (err: any, user: any, info: any) => {
     if (err || !user) {
-      const errorMessage = err ? err.message : "LoginFailed";
+      // Ưu tiên tin nhắn từ info (do Passport trả về) hoặc err
+      const errorMessage = (info && info.message) ? info.message : (err ? err.message : "LoginFailed");
+      
       return res.redirect(
         `${env.FRONTEND_URL}/auth/login?error=${encodeURIComponent(
           errorMessage

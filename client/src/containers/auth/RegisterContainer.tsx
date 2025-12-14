@@ -4,6 +4,8 @@ import ReCAPTCHA from "react-google-recaptcha";
 import { authApi } from "@services/auth.api";
 import type { RegisterDto } from "@interfaces/auth";
 import EmailCard from "@components/forms/EmailCard";
+import { useAlertStore } from "@stores/useAlertStore";
+import GoogleAuthButton from "@components/ui/GoogleAuthButton";
 import {
   validateUsername,
   validateEmail,
@@ -20,6 +22,7 @@ const RegisterContainer = () => {
   const [password, setPassword] = useState<string>("");
   const [confirmPassword, setConfirmPassword] = useState<string>("");
   const [recaptchaToken, setReCaptchaToken] = useState<string | null>(null);
+  const { addAlert } = useAlertStore();
   const [error, setError] = useState<{
     name?: string;
     email?: string;
@@ -27,8 +30,6 @@ const RegisterContainer = () => {
     password?: string;
     confirmPassword?: string;
     address?: string;
-    captcha?: string;
-    general?: string;
   }>({});
 
   const handleSubmit = async () => {
@@ -41,8 +42,6 @@ const RegisterContainer = () => {
       password?: string;
       confirmPassword?: string;
       address?: string;
-      captcha?: string;
-      general?: string;
     } = {};
 
     const nameError = validateUsername(name);
@@ -62,7 +61,10 @@ const RegisterContainer = () => {
 
     if (!confirmPassword)
       newErrors.confirmPassword = "Confirm Password is required";
-    if (!recaptchaToken) newErrors.captcha = "Please complete the reCAPTCHA";
+
+    // Captcha validation via Alert
+    if (!recaptchaToken) {
+    }
 
     if (password !== confirmPassword) {
       newErrors.confirmPassword = "Passwords do not match";
@@ -70,7 +72,12 @@ const RegisterContainer = () => {
 
     setError(newErrors);
 
-    if (Object.keys(newErrors).length === 0 && recaptchaToken) {
+    if (Object.keys(newErrors).length === 0) {
+      if (!recaptchaToken) {
+        addAlert("error", "Please complete the reCAPTCHA");
+        return;
+      }
+
       try {
         const payload: RegisterDto = {
           name,
@@ -85,13 +92,13 @@ const RegisterContainer = () => {
           localStorage.setItem("token", response.token);
           window.location.href = "/";
         } else {
-          setError({ general: response.message });
+          addAlert("error", response.message!);
         }
       } catch (err: unknown) {
         if (err instanceof Error) {
-          setError({ general: err.message });
+          addAlert("error", err.message);
         } else {
-          setError({ general: "An unknown error occurred" });
+          addAlert("error", "An unknown error occurred");
         }
       }
     }
@@ -164,9 +171,22 @@ const RegisterContainer = () => {
       }}
       onSubmit={handleSubmit}
     >
-      {/* Error message */}
-      {error.captcha && <p className="text-xs text-red-500">{error.captcha}</p>}
-      {error.general && <p className="text-xs text-red-500">{error.general}</p>}
+      {/* PopUpAlert is handled globally, no local errors displayed here unless specialized */}
+    
+      <div className="mt-4">
+        <div className="relative">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-gray-300" />
+          </div>
+          <div className="relative flex justify-center text-sm">
+            <span className="px-2 bg-white text-gray-500">Or sign up with</span>
+          </div>
+        </div>
+
+        <div className="mt-4">
+          <GoogleAuthButton text="Sign up with Google" />
+        </div>
+      </div>
     </FormCard>
   );
 };
