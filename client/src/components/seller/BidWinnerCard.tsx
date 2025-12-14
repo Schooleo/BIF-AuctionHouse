@@ -351,11 +351,7 @@ const BidWinnerCard: React.FC<BidWinnerCardProps> = ({
           onClose={() => setIsRateModalOpen(false)}
           onSubmit={handleRateSubmit}
           loading={loading}
-          bidderName={
-            (typeof product.currentBidder === "object" &&
-              product.currentBidder?.name) ||
-            "Bidder"
-          }
+          bidderName={bidderName} 
           initialScore={
             (product.sellerRating?.score as 1 | -1) ||
             order?.ratingBySeller?.score
