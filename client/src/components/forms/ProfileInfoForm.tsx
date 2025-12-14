@@ -3,6 +3,7 @@ import InputField from '@components/forms/InputField';
 import Button from '@components/forms/Button';
 import ConfirmationModal from '@components/ui/ConfirmationModal';
 import type { UpdateProfileDto } from '@interfaces/bidder';
+import { validateUsername, validateAddress, validateEmail } from "@utils/validation";
 
 interface ProfileInfoFormProps {
   initialData: {
@@ -79,14 +80,15 @@ const ProfileInfoForm: React.FC<ProfileInfoFormProps> = ({ initialData, onSubmit
   const validate = () => {
     const newErrors: Record<string, string> = {};
 
-    if (!formData.name.trim()) {
-      newErrors.name = 'Name cannot be empty';
-    } else if (formData.name.trim().length < 2) {
-      newErrors.name = 'Name must be at least 2 characters';
-    }
+    const nameError = validateUsername(formData.name);
+    if (nameError) newErrors.name = nameError;
 
-    if (formData.contactEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.contactEmail)) {
-      newErrors.contactEmail = 'Invalid email format';
+    const addressError = validateAddress(formData.address);
+    if (addressError) newErrors.address = addressError;
+
+    if (formData.contactEmail) {
+      const emailError = validateEmail(formData.contactEmail);
+      if (emailError) newErrors.contactEmail = emailError;
     }
 
     setErrors(newErrors);
