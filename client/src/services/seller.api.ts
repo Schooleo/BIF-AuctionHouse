@@ -1,6 +1,7 @@
 import { handleResponse } from "@utils/handleResponse";
 import type { Product, CreateProductDto } from "@interfaces/product";
 import type { User } from "@interfaces/auth";
+import type { RatingReceived } from "@interfaces/bidder";
 import type {
   UpdateSellerProfileDto,
   ChangeSellerPasswordDto,
@@ -287,6 +288,32 @@ export const sellerApi = {
 
     const res = await fetch(url, {
       method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    return handleResponse(res);
+  },
+
+  getReceivedRatings: async (
+    page: number = 1,
+    limit: number = 10
+  ): Promise<{
+    data: RatingReceived[];
+    pagination: {
+      page: number;
+      limit: number;
+      total: number;
+      totalPages: number;
+    };
+  }> => {
+    const url = `${API_BASE}/api/seller/ratings-received?page=${page}&limit=${limit}`;
+    const token = localStorage.getItem("token");
+
+    const res = await fetch(url, {
+      method: "GET",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,

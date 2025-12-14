@@ -15,6 +15,7 @@ import {
   changeSellerPassword,
   completeTransaction,
   archiveCancelledProduct,
+  viewReceivedRatings,
 } from "../controllers/seller.controller";
 import { protect } from "../middleware/auth.middleware";
 import { validate } from "../middleware/validate";
@@ -103,5 +104,7 @@ router.post(
   validate(productIdParamsSchema, "params"),
   archiveCancelledProduct
 );
+
+router.get("/ratings-received", viewReceivedRatings);
 
 export default router;

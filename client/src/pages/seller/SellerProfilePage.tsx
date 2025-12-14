@@ -6,7 +6,7 @@ import { sellerApi } from "@services/seller.api";
 
 import ProfileInfoForm from "@components/forms/ProfileInfoForm";
 import ProfilePasswordForm from "@components/forms/ProfilePasswordForm";
-import RatingsReceivedList from "@components/user/RatingsReceivedList";
+import SellerRatingList from "@components/seller/SellerRatingList";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import type {
   UpdateSellerProfileDto,
@@ -131,8 +131,7 @@ const SellerProfilePage: React.FC = () => {
 
           {activeTab === "ratings" && (
             <div>
-              <h2 className="text-xl font-bold mb-6">Ratings Received</h2>
-              <RatingsReceivedList />
+              <SellerRatingList />
             </div>
           )}
         </div>
