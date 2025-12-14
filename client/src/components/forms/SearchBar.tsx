@@ -1,22 +1,16 @@
-import { useState, useEffect } from "react";
-import { Search } from "lucide-react";
-import { useNavigate, useLocation } from "react-router-dom";
-import type { SearchBarProps } from "@interfaces/ui";
+import { useState, useEffect } from 'react';
+import { Search } from 'lucide-react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import type { SearchBarProps } from '@interfaces/ui';
 
-const SearchBar: React.FC<SearchBarProps> = ({
-  placeholder,
-  value,
-  onChange,
-  onSubmit,
-  className,
-}) => {
-  const [internalValue, setInternalValue] = useState<string>(value || "");
+const SearchBar: React.FC<SearchBarProps> = ({ placeholder, value, onChange, onSubmit, className }) => {
+  const [internalValue, setInternalValue] = useState<string>(value || '');
   const navigate = useNavigate();
   const location = useLocation();
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
-    const q = params.get("q") || "";
+    const q = params.get('q') || '';
     if (!value) {
       setInternalValue(q);
     }
@@ -44,15 +38,15 @@ const SearchBar: React.FC<SearchBarProps> = ({
     // Chuyển qua trang products với tham số tìm kiếm
     const searchParams = new URLSearchParams();
     if (trimmed) {
-      searchParams.set("q", trimmed);
+      searchParams.set('q', trimmed);
     }
 
     const currentParams = new URLSearchParams(location.search);
-    const category = currentParams.get("category");
-    if (category) searchParams.set("category", category);
+    const category = currentParams.get('category');
+    if (category) searchParams.set('category', category);
 
-    if (location.pathname.startsWith("/seller")) {
-      if (location.pathname.includes("ended-products")) {
+    if (location.pathname.startsWith('/seller')) {
+      if (location.pathname.includes('ended-products')) {
         navigate(`/seller/ended-products?${searchParams.toString()}`);
       } else {
         navigate(`/seller/products?${searchParams.toString()}`);
@@ -65,18 +59,18 @@ const SearchBar: React.FC<SearchBarProps> = ({
   return (
     <form
       onSubmit={handleSubmit}
-      className={`hidden md:flex grow justify-around rounded-full border border-white text-white focus:outline-none focus:ring-white bg-secondary-blue ${className}`}
+      className={`flex w-full justify-around rounded-full border border-white text-white focus:outline-none focus:ring-white bg-secondary-blue ${className}`}
     >
       <input
-        type="text"
+        type='text'
         value={currentValue}
         onChange={handleChange}
         placeholder={placeholder}
-        className="w-full max-w-sm px-4 py-2 placeholder-gray-400 focus:outline-none"
+        className='w-full max-w-sm px-4 py-2 placeholder-gray-400 focus:outline-none'
       />
       <button
-        type="submit"
-        className="mr-3 text-gray-300 hover:text-gray-100 hover:scale-110 transition-all duration-200"
+        type='submit'
+        className='mr-3 text-gray-300 hover:text-gray-100 hover:scale-110 transition-all duration-200'
       >
         <Search size={20} />
       </button>

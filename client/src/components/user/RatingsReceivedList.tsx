@@ -84,14 +84,14 @@ const RatingsReceivedList: React.FC<RatingsReceivedListProps> = ({ title = 'Rati
   return (
     <div className='space-y-6'>
       {/* Title and Filter */}
-      <div className='flex items-center justify-between'>
+      <div className='flex flex-wrap items-center justify-between gap-3'>
         <h2 className='text-xl font-bold'>{title}</h2>
         <div className='flex items-center gap-2'>
           <span className='text-sm font-bold text-primary-blue'>Sort:</span>
           <select
             value={filter}
             onChange={(e) => handleFilterChange(e.target.value as FilterType)}
-            className='px-3 py-2 border rounded-md'
+            className='px-3 py-2 border rounded-md text-sm'
           >
             <option value='all'>All Ratings</option>
             <option value='positive'>Positive</option>

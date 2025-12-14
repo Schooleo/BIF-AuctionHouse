@@ -12,13 +12,10 @@ const Logo = ({ logoSizes = [12, 16, 20], spanText, className }: LogoProps) => {
   }
 
   return (
-    <Link
-      to="/"
-      className={`flex items-center space-x-2 sm:space-x-3 ${className}`}
-    >
-      <img src={logo} alt="Logo Image" className={mapLogoSize(logoSizes)} />
+    <Link to='/' className={`flex items-center space-x-2 sm:space-x-3 bg-[#FAF3D6] rounded-full p-0.1 ${className}`}>
+      <img src={logo} alt='Logo Image' className={mapLogoSize(logoSizes)} />
       {spanText && (
-        <span className="text-white text-lg sm:text-xl md:text-2xl font-serif font-semibold whitespace-nowrap">
+        <span className='text-white text-lg sm:text-xl md:text-2xl font-serif font-semibold whitespace-nowrap'>
           {spanText}
         </span>
       )}

@@ -187,21 +187,21 @@ const ProfilePage: React.FC = () => {
       {/* Main Content */}
       <div className='flex-1 min-w-0'>
         {/* Header Section */}
-        <div className='bg-white rounded-lg shadow-md p-6 mb-6'>
-          <div className='flex items-center gap-4'>
-            <div className='w-20 h-20 rounded-full bg-blue-600 text-white flex items-center justify-center text-3xl font-bold'>
+        <div className='bg-white rounded-lg shadow-md p-6 mb-6 overflow-hidden'>
+          <div className='flex items-start gap-4'>
+            <div className='w-20 h-20 shrink-0 rounded-full bg-blue-600 text-white flex items-center justify-center text-3xl font-bold'>
               {user.name.charAt(0).toUpperCase()}
             </div>
-            <div className='flex-1'>
-              <h1 className='text-2xl font-bold text-gray-800'>{user.name}</h1>
-              <p className='text-gray-600'>{user.email}</p>
-              <p className='text-sm text-gray-500'>{user.contactEmail || 'No contact email'}</p>
-              <div className='flex items-center gap-4 mt-2'>
-                <div className='flex items-center gap-2'>
+            <div className='flex-1 min-w-0'>
+              <h1 className='text-2xl font-bold text-gray-800 truncate'>{user.name}</h1>
+              <p className='text-gray-600 truncate'>{user.email}</p>
+              <p className='text-sm text-gray-500 truncate'>{user.contactEmail || 'No contact email'}</p>
+              <div className='flex flex-wrap items-center gap-x-3 gap-y-1 mt-2'>
+                <div className='flex items-center gap-2 whitespace-nowrap'>
                   <span className='text-sm text-gray-600'>Reputation:</span>
                   <span className='font-semibold text-blue-600'>{reputationPercentage}%</span>
                 </div>
-                <div className='flex items-center gap-2 text-sm'>
+                <div className='flex items-center gap-2 text-sm whitespace-nowrap'>
                   <span className='text-green-600 font-semibold flex items-center gap-1'>
                     <ThumbsUp size={16} /> {positiveCount}
                   </span>

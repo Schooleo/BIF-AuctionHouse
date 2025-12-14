@@ -25,19 +25,19 @@ export default function NavbarAuthLinks() {
       <div className="hidden md:flex items-center space-x-6 text-white text-xl">
         <Link
           to="/notifications"
-          className="hover:text-primary-yellow hover:font-semibold transition-all duration-200"
+          className="hover:text-primary-yellow transition-all duration-200"
         >
           Notifications
         </Link>
         <Link
           to={profileLink}
-          className="hover:text-primary-yellow hover:font-semibold transition-all duration-200"
+          className="hover:text-primary-yellow transition-all duration-200"
         >
           {user.name}
         </Link>
         <button
           onClick={() => setShowLogoutModal(true)}
-          className="hover:text-red-600 hover:font-semibold transition-all duration-200"
+          className="hover:text-red-600 transition-all duration-200"
         >
           Logout
         </button>
