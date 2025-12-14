@@ -4,6 +4,7 @@ import Button from "./Button";
 import type { EmailCardProps } from "@interfaces/ui";
 import type { RequestOtpDto } from "@interfaces/auth";
 import { authApi } from "@services/auth.api";
+import { validateEmail } from "@utils/validation";
 
 const EmailCard: React.FC<EmailCardProps> = ({
   label,
@@ -31,17 +32,13 @@ const EmailCard: React.FC<EmailCardProps> = ({
     };
   }, []);
 
-  const validateEmail = (email: string) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-  };
-
   const sendOtp = async () => {
     setError(null);
     setSuccess(null);
 
-    if (!value || !validateEmail(value)) {
-      setError("Please enter a valid email address.");
+    const emailValidationError = validateEmail(value);
+    if (emailValidationError) {
+      setError(emailValidationError);
       return;
     }
 

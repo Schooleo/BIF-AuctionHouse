@@ -4,6 +4,13 @@ import ReCAPTCHA from "react-google-recaptcha";
 import { authApi } from "@services/auth.api";
 import type { RegisterDto } from "@interfaces/auth";
 import EmailCard from "@components/forms/EmailCard";
+import {
+  validateUsername,
+  validateEmail,
+  validatePassword,
+  validateAddress,
+  validateOtp,
+} from "@utils/validation";
 
 const RegisterContainer = () => {
   const [name, setName] = useState<string>("");
@@ -38,13 +45,21 @@ const RegisterContainer = () => {
       general?: string;
     } = {};
 
-    if (!name) newErrors.name = "Username is required";
-    if (!email) newErrors.email = "Email is required";
-    if (!otp) newErrors.otp = "OTP is required";
-    if (!password) newErrors.password = "Password is required";
-    if (password.length < 8)
-      newErrors.password = "Password must be at least 8 characters";
-    if (!address) newErrors.address = "Address is required";
+    const nameError = validateUsername(name);
+    if (nameError) newErrors.name = nameError;
+
+    const emailError = validateEmail(email);
+    if (emailError) newErrors.email = emailError;
+
+    const otpError = validateOtp(otp);
+    if (otpError) newErrors.otp = otpError;
+
+    const passwordError = validatePassword(password);
+    if (passwordError) newErrors.password = passwordError;
+
+    const addressError = validateAddress(address);
+    if (addressError) newErrors.address = addressError;
+
     if (!confirmPassword)
       newErrors.confirmPassword = "Confirm Password is required";
     if (!recaptchaToken) newErrors.captcha = "Please complete the reCAPTCHA";

@@ -5,6 +5,7 @@ import { authApi } from "@services/auth.api";
 import type { ResetPasswordDto } from "@interfaces/auth";
 import EmailCard from "@components/forms/EmailCard";
 import ConfirmationModal from "@components/ui/ConfirmationModal";
+import { validateEmail, validateOtp, validatePassword } from "@utils/validation";
 
 const ResetPasswordContainer = () => {
   const [email, setEmail] = useState("");
@@ -35,11 +36,15 @@ const ResetPasswordContainer = () => {
       captcha?: string;
     } = {};
 
-    if (!email) newErrors.email = "Email is required";
-    if (!otp) newErrors.otp = "OTP is required";
-    if (!password) newErrors.password = "Password is required";
-    if (password.length < 8)
-      newErrors.password = "Password must be at least 8 characters";
+    const emailError = validateEmail(email);
+    if (emailError) newErrors.email = emailError;
+
+    const otpError = validateOtp(otp);
+    if (otpError) newErrors.otp = otpError;
+
+    const passwordError = validatePassword(password);
+    if (passwordError) newErrors.password = passwordError;
+
     if (!confirmPassword)
       newErrors.confirmPassword = "Confirm Password is required";
 
