@@ -601,78 +601,38 @@ export const bidderService = {
     let totalForFilter: number;
 
     if (sortBy === "endTime" && (!status || status === "all")) {
-      let groupOrder: Array<"processing" | "awaiting" | "active">;
-
-      if (sortOrder === "desc") {
-        groupOrder = ["processing", "awaiting", "active"];
-      } else {
-        groupOrder = ["active", "awaiting", "processing"];
-      }
-
-      const startIndex = (page - 1) * limit;
-      const endIndex = page * limit;
-
-      interface FetchPlan {
-        group: "active" | "awaiting" | "processing";
-        skip: number;
-        limit: number;
-      }
-
-      const totals: Record<string, number> = {
-        processing: processingTotal,
-        awaiting: awaitingTotal,
-        active: activeTotal,
+      const queryFilter = {
+        _id: { $in: bids },
+        $or: [
+          { endTime: { $gt: now } },
+          {
+            currentBidder: bidderId,
+            endTime: { $lt: now },
+            winnerConfirmed: { $ne: true },
+          },
+          {
+            currentBidder: bidderId,
+            winnerConfirmed: true,
+            transactionCompleted: { $ne: true },
+          },
+        ],
       };
 
-      const fetchPlan: FetchPlan[] = [];
-      let cumulativeTotal = 0;
+      const skip = (page - 1) * limit;
+      const sortDirection = sortOrder === "asc" ? 1 : -1;
 
-      for (const group of groupOrder) {
-        const groupTotal = totals[group] || 0;
-        const groupStart = cumulativeTotal;
-        const groupEnd = cumulativeTotal + groupTotal;
+      const [products, total] = await Promise.all([
+        Product.find(queryFilter)
+          .populate(populateFields)
+          .sort({ endTime: sortDirection })
+          .skip(skip)
+          .limit(limit)
+          .lean(),
+        Product.countDocuments(queryFilter),
+      ]);
 
-        if (startIndex < groupEnd && endIndex > groupStart) {
-          const skip = Math.max(0, startIndex - groupStart);
-          const alreadyFetched = fetchPlan.reduce((sum, p) => sum + p.limit, 0);
-          const take = Math.min(
-            limit - alreadyFetched,
-            groupEnd - Math.max(startIndex, groupStart)
-          );
-
-          if (take > 0) {
-            fetchPlan.push({ group, skip, limit: take });
-          }
-        }
-
-        cumulativeTotal = groupEnd;
-      }
-
-      const getSortFieldForGroup = (
-        group: string
-      ): { [key: string]: 1 | -1 } => {
-        if (group === "processing") {
-          return { updatedAt: sortOrder === "asc" ? 1 : -1 };
-        }
-        return { endTime: sortOrder === "asc" ? 1 : -1 };
-      };
-
-      const results = await Promise.all(
-        fetchPlan.map((plan) =>
-          Product.find(queries[plan.group])
-            .populate(populateFields)
-            .sort(getSortFieldForGroup(plan.group))
-            .skip(plan.skip)
-            .limit(plan.limit)
-            .lean()
-        )
-      );
-
-      enrichedProducts = results.flatMap((products) =>
-        products.map((p) => enrichProduct(p))
-      );
-
-      totalForFilter = activeTotal + awaitingTotal + processingTotal;
+      enrichedProducts = products.map((p) => enrichProduct(p));
+      totalForFilter = total;
     } else {
       let queryFilter: any;
       let sortField: any = {};

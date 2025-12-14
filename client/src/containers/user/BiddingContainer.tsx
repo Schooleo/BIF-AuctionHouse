@@ -5,6 +5,8 @@ import { useAuthStore } from "@stores/useAuthStore";
 import type { BidItem } from "@interfaces/bidder";
 import BiddingProductCard from "@components/product/BiddingProductCard";
 import Spinner from "@components/ui/Spinner";
+import SidebarFilter from "@components/ui/SidebarFilter";
+import { AlertCircle } from "lucide-react";
 
 const validatePage = (pageStr: string | null): number => {
   const parsed = parseInt(pageStr || "1");
@@ -91,7 +93,6 @@ const BiddingContainer: React.FC = () => {
   }, [page, sortBy, sortOrder, status, setSearchParams]);
 
   useEffect(() => {
-    // Nếu page vượt quá totalPages, redirect về page cuối
     if (totalPages > 0 && page > totalPages) {
       setPage(totalPages);
     }
@@ -126,24 +127,25 @@ const BiddingContainer: React.FC = () => {
     }
   };
 
-  const handleSortChange = (newSortBy: "endTime" | "price" | "bidCount") => {
-    if (newSortBy === sortBy) {
-      setSortOrder(sortOrder === "desc" ? "asc" : "desc");
-    } else {
-      setSortBy(newSortBy);
-      setSortOrder("desc");
-    }
-    setPage(1); // Reset về page 1 khi sort
+  const handleSortChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const value = e.target.value;
+    const [newSortBy, newSortOrder] = value.split("-") as [
+      "endTime" | "price" | "bidCount",
+      "asc" | "desc"
+    ];
+    setSortBy(newSortBy);
+    setSortOrder(newSortOrder);
+    setPage(1);
   };
 
   const handlePageChange = (newPage: number) => {
     setPage(newPage);
-    window.scrollTo({ top: 0, behavior: "smooth" }); // ✅ Scroll to top
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   if (loading || isUrlChanging) {
     return (
-      <div className="flex justify-center items-center py-12">
+      <div className="flex justify-center items-center py-20">
         <Spinner size={60} />
       </div>
     );
@@ -152,10 +154,10 @@ const BiddingContainer: React.FC = () => {
   if (error) {
     return (
       <div className="text-center py-12">
-        <p className="text-red-600">{error}</p>
+        <p className="text-red-600 font-medium mb-4">{error}</p>
         <button
           onClick={fetchBids}
-          className="mt-4 text-blue-600 hover:underline"
+          className="text-blue-600 hover:underline font-semibold"
         >
           Try Again
         </button>
@@ -163,195 +165,128 @@ const BiddingContainer: React.FC = () => {
     );
   }
 
-  if (bids.length === 0) {
-    return (
-      <div className="text-center py-12 text-gray-500">
-        <p className="text-lg mb-4">You haven't placed any bids yet</p>
-        <button
-          onClick={() => navigate("/products")}
-          className="px-6 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition"
-        >
-          Start Bidding Now
-        </button>
-      </div>
-    );
-  }
+  // Sidebar options
+  const filters = [
+    { label: "All Bids", value: "all", count: activeTotal + awaitingTotal + processingTotal },
+    { label: "Active", value: "active", count: activeTotal, color: "bg-blue-500" },
+    { label: "Awaiting", value: "awaiting", count: awaitingTotal, color: "bg-yellow-500" },
+    { label: "Processing", value: "processing", count: processingTotal, color: "bg-green-500" },
+  ];
 
   return (
-    <div className="space-y-6">
-      {/* Info Banner */}
-      {(awaitingTotal > 0 || activeTotal > 0 || processingTotal > 0) && (
-        <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-lg">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-blue-800">
-                <span className="font-semibold">{activeTotal}</span> active{" "}
-                <span className="font-semibold">{awaitingTotal}</span> awaiting{" "}
-                <span className="font-semibold">{processingTotal}</span>{" "}
-                processing
-              </p>
-              <p className="text-xs text-blue-600 mt-1">
-                {status === "all"
-                  ? `Showing all bids (${activeTotal + awaitingTotal + processingTotal} total)`
-                  : `Filtered by: ${status.charAt(0).toUpperCase() + status.slice(1)}`}
-              </p>
+    <div className="container mx-auto px-4 py-8">
+      {/* Page Header */}
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold text-gray-900">My Bids</h1>
+        <p className="text-gray-600 mt-1">
+          Manage your auctions and track your bidding status.
+        </p>
+      </div>
+
+      <div className="flex flex-col md:flex-row gap-6">
+        {/* Sidebar */}
+        <div className="w-full md:w-64 flex-shrink-0 space-y-4">
+          <SidebarFilter
+            title="Filter Status"
+            options={filters}
+            currentValue={status}
+            onFilterChange={(val) => {
+              setStatus(val as any);
+              setPage(1);
+            }}
+          />
+        </div>
+
+        {/* Main Content */}
+        <div className="flex-1">
+          {/* Controls Bar */}
+          <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm mb-6 flex flex-wrap gap-4 items-center justify-between">
+            <div className="text-sm text-gray-600 font-medium">
+              Running {activeTotal} active auction{activeTotal !== 1 ? "s" : ""}
+            </div>
+
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-medium text-gray-700 whitespace-nowrap">Sort by:</span>
+              <div className="relative min-w-[200px]">
+                <select
+                  value={`${sortBy}-${sortOrder}`}
+                  onChange={handleSortChange}
+                  className="appearance-none w-full bg-white border border-gray-300 text-gray-700 text-sm rounded-md focus:ring-blue-500 focus:border-blue-500 pl-3 pr-10 py-2 cursor-pointer outline-none shadow-sm transition-all hover:border-blue-400"
+                >
+                  <option value="endTime-asc">Ending Soonest</option>
+                  <option value="endTime-desc">Ending Latest</option>
+                  <option value="price-desc">Highest Price</option>
+                  <option value="price-asc">Lowest Price</option>
+                  <option value="bidCount-desc">Most Bids</option>
+                  <option value="bidCount-asc">Least Bids</option>
+                </select>
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
+                  <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      )}
 
-      {/* ========== FILTER TABS ========== */}
-      <div className="flex flex-wrap gap-3 items-center bg-white p-4 rounded-lg border border-gray-200">
-        <span className="text-sm font-medium text-gray-700 mr-2">Filter:</span>
+          {/* List */}
+          {bids.length > 0 ? (
+            <div className="space-y-4">
+              {bids.map((bid) => (
+                <BiddingProductCard key={bid._id} bid={bid} />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-16 bg-white rounded-lg border border-dashed border-gray-300">
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-blue-50">
+                <AlertCircle className="h-6 w-6 text-blue-400" aria-hidden="true" />
+              </div>
+              <h3 className="mt-2 text-sm font-semibold text-gray-900">No auctions found</h3>
+              <p className="mt-1 text-sm text-gray-500">
+                {status === "all" 
+                  ? "You haven't placed any bids yet." 
+                  : `You don't have any ${status} auctions.`}
+              </p>
+              {status === "all" ? (
+                <button
+                  onClick={() => navigate("/products")}
+                  className="mt-6 inline-flex items-center rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500"
+                >
+                  Start Bidding
+                </button>
+              ) : (
+                <button
+                  onClick={() => setStatus("all")}
+                  className="mt-6 inline-flex items-center rounded-md bg-white border border-gray-300 px-3 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
+                >
+                  View All Bids
+                </button>
+              )}
+            </div>
+          )}
 
-        <button
-          onClick={() => {
-            setStatus("all");
-            setPage(1);
-          }}
-          className={`px-4 py-2 rounded-md text-sm font-medium transition ${
-            status === "all"
-              ? "bg-primary-blue text-white shadow-md"
-              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-          }`}
-        >
-          All Bids
-          <span className="ml-2 bg-white bg-opacity-30 px-2 py-0.5 rounded-full text-xs">
-            {activeTotal + awaitingTotal + processingTotal}
-          </span>
-        </button>
-
-        <button
-          onClick={() => {
-            setStatus("active");
-            setPage(1);
-          }}
-          className={`px-4 py-2 rounded-md text-sm font-medium transition ${
-            status === "active"
-              ? "bg-blue-600 text-white shadow-md"
-              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-          }`}
-        >
-          Active
-          <span className="ml-2 bg-white bg-opacity-30 px-2 py-0.5 rounded-full text-xs">
-            {activeTotal}
-          </span>
-        </button>
-
-        <button
-          onClick={() => {
-            setStatus("awaiting");
-            setPage(1);
-          }}
-          className={`px-4 py-2 rounded-md text-sm font-medium transition ${
-            status === "awaiting"
-              ? "bg-yellow-600 text-white shadow-md"
-              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-          }`}
-        >
-          Awaiting
-          <span className="ml-2 bg-white bg-opacity-30 px-2 py-0.5 rounded-full text-xs">
-            {awaitingTotal}
-          </span>
-        </button>
-
-        <button
-          onClick={() => {
-            setStatus("processing");
-            setPage(1);
-          }}
-          className={`px-4 py-2 rounded-md text-sm font-medium transition ${
-            status === "processing"
-              ? "bg-green-600 text-white shadow-md"
-              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-          }`}
-        >
-          Processing
-          <span className="ml-2 bg-white bg-opacity-30 px-2 py-0.5 rounded-full text-xs font-semibold">
-            {processingTotal}
-          </span>
-        </button>
-      </div>
-
-      {/* Sort Controls */}
-      <div className="flex flex-wrap gap-3 items-center justify-between bg-gray-50 p-4 rounded-lg">
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-gray-700">Sort by:</span>
-
-          {/* Sort by End Time */}
-          <button
-            onClick={() => handleSortChange("endTime")}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition ${
-              sortBy === "endTime"
-                ? "bg-primary-blue text-white"
-                : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-300"
-            }`}
-          >
-            End Time{" "}
-            {sortBy === "endTime" && (sortOrder === "desc" ? "↓" : "↑")}
-          </button>
-
-          {/* Sort by Price */}
-          <button
-            onClick={() => handleSortChange("price")}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition ${
-              sortBy === "price"
-                ? "bg-primary-blue text-white"
-                : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-300"
-            }`}
-          >
-            Price {sortBy === "price" && (sortOrder === "desc" ? "↓" : "↑")}
-          </button>
-
-          {/* Sort by Bid Count */}
-          <button
-            onClick={() => handleSortChange("bidCount")}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition ${
-              sortBy === "bidCount"
-                ? "bg-primary-blue text-white"
-                : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-300"
-            }`}
-          >
-            Bid Count{" "}
-            {sortBy === "bidCount" && (sortOrder === "desc" ? "↓" : "↑")}
-          </button>
-        </div>
-      </div>
-
-      {/* Products List - Horizontal Cards */}
-      <div className="space-y-4">
-        {bids.map((bid) => (
-          <BiddingProductCard key={bid._id} bid={bid} />
-        ))}
-      </div>
-
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex justify-center items-center gap-2 mt-6">
-          <button
-            onClick={() => handlePageChange(Math.max(1, page - 1))}
-            disabled={page === 1}
-            className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Previous
-          </button>
-          <span className="px-4 py-2 text-sm">
-            Page {page} / {totalPages}
-            {status !== "all" && (
-              <span className="text-gray-500 ml-2">
-                ({status.charAt(0).toUpperCase() + status.slice(1)})
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex justify-center items-center gap-2 mt-8">
+              <button
+                onClick={() => handlePageChange(Math.max(1, page - 1))}
+                disabled={page === 1}
+                className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
+              >
+                Previous
+              </button>
+              <span className="px-4 py-2 text-sm font-medium text-gray-700">
+                Page {page} of {totalPages}
               </span>
-            )}
-          </span>
-          <button
-            onClick={() => handlePageChange(Math.min(totalPages, page + 1))}
-            disabled={page === totalPages}
-            className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Next
-          </button>
+              <button
+                onClick={() => handlePageChange(Math.min(totalPages, page + 1))}
+                disabled={page === totalPages}
+                className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
+              >
+                Next
+              </button>
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 };
