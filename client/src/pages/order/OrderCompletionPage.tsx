@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import { useAuthStore } from "@stores/useAuthStore";
 import { useAlertStore } from "@stores/useAlertStore";
-import { CheckCircle, Truck, Package, Star, ChevronRight } from "lucide-react";
+import { CheckCircle, Truck, Package, Star } from "lucide-react";
 import { orderApi } from "@services/order.api";
 import type { Order } from "@interfaces/order";
 
@@ -23,23 +23,40 @@ const OrderCompletionPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [currentStep, setCurrentStep] = useState(1);
 
-  useEffect(() => {
-    const fetchOrder = async () => {
+  // Fetch order logic with polling support
+  const fetchOrder = React.useCallback(
+    async (isPolling = false) => {
+      if (!id) return;
       try {
-        const data = await orderApi.getOrder(id!);
-        setOrder(data);
-        setCurrentStep(data.step);
+        const data = await orderApi.getOrder(id);
+        // Only update state if data has changed to prevent unnecessary re-renders (basic check)
+        setOrder((prev) => {
+          if (JSON.stringify(prev) !== JSON.stringify(data)) {
+            setCurrentStep(data.step);
+            return data;
+          }
+          return prev;
+        });
       } catch (error) {
         console.error("Failed to load order", error);
-        addAlert("error", "Failed to load order");
+        if (!isPolling) addAlert("error", "Failed to load order");
       } finally {
-        setLoading(false);
+        if (!isPolling) setLoading(false);
       }
-    };
-    if (id) {
-      fetchOrder();
-    }
-  }, [id, addAlert]);
+    },
+    [id, addAlert]
+  );
+
+  useEffect(() => {
+    fetchOrder(false); // Initial fetch
+
+    // Poll every 4 seconds
+    const interval = setInterval(() => {
+      fetchOrder(true);
+    }, 4000);
+
+    return () => clearInterval(interval);
+  }, [fetchOrder]);
 
   const handleUpdate = (updatedOrder: Order) => {
     setOrder(updatedOrder);
@@ -74,93 +91,83 @@ const OrderCompletionPage: React.FC = () => {
             order.status === "CANCELLED" ? "text-gray-400" : ""
           }`}
         >
-          Order #{id?.slice(-8)} • {order.product?.name}
+          Order #{id?.slice(-8)} •{" "}
+          <Link
+            to={`/product/${order.product?._id}`}
+            className="hover:underline hover:text-blue-600 transition-colors"
+          >
+            {order.product?.name}
+          </Link>
         </p>
       </div>
 
       <div className="flex flex-col lg:flex-row gap-8">
+        {/* Left Vertical Stepper */}
+        <div className="hidden lg:flex flex-col gap-0 w-fit shrink-0 mt-8 min-w-[120px]">
+          {[
+            { step: 1, icon: CheckCircle, label: "Payment" },
+            { step: 2, icon: Truck, label: "Shipping" },
+            { step: 3, icon: Package, label: "Receipt" },
+            { step: 4, icon: Star, label: "Rating" },
+          ].map((s, index, array) => (
+            <React.Fragment key={s.step}>
+              {/* Step Item */}
+              <div className="flex items-center gap-4 relative z-10 group cursor-default">
+                <div
+                  className={`w-12 h-12 rounded-full flex items-center justify-center border-2 transition-all duration-300 shadow-sm shrink-0 ${
+                    order.status === "CANCELLED"
+                      ? "bg-red-50 border-gray-300 text-gray-300 opacity-50"
+                      : currentStep > s.step
+                        ? "bg-blue-600 border-blue-600 text-white visited"
+                        : currentStep === s.step
+                          ? "border-blue-600 bg-white text-blue-600 ring-4 ring-blue-50 active-step"
+                          : "border-gray-300 bg-white text-gray-400"
+                  }`}
+                >
+                  {order.status !== "CANCELLED" && currentStep > s.step ? (
+                    <CheckCircle size={24} className="stroke-[2.5]" />
+                  ) : (
+                    <s.icon
+                      size={24}
+                      className={
+                        order.status !== "CANCELLED" && currentStep === s.step
+                          ? "stroke-[2.5]"
+                          : ""
+                      }
+                    />
+                  )}
+                </div>
+                <span
+                  className={`text-sm font-semibold tracking-wide transition-colors duration-300 ${
+                    order.status === "CANCELLED"
+                      ? "text-gray-400"
+                      : currentStep >= s.step
+                        ? "text-blue-700"
+                        : "text-gray-400"
+                  }`}
+                >
+                  {s.label}
+                </span>
+              </div>
+
+              {/* Vertical Connector */}
+              {index < array.length - 1 && (
+                <div className="h-10 w-12 flex justify-center items-center my-0 shrink-0">
+                  <div
+                    className={`h-full w-0.5 rounded-full transition-colors duration-500 ${
+                      order.status !== "CANCELLED" && currentStep > s.step
+                        ? "bg-blue-600"
+                        : "bg-gray-200"
+                    }`}
+                  />
+                </div>
+              )}
+            </React.Fragment>
+          ))}
+        </div>
+
         {/* Main Process Area */}
         <div className="flex-1">
-          {/* Stepper */}
-          <div className="flex items-start justify-between mb-10 mt-4 px-4 sm:px-10">
-            {[
-              { step: 1, icon: CheckCircle, label: "Payment" },
-              { step: 2, icon: Truck, label: "Shipping" },
-              { step: 3, icon: Package, label: "Receipt" },
-              { step: 4, icon: Star, label: "Rating" },
-            ].map((s, index, array) => (
-              <React.Fragment key={s.step}>
-                {/* Step Item */}
-                <div className="flex flex-col items-center gap-2 relative z-10 group cursor-default">
-                  <div
-                    className={`w-12 h-12 rounded-full flex items-center justify-center border-2 transition-all duration-300 shadow-sm ${
-                      order.status === "CANCELLED"
-                        ? "bg-red-50 border-gray-300 text-gray-300 opacity-50"
-                        : currentStep > s.step
-                          ? "bg-blue-600 border-blue-600 text-white visited"
-                          : currentStep === s.step
-                            ? "border-blue-600 bg-white text-blue-600 ring-4 ring-blue-50 active-step"
-                            : "border-gray-300 bg-white text-gray-400"
-                    }`}
-                  >
-                    {order.status !== "CANCELLED" && currentStep > s.step ? (
-                      <CheckCircle size={24} className="stroke-[2.5]" />
-                    ) : (
-                      <s.icon
-                        size={24}
-                        className={
-                          order.status !== "CANCELLED" && currentStep === s.step
-                            ? "stroke-[2.5]"
-                            : ""
-                        }
-                      />
-                    )}
-                  </div>
-                  <span
-                    className={`text-sm font-semibold tracking-wide transition-colors duration-300 ${
-                      order.status === "CANCELLED"
-                        ? "text-gray-400"
-                        : currentStep >= s.step
-                          ? "text-blue-700"
-                          : "text-gray-400"
-                    }`}
-                  >
-                    {s.label}
-                  </span>
-                </div>
-
-                {/* Connector Arrow */}
-                {index < array.length - 1 && (
-                  <div className="flex-1 flex items-center self-start h-12 px-2">
-                    <div
-                      className={`h-0.5 w-full rounded-full transition-colors duration-500 ${
-                        order.status !== "CANCELLED" && currentStep > s.step
-                          ? "bg-blue-600"
-                          : "bg-gray-200"
-                      }`}
-                    />
-                    <div
-                      className={`mx-1 transition-colors duration-500 ${
-                        order.status !== "CANCELLED" && currentStep > s.step
-                          ? "text-blue-600"
-                          : "text-gray-300"
-                      }`}
-                    >
-                      <ChevronRight size={20} className="stroke-3" />
-                    </div>
-                    <div
-                      className={`h-0.5 w-full rounded-full transition-colors duration-500 ${
-                        order.status !== "CANCELLED" && currentStep > s.step
-                          ? "bg-blue-600"
-                          : "bg-gray-200"
-                      }`}
-                    />
-                  </div>
-                )}
-              </React.Fragment>
-            ))}
-          </div>
-
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 min-h-[400px]">
             {order.status === "CANCELLED" ? (
               <div className="flex flex-col items-center justify-center py-16 text-center">
@@ -212,7 +219,7 @@ const OrderCompletionPage: React.FC = () => {
 
         {/* Chat Sidebar */}
         <div className="w-full lg:w-96 shrink-0">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 h-[600px] flex flex-col sticky top-24">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 h-[600px] flex flex-col">
             <OrderChat orderId={order._id} />
           </div>
         </div>

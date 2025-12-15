@@ -2,13 +2,17 @@
 import React from "react";
 import { useState, useEffect } from "react";
 import type { Category } from "@interfaces/product";
-import { Outlet, useLocation, useSearchParams, useNavigate } from "react-router-dom";
+import {
+  Outlet,
+  useLocation,
+  useSearchParams,
+  useNavigate,
+} from "react-router-dom";
 import Navbar from "@components/ui/Navbar";
 import Footer from "@components/ui/Footer";
 import SideBarCategory from "@components/ui/LeftSideBar";
 import { productApi } from "@services/product.api";
 import { useAuthStore } from "@stores/useAuthStore";
-
 
 const MainLayout: React.FC = () => {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -18,8 +22,10 @@ const MainLayout: React.FC = () => {
   const setToken = useAuthStore((state) => state.setToken);
   const refreshUser = useAuthStore((state) => state.refreshUser);
 
-  const hideSidebar = location.pathname.startsWith("/product/") ||
-    location.pathname === "/watchlist";
+  const hideSidebar =
+    location.pathname.startsWith("/product/") ||
+    location.pathname === "/watchlist" ||
+    location.pathname.startsWith("/orders/");
 
   useEffect(() => {
     const token = searchParams.get("token");
