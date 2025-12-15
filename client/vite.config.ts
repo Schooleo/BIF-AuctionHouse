@@ -12,23 +12,23 @@ export default defineConfig({
   plugins: [
     react({
       babel: {
-        plugins: [["babel-plugin-react-compiler"]],
+        plugins: [['react-compiler']],
       },
     }),
     tailwindcss(),
   ],
   resolve: {
     alias: {
-      "@img": path.resolve(__dirname, "src/assets/img"),
-      "@interfaces": path.resolve(__dirname, "src/interfaces"),
-      "@components": path.resolve(__dirname, "src/components"),
-      "@containers": path.resolve(__dirname, "src/containers"),
-      "@contexts": path.resolve(__dirname, "src/contexts"),
-      "@layouts": path.resolve(__dirname, "src/layouts"),
-      "@pages": path.resolve(__dirname, "src/pages"),
-      "@utils": path.resolve(__dirname, "src/utils"),
-      "@services": path.resolve(__dirname, "src/services"),
-      "@stores": path.resolve(__dirname, "src/stores"),
+      '@img': path.resolve(__dirname, 'src/assets/img'),
+      '@interfaces': path.resolve(__dirname, 'src/interfaces'),
+      '@components': path.resolve(__dirname, 'src/components'),
+      '@containers': path.resolve(__dirname, 'src/containers'),
+      '@contexts': path.resolve(__dirname, 'src/contexts'),
+      '@layouts': path.resolve(__dirname, 'src/layouts'),
+      '@pages': path.resolve(__dirname, 'src/pages'),
+      '@utils': path.resolve(__dirname, 'src/utils'),
+      '@services': path.resolve(__dirname, 'src/services'),
+      '@stores': path.resolve(__dirname, 'src/stores'),
     },
   },
 });
