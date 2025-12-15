@@ -11,6 +11,7 @@ export interface User {
   updatedAt: string;
   positiveRatings?: number;
   negativeRatings?: number;
+  googleId?: string;
 }
 
 export interface AuthStore {

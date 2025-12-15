@@ -4,6 +4,7 @@ import { generateToken } from "../utils/jwt.util";
 import { sendOTPEmail, sendPasswordResetOTPEmail } from "../utils/email.util";
 import { verifyRecaptcha } from "../utils/recaptcha.util";
 import { AuthMessages } from "../constants/messages";
+import * as crypto from "crypto";
 
 export const authService = {
   async getUser(id: string) {
@@ -18,6 +19,7 @@ export const authService = {
       positiveRatings: user.positiveRatings,
       negativeRatings: user.negativeRatings,
       reputationScore: user.reputationScore,
+      googleId: user.googleId,
     };
   },
 
@@ -135,5 +137,50 @@ export const authService = {
     });
 
     return { user, token };
+  },
+
+  async handleGoogleAuth(profile: any) {
+    const email = profile.emails?.[0]?.value;
+
+    if (!email) {
+      throw new Error("No email found from Google profile");
+    }
+
+    const existingUser = await User.findOne({ email });
+
+    if (existingUser) {
+      if (!existingUser.googleId) {
+        throw new Error(
+          "This email is already registered with password. Please login using your email and password."
+        );
+      }
+      return existingUser;
+    }
+
+    const randomDigits = Math.floor(1000 + Math.random() * 9000);
+    let baseName = profile.displayName.replace(/[^a-zA-Z0-9]/g, "");
+    if (baseName.length > 10) baseName = baseName.substring(0, 10);
+    const username = `${baseName}${randomDigits}`;
+
+    const randomPassword = crypto.randomBytes(16).toString("hex");
+
+    const newUser = await User.create({
+      name: username,
+      email: email,
+      password: randomPassword,
+      googleId: profile.id,
+      role: "bidder",
+      address: "",
+    });
+
+    return newUser;
+  },
+
+  generateAuthToken(user: any) {
+    return generateToken({
+      id: user._id || user.id,
+      role: user.role,
+      email: user.email,
+    });
   },
 };
