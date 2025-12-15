@@ -7,6 +7,7 @@ export interface SellerBidHistoryResponse {
       _id: string;
       name?: string;
       rating?: number;
+      rejected?: boolean;
     } | null;
   }[];
 
@@ -14,6 +15,7 @@ export interface SellerBidHistoryResponse {
     currentPage: number;
     totalPages: number;
     totalBids: number;
+    totalRejected: number;
     limit: number;
   };
 }

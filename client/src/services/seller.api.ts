@@ -207,11 +207,14 @@ export const sellerApi = {
 
   getProductBidHistory: async (
     productId: string,
-    params: { page?: number; limit?: number } = {}
+    params: { page?: number; limit?: number; includeRejected?: boolean }
   ): Promise<SellerBidHistoryResponse> => {
     const query = new URLSearchParams();
     query.set("page", String(params.page ?? 1));
     query.set("limit", String(params.limit ?? 10));
+    if (params.includeRejected !== undefined) {
+      query.set("includeRejected", String(params.includeRejected));
+    }
 
     const url = `${API_BASE}/api/seller/products/${productId}/bid-history?${query.toString()}`;
     const token = localStorage.getItem("token");

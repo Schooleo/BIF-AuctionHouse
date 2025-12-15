@@ -218,7 +218,14 @@ const SellerProductDetailsContainer: React.FC<
         addAlert("success", "Bidder rejected successfully.");
       }
 
+      // Close modal before refresh to prevent stale data
+      setIsBidHistoryOpen(false);
+    
+      // Fetch updated product data
       await fetchDetails(false);
+      
+      // Reopen modal with fresh data
+      setTimeout(() => setIsBidHistoryOpen(true), 100);
     } catch (err: unknown) {
       const message =
         (err as { message?: string })?.message ||
@@ -569,7 +576,13 @@ const SellerProductDetailsContainer: React.FC<
         onClose={() => setIsBidHistoryOpen(false)}
         onRejectBidder={handleRejectBidder}
         rejectedBidderIds={product.rejectedBidders ?? []}
-        currentBidderId={product.highestBidder?._id}
+        currentBidderId={
+          typeof product.currentBidder === "object"
+            ? product.currentBidder?._id
+            : product.currentBidder
+            ? String(product.currentBidder)
+            : undefined
+        }
         rejectingBidderId={rejectingBidderId}
         winnerConfirmed={winnerConfirmed}
       />

@@ -408,13 +408,14 @@ export const viewSellerBidHistory = async (req: Request, res: Response) => {
     }
 
     const { productId } = req.params;
-    const { page = 1, limit = 10 } = req.query as any;
+    const { page = 1, limit = 10, includeRejected = "false" } = req.query as any;
 
     const result = await SellerService.getProductBidHistory(
       String(sellerId),
       String(productId),
       Number(page),
-      Number(limit)
+      Number(limit),
+      includeRejected === "true"
     );
 
     res.status(200).json(result);

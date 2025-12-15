@@ -76,13 +76,17 @@ export class SellerService {
       bidder._id as any,
     ];
 
-    await Bid.deleteMany({
-      product: productId,
-      bidder: bidderId,
-    });
+    await Bid.updateMany(
+      { product: productId, bidder: bidderId },
+      { $set: { rejected: true } }
+    );
 
     const remainingBidCount = await Bid.countDocuments({
       product: productId,
+      $or: [
+        { rejected: { $exists: false } },
+        { rejected: false }
+      ],
     });
 
     product.bidCount = remainingBidCount;
@@ -90,9 +94,14 @@ export class SellerService {
     const removedCurrentWinner =
       product.currentBidder && product.currentBidder.toString() === bidderId;
 
-    if (removedCurrentWinner) {
+    if (removedCurrentWinner || remainingBidCount === 0) {
+      // Find next highest valid bid (non-rejected)
       const nextHighestBid = await Bid.findOne({
         product: productId,
+        $or: [
+          { rejected: { $exists: false } },
+          { rejected: false }
+        ],
       }).sort({ price: -1, createdAt: 1 });
 
       if (nextHighestBid) {
@@ -445,7 +454,8 @@ export class SellerService {
     userId: string,
     productId: string,
     page: number = 1,
-    limit: number = 10
+    limit: number = 10,
+    includeRejected: boolean = false
   ) {
     const product = await Product.findOne({
       _id: productId,
@@ -460,30 +470,54 @@ export class SellerService {
     const safeLimit = Math.min(100, Math.max(1, limit));
     const skip = (safePage - 1) * safeLimit;
 
-    const [bids, totalBids] = await Promise.all([
-      Bid.find({ product: productId })
+    // Build query based on whether we want rejected or valid bids
+    const bidQuery: any = { product: productId };
+    
+    if (includeRejected) {
+      // Show ONLY rejected bids
+      bidQuery.rejected = true;
+    } else {
+      // Show ONLY valid (non-rejected) bids
+      bidQuery.$or = [
+        { rejected: { $exists: false } },
+        { rejected: false }
+      ];
+    }
+
+    const [bids, totalBids, totalRejected] = await Promise.all([
+      Bid.find(bidQuery)
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(safeLimit)
-        .populate("bidder", "name email rating"),
-      Bid.countDocuments({ product: productId }),
+        .populate("bidder", "name email rating positiveRatings negativeRatings"),
+      Bid.countDocuments(bidQuery),
+      Bid.countDocuments({ product: productId, rejected: true }),
     ]);
 
-    const bidHistory = bids.map((bid) => ({
-      _id: (bid as any)._id.toString(),
-      bidder: bid.bidder
-        ? {
-            _id: (bid.bidder as any)._id.toString(),
-            name: (bid.bidder as any).name ?? "Unknown bidder",
-            rating:
-              typeof (bid.bidder as any).rating === "number"
-                ? (bid.bidder as any).rating
-                : undefined,
-          }
-        : null,
-      price: bid.price,
-      createdAt: bid.createdAt.toISOString(),
-    }));
+    const bidHistory = bids.map((bid) => {
+      const bidder = bid.bidder as any;
+      let rating: number | undefined;
+      
+      if (bidder) {
+        const totalRatings = (bidder.positiveRatings || 0) + (bidder.negativeRatings || 0);
+        const reputationScore = totalRatings === 0 ? 0 : (bidder.positiveRatings || 0) / totalRatings;
+        rating = totalRatings === 0 ? undefined : reputationScore * 5;
+      }
+
+      return {
+        _id: (bid as any)._id.toString(),
+        bidder: bidder
+          ? {
+              _id: bidder._id.toString(),
+              name: bidder.name ?? "Unknown bidder",
+              rating: rating,
+              rejected: (bid as any).rejected || false,
+            }
+          : null,
+        price: bid.price,
+        createdAt: bid.createdAt.toISOString(),
+      };
+    });
 
     return {
       bidHistory,
@@ -491,6 +525,7 @@ export class SellerService {
         currentPage: safePage,
         totalPages: Math.ceil(totalBids / safeLimit),
         totalBids,
+        totalRejected,
         limit: safeLimit,
         length: totalBids,
       },
@@ -890,15 +925,24 @@ export class SellerService {
 
     // 3. DELETE BIDS from this user (Clean up eligibility)
     const Bid = (await import("../models/bid.model")).Bid;
-    await Bid.deleteMany({ product: productId, bidder: bidderId });
+    
+    await Bid.updateMany(
+      { product: productId, bidder: bidderId },
+      { $set: { rejected: true } }
+    );
 
     const remainingBidCount = await Bid.countDocuments({
       product: productId,
-      bidder: { $nin: product.rejectedBidders },
+      $or: [
+        { rejected: { $exists: false } },
+        { rejected: false }
+      ],
     });
+
     console.log(
       `[CancelTrans] Remaining Bid Count: ${remainingBidCount}. Rejected Bidders: ${product.rejectedBidders.length}`
     );
+
     product.bidCount = remainingBidCount;
 
     const removedCurrentWinner =
@@ -908,11 +952,15 @@ export class SellerService {
       // Find next highest
       const nextHighestBid = await Bid.findOne({
         product: productId,
-        bidder: { $nin: product.rejectedBidders },
+        $or: [
+          { rejected: { $exists: false } },
+          { rejected: false }
+        ],
       }).sort({
         price: -1,
         createdAt: 1,
       });
+
       if (nextHighestBid) {
         product.currentPrice = nextHighestBid.price;
         product.currentBidder = nextHighestBid.bidder as any;
@@ -920,12 +968,22 @@ export class SellerService {
         product.currentPrice = product.startingPrice;
         product.currentBidder = null as any;
       }
+    } else if (remainingBidCount === 0) {
+      product.currentPrice = product.startingPrice;
+      product.currentBidder = null as any;
     }
 
     product.winnerConfirmed = false;
 
     try {
       await product.save();
+      const updatedProduct = await Product.findById(productId)
+      .populate({
+        path: "currentBidder",
+        select: "name email positiveRatings negativeRatings",
+      })
+      .populate({ path: "category", select: "name" })
+      .lean();
     } catch (saveError) {
       console.error("Failed to save product during cancellation:", saveError);
       throw new Error("Failed to update product state after cancellation");
