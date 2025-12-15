@@ -28,6 +28,7 @@ interface BidHistoryRow {
   bidAmount: number;
   createdAt: string;
   bidderRating?: number;
+  rejected?: boolean;
 }
 
 const PAGE_SIZE = 10;
@@ -55,6 +56,7 @@ const SellerBidHistoryModal: React.FC<SellerBidHistoryModalProps> = ({
   );
   const [actionLoading, setActionLoading] = useState(false);
   const [showOnlyRejected, setShowOnlyRejected] = useState(false);
+  const [totalRejected, setTotalRejected] = useState(0);
 
   const isRejected = useCallback(
     (bidderId: string) =>
@@ -62,18 +64,17 @@ const SellerBidHistoryModal: React.FC<SellerBidHistoryModalProps> = ({
     [rejectedBidderIds]
   );
 
-  const visibleRows = useMemo(() => {
-    if (!showOnlyRejected) return rows;
-    return rows.filter(
-      (row) => row.bidderId && isRejected(row.bidderId)
-    );
-  }, [rows, showOnlyRejected, isRejected]);
+  // const visibleRows = useMemo(() => {
+  //   if (!showOnlyRejected) return rows;
+  //   return rows.filter((row) => row.rejected || isRejected(row.bidderId));
+  // }, [rows, showOnlyRejected, isRejected]);
+  const visibleRows = rows;
 
   const mapBidHistory = useCallback(
     (
       items: {
         _id: string;
-        bidder: { _id: string; name?: string; rating?: number } | null;
+        bidder: { _id: string; name?: string; rating?: number; rejected?: boolean } | null;
         price: number;
         createdAt: string;
       }[]
@@ -85,6 +86,7 @@ const SellerBidHistoryModal: React.FC<SellerBidHistoryModalProps> = ({
         bidderRating: item.bidder?.rating,
         bidAmount: item.price,
         createdAt: item.createdAt,
+        rejected: item.bidder?.rejected ?? false, // Add this
       }));
     },
     []
@@ -98,11 +100,15 @@ const SellerBidHistoryModal: React.FC<SellerBidHistoryModalProps> = ({
         const response = await sellerApi.getProductBidHistory(productId, {
           page,
           limit: PAGE_SIZE,
+          includeRejected: showOnlyRejected,
         });
-        setRows(mapBidHistory(response.bidHistory));
+        
+        const mappedRows = mapBidHistory(response.bidHistory);
+        setRows(mappedRows);
         setCurrentPage(response.pagination.currentPage);
         setTotalPages(response.pagination.totalPages);
         setTotalBids(response.pagination.totalBids);
+        setTotalRejected(response.pagination.totalRejected || 0);
       } catch (err: any) {
         const message =
           err?.message || "Failed to fetch bid history. Please try again.";
@@ -111,7 +117,7 @@ const SellerBidHistoryModal: React.FC<SellerBidHistoryModalProps> = ({
         setLoading(false);
       }
     },
-    [productId, mapBidHistory]
+    [productId, mapBidHistory, showOnlyRejected]
   );
 
   useEffect(() => {
@@ -187,16 +193,19 @@ const SellerBidHistoryModal: React.FC<SellerBidHistoryModalProps> = ({
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between text-sm text-gray-500">
               <div>
                 {showOnlyRejected
-                  ? `Rejected bidders on this product: ${visibleRows.length}`
-                  : `Total bids: ${totalBids}`}
+                  ? `Rejected bidders: ${totalRejected}`
+                  : `Total valid bids: ${totalBids} • Rejected: ${totalRejected}`}
               </div>
               <button
                 type="button"
-                onClick={() => setShowOnlyRejected((prev) => !prev)}
+                onClick={() => {
+                  setShowOnlyRejected((prev) => !prev);
+                  setCurrentPage(1);
+                }}
                 className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-semibold rounded-lg border border-gray-300 hover:bg-gray-100 transition"
               >
                 <ShieldX className="w-3.5 h-3.5" />
-                {showOnlyRejected ? "Show all bids" : "View rejected bidders"}
+                {showOnlyRejected ? "Show bid history" : "View rejected bidders"}
               </button>
             </div>
 
@@ -221,13 +230,9 @@ const SellerBidHistoryModal: React.FC<SellerBidHistoryModalProps> = ({
                     </thead>
                     <tbody className="divide-y divide-gray-200">
                       {visibleRows.map((row, idx) => {
-                        const baseIndex = showOnlyRejected
-                          ? idx
-                          : (currentPage - 1) * PAGE_SIZE + idx;
-                        const globalIndex = baseIndex + 1;
-                        const bidderRejected = isRejected(row.bidderId);
-                        const isCurrentWinner =
-                          row.bidderId === currentBidderId;
+                        const globalIndex = (currentPage - 1) * PAGE_SIZE + idx + 1; // Simplified
+                        const bidderRejected = row.rejected; // Use the rejected field from server
+                        const isCurrentWinner = row.bidderId === currentBidderId && !bidderRejected;
 
                         return (
                           <tr
@@ -253,7 +258,7 @@ const SellerBidHistoryModal: React.FC<SellerBidHistoryModalProps> = ({
                                     Rating: {row.bidderRating.toFixed(2)} ★
                                   </span>
                                 )}
-                                {isCurrentWinner && (
+                                {isCurrentWinner && !bidderRejected && (
                                   <span
                                     className={`text-xs font-medium ${
                                       winnerConfirmed

@@ -408,13 +408,14 @@ export const viewSellerBidHistory = async (req: Request, res: Response) => {
     }
 
     const { productId } = req.params;
-    const { page = 1, limit = 10 } = req.query as any;
+    const { page = 1, limit = 10, includeRejected = "false" } = req.query as any;
 
     const result = await SellerService.getProductBidHistory(
       String(sellerId),
       String(productId),
       Number(page),
-      Number(limit)
+      Number(limit),
+      includeRejected === "true"
     );
 
     res.status(200).json(result);
@@ -424,5 +425,42 @@ export const viewSellerBidHistory = async (req: Request, res: Response) => {
     }
     console.error("Error fetching seller bid history:", error);
     res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+export const viewReceivedRatings = async (req: Request, res: Response) => {
+  try {
+    const sellerId = (req.user as any)?._id;
+    if (!sellerId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+
+    const { Rating } = await import("../models/rating.model");
+    const skip = (page - 1) * limit;
+
+    const [ratings, total] = await Promise.all([
+      Rating.find({ type: "seller", ratee: sellerId })
+        .populate("rater", "name email")
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit),
+      Rating.countDocuments({ type: "seller", ratee: sellerId }),
+    ]);
+
+    res.status(200).json({
+      data: ratings,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    });
+  } catch (error: any) {
+    console.error("Error fetching seller ratings:", error);
+    res.status(500).json({ message: error.message || "Internal server error" });
   }
 };

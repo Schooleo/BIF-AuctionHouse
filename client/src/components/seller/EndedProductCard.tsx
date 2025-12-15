@@ -34,9 +34,18 @@ const EndedProductCard: React.FC<EndedProductCardProps> = ({
       ? product.currentBidder?._id
       : product.currentBidder;
 
-  const isRejected =
-    product.currentBidder &&
-    product.rejectedBidders?.includes(currentBidderId || "");
+  const currentBidderIsRejected =
+    currentBidderId && product.rejectedBidders?.includes(currentBidderId);
+
+  // Determine status label
+  const getWinnerStatus = () => {
+    if (!product.currentBidder) return "No bids placed";
+    if (product.winnerConfirmed) return "Final Winner";
+    if (currentBidderIsRejected) return "No Valid Bidders"; // All bidders rejected
+    return "Provisional Winner";
+  };
+
+  const winnerStatus = getWinnerStatus();
 
   const handleChatOrder = async () => {
     try {
@@ -81,7 +90,14 @@ const EndedProductCard: React.FC<EndedProductCardProps> = ({
       setRejectingBidderId(bidderId);
       await sellerApi.rejectBidder(product._id, bidderId);
       addAlert("success", "Bidder rejected successfully");
+
+      // Close the modal first to prevent stale data display
+      setIsBidHistoryOpen(false);
+      
       onRefresh(); // Refresh to update product state (new winner or no winner)
+    
+      // Reopen the modal with fresh data
+      setTimeout(() => setIsBidHistoryOpen(true), 100);
     } catch (err: unknown) {
       const message =
         (err as { message?: string })?.message || "Failed to reject bidder";
@@ -132,34 +148,35 @@ const EndedProductCard: React.FC<EndedProductCardProps> = ({
 
             <div
               className={`p-2.5 rounded-md border inline-block min-w-0 w-full ${
-                !product.currentBidder
+                !product.currentBidder || currentBidderIsRejected
                   ? "bg-gray-50 border-gray-200"
                   : "bg-blue-50 border-blue-200"
               }`}
             >
               <h4
                 className={`text-xs font-semibold uppercase tracking-wide mb-1 flex items-center gap-1 ${
-                  !product.currentBidder ? "text-gray-600" : "text-blue-800"
+                  !product.currentBidder || currentBidderIsRejected
+                   ? "text-gray-600" 
+                   : "text-blue-800"
                 }`}
               >
-                {product.currentBidder && <Trophy size={12} />}{" "}
-                {!product.currentBidder
-                  ? "No bids placed"
-                  : product.winnerConfirmed
-                    ? "Final Winner"
-                    : isRejected
-                      ? "Rejected Bidder"
-                      : "Provisional Winner"}
+                {product.currentBidder && !currentBidderIsRejected && <Trophy size={12} />}
+                {winnerStatus}
               </h4>
               {product.currentBidder ? (
                 <div className="text-sm font-medium text-gray-700">
                   <span
-                    className={isRejected ? "text-red-600 line-through" : ""}
+                    className={currentBidderIsRejected ? "text-red-600 line-through" : ""}
                   >
                     {(typeof product.currentBidder === "object" &&
                       product.currentBidder?.name) ||
                       "Unknown User"}
                   </span>
+                  {currentBidderIsRejected && (
+                    <span className="text-xs text-red-600 ml-2">
+                      (Last rejected bidder)
+                    </span>
+                  )}
                   <span className="text-gray-500 text-xs ml-1">
                     (Rating:{" "}
                     {(typeof product.currentBidder === "object" &&

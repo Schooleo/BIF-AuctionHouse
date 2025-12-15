@@ -389,15 +389,23 @@ export const ProductService = {
     // 2. Normalize seller & currentBidder
     const seller = normalizeUser(productDoc.seller);
     const category = normalizeCategory(productDoc.category);
+    
     const currentBidder = productDoc.currentBidder
       ? normalizeUser(productDoc.currentBidder)
       : null;
+
     const rejectedBidderIds = Array.isArray(productDoc.rejectedBidders)
       ? productDoc.rejectedBidders.map((id: any) => id.toString())
       : [];
 
     // 3. Fetch top bid
-    const topBidDoc = await Bid.findOne({ product: pid })
+    const topBidDoc = await Bid.findOne({
+      product: pid,
+      $or: [
+        { rejected: { $exists: false } },
+        { rejected: false }
+      ]
+    })
       .sort({ price: -1, createdAt: 1 })
       .populate("bidder", userFields)
       .lean();

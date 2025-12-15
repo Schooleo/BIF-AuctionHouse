@@ -42,10 +42,15 @@ const SellerProductSummary: React.FC<SellerProductSummaryProps> = ({
       : (product.category?.name ?? "Unknown Category"));
 
   const bidderLabel = winnerConfirmed ? "Winner" : "Highest Bidder";
-  const highestBidderDisplay = product.highestBidder?.name
-    ? maskName(product.highestBidder.name)
+
+  // Use currentBidder as the primary source, fallback to highestBidder
+  const effectiveBidder = product.currentBidder || product.highestBidder;
+
+  const highestBidderDisplay = effectiveBidder?.name
+    ? maskName(effectiveBidder.name)
     : "No active bids";
-  const highestBidderRating = product.highestBidder?.rating;
+
+  const highestBidderRating = effectiveBidder?.rating;
 
   const statusLabel = isEnded ? "Ended" : "Ongoing";
   const statusStyles = isEnded
