@@ -40,6 +40,8 @@ export const productApi = {
     categoryId,
     query,
     sort,
+    minPrice,
+    maxPrice,
   }: FetchProductsDto): Promise<IPaginatedResponse<Product>> => {
     const params = new URLSearchParams();
     params.append("page", page.toString());
@@ -48,6 +50,8 @@ export const productApi = {
     if (categoryId) params.append("category", categoryId);
     if (query) params.append("q", query);
     if (sort) params.append("sort", sort);
+    if (minPrice !== undefined) params.append("min_price", minPrice.toString());
+    if (maxPrice !== undefined) params.append("max_price", maxPrice.toString());
 
     const url = `${API_BASE}/api/guest/products?${params.toString()}`;
 

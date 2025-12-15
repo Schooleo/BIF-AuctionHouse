@@ -99,4 +99,6 @@ export interface SearchParams {
   sort: ProductSortOption | "rating";
   category?: string | undefined;
   newMinutes?: number | undefined;
+  min_price?: number | undefined;
+  max_price?: number | undefined;
 }

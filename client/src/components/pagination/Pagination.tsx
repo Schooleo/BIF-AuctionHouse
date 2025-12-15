@@ -18,44 +18,48 @@ const Pagination: React.FC<PaginationProps> = ({
   }
 
   const pagesToShow: (number | "...")[] = [];
-  const maxButtons = 5; // Max number of visible buttons (e.g., 1, 2, 3, 4, 5)
-
-  // Function to generate a range of page numbers
-  const range = (start: number, end: number) => {
-    return Array.from({ length: end - start + 1 }, (_, i) => start + i);
-  };
+  const maxButtons = 5;
 
   if (totalPages <= maxButtons) {
-    // If few pages, show all buttons
-    pagesToShow.push(...range(1, totalPages));
+    for (let i = 1; i <= totalPages; i++) {
+      pagesToShow.push(i);
+    }
   } else {
-    const start = Math.max(1, currentPage - 2);
-    const end = Math.min(totalPages, currentPage + 2);
+    // Always show first page
+    pagesToShow.push(1);
 
-    // Always show page 1
-    if (start > 1) {
-      pagesToShow.push(1);
-      if (start > 2) pagesToShow.push("...");
+    // Calculate start and end of neighbors
+    let startPage = Math.max(2, currentPage - 1);
+    let endPage = Math.min(totalPages - 1, currentPage + 1);
+
+    // Dynamic adjustment for edges to keep constant number of buttons roughly
+    if (currentPage <= 3) {
+      startPage = 2;
+      endPage = 4; // Show 1, 2, 3, 4 ... Last
+    } else if (currentPage >= totalPages - 2) {
+      startPage = totalPages - 3;
+      endPage = totalPages - 1; // Show First ... 7, 8, 9, 10
     }
 
-    // Show pages around the current page
-    pagesToShow.push(
-      ...range(start, end).filter((p) => p !== 1 && p !== totalPages)
-    );
-
-    // Always show the last page
-    if (end < totalPages) {
-      if (end < totalPages - 1) pagesToShow.push("...");
-      pagesToShow.push(totalPages);
+    // Add ellipsis before start if gap exists
+    if (startPage > 2) {
+      pagesToShow.push("...");
     }
 
-    // Filter duplicates and sort
-    const uniquePages = Array.from(new Set(pagesToShow));
-    uniquePages.sort((a, b) =>
-      typeof a === "number" && typeof b === "number" ? a - b : 0
-    );
-    pagesToShow.length = 0;
-    pagesToShow.push(...uniquePages);
+    // Add neighbors
+    for (let i = startPage; i <= endPage; i++) {
+      if (i > 1 && i < totalPages) {
+        pagesToShow.push(i);
+      }
+    }
+
+    // Add ellipsis after end if gap exists
+    if (endPage < totalPages - 1) {
+      pagesToShow.push("...");
+    }
+
+    // Always show last page
+    pagesToShow.push(totalPages);
   }
 
   return (

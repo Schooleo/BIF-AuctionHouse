@@ -7,8 +7,9 @@ import ErrorMessage from "@components/message/ErrorMessage";
 import EmptyMessage from "@components/message/EmptyMessage";
 import Spinner from "@components/ui/Spinner";
 import { productApi } from "@services/product.api";
-import type { Product, ProductSortOption } from "@interfaces/product";
+import type { Product, ProductSortOption, Category } from "@interfaces/product";
 import type { IPagination, IPaginatedResponse } from "@interfaces/ui";
+import ActiveFilters from "@components/ui/ActiveFilters";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -22,13 +23,15 @@ const defaultPagination: IPagination = {
 interface ProductsContainerProps {
   initialCategory?: string;
   initialQuery?: string;
+  categories?: Category[];
 }
 
 const ProductsContainer: React.FC<ProductsContainerProps> = ({
   initialCategory = "",
   initialQuery = "",
+  categories = [],
 }) => {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const [data, setData] = useState<IPaginatedResponse<Product>>({
     data: [],
@@ -37,15 +40,16 @@ const ProductsContainer: React.FC<ProductsContainerProps> = ({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const [sort, setSort] = useState<ProductSortOption>(
-    (searchParams.get("sort") as ProductSortOption) || "default"
-  );
+  const sort = (searchParams.get("sort") as ProductSortOption) || "default";
   const category = searchParams.get("category") || initialCategory;
   const query = searchParams.get("q") || initialQuery;
-
-  const [currentPage, setCurrentPage] = useState(
-    Number(searchParams.get("page")) || 1
-  );
+  const minPrice = searchParams.get("min_price")
+    ? Number(searchParams.get("min_price"))
+    : undefined;
+  const maxPrice = searchParams.get("max_price")
+    ? Number(searchParams.get("max_price"))
+    : undefined;
+  const currentPage = Number(searchParams.get("page")) || 1;
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -59,6 +63,8 @@ const ProductsContainer: React.FC<ProductsContainerProps> = ({
           categoryId: category,
           query: query,
           sort: sort,
+          minPrice,
+          maxPrice,
         });
 
         setData({
@@ -74,18 +80,20 @@ const ProductsContainer: React.FC<ProductsContainerProps> = ({
     };
 
     fetchProducts();
-    window.scrollTo(0, 0);
-  }, [category, query, sort, currentPage]);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [category, query, sort, currentPage, minPrice, maxPrice]);
 
   const handlePageChange = (newPage: number) => {
-    if (newPage !== currentPage) {
-      setCurrentPage(newPage);
-    }
+    const newParams = new URLSearchParams(searchParams);
+    newParams.set("page", newPage.toString());
+    setSearchParams(newParams);
   };
 
   const handleSortChange = (newSort: ProductSortOption) => {
-    setSort(newSort);
-    setCurrentPage(1);
+    const newParams = new URLSearchParams(searchParams);
+    newParams.set("sort", newSort);
+    newParams.set("page", "1");
+    setSearchParams(newParams);
   };
 
   console.log(data);
@@ -97,6 +105,7 @@ const ProductsContainer: React.FC<ProductsContainerProps> = ({
 
   return (
     <>
+      <ActiveFilters categories={categories} />
       <SortBar sort={sort} setSort={handleSortChange} />
 
       <div className="products-container">
