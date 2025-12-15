@@ -67,6 +67,19 @@ const PopUpWindow: React.FC<PopUpWindowProps> = ({
     };
   }, [isOpen, onClose, isLoading]);
 
+  // Lock body scroll when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   // Size mapping
@@ -105,12 +118,13 @@ const PopUpWindow: React.FC<PopUpWindowProps> = ({
     >
       <div
         ref={modalRef}
-        className={`bg-white rounded-xl shadow-xl ${sizeClasses[size]} overflow-hidden animate-in zoom-in-95 duration-200 border border-gray-100`}
+        className={`bg-white rounded-xl shadow-xl ${sizeClasses[size]} max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 border border-gray-100 relative`}
+        style={{ overflow: "hidden" }} // Force overflow hidden to prevent any CSS leaks
         role="dialog"
         aria-modal="true"
       >
         {/* Header */}
-        <div className="flex justify-between items-center p-4 bg-primary-blue text-white">
+        <div className="flex justify-between items-center p-4 bg-primary-blue text-white shrink-0">
           <h3 className="text-lg font-bold truncate pr-4" title={title}>
             {title}
           </h3>
@@ -126,19 +140,22 @@ const PopUpWindow: React.FC<PopUpWindowProps> = ({
           </button>
         </div>
 
-        {/* Content */}
-        <form onSubmit={handleSubmit}>
+        {/* Content & Footer Wrapper */}
+        <form
+          onSubmit={handleSubmit}
+          className="flex flex-col flex-1 min-h-0 overflow-hidden relative"
+        >
           <div
             className={`${
               noPadding ? "p-0" : "p-6"
-            } max-h-[70vh] overflow-y-auto ${contentClassName}`}
+            } overflow-y-auto flex-1 min-h-0 ${contentClassName}`}
           >
             {children}
           </div>
 
           {/* Footer with buttons - Same style as ConfirmationModal */}
           {!hideFooter && (
-            <div className="flex justify-center gap-4 p-6 pt-0">
+            <div className="flex justify-center gap-4 p-6 pt-0 shrink-0 mt-4">
               <button
                 type="button"
                 onClick={onClose}

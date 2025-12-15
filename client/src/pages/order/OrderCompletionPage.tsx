@@ -14,8 +14,7 @@ import OrderChat from "@components/order/OrderChat";
 import type { UserSummary } from "@interfaces/product";
 
 const OrderCompletionPage: React.FC = () => {
-  const { id } = useParams<{ id: string }>(); // This must be the ORDER ID
-  // const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
   const { user } = useAuthStore();
   const addAlert = useAlertStore((state) => state.addAlert);
 
@@ -93,7 +92,7 @@ const OrderCompletionPage: React.FC = () => {
         >
           Order #{id?.slice(-8)} •{" "}
           <Link
-            to={`/product/${order.product?._id}`}
+            to={`${user.role === "seller" ? "/seller" : "/buyer"}/products/${order.product?._id}`}
             className="hover:underline hover:text-blue-600 transition-colors"
           >
             {order.product?.name}
@@ -138,11 +137,11 @@ const OrderCompletionPage: React.FC = () => {
                   )}
                 </div>
                 <span
-                  className={`text-sm font-semibold tracking-wide transition-colors duration-300 ${
+                  className={`text-sm font-bold tracking-wide transition-colors duration-300 ${
                     order.status === "CANCELLED"
                       ? "text-gray-400"
                       : currentStep >= s.step
-                        ? "text-blue-700"
+                        ? "text-blue-600"
                         : "text-gray-400"
                   }`}
                 >

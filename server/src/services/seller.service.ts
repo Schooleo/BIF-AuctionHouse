@@ -1,8 +1,8 @@
 import { Types } from "mongoose";
 import { Product } from "../models/product.model";
 import { Bid } from "../models/bid.model";
-import { User } from "../models/index.model";
-import { Order, OrderStatus } from "../models/order.model";
+import { User, AutoBid } from "../models/index.model";
+import { OrderStatus } from "../models/order.model";
 import { SellerMessages } from "../constants/messages";
 import {
   sendAuctionEndedSellerEmail,
@@ -77,16 +77,16 @@ export class SellerService {
     ];
 
     await Bid.updateMany(
-      { product: productId, bidder: bidderId },
+      {
+        product: new Types.ObjectId(productId),
+        bidder: new Types.ObjectId(bidderId),
+      },
       { $set: { rejected: true } }
     );
 
     const remainingBidCount = await Bid.countDocuments({
       product: productId,
-      $or: [
-        { rejected: { $exists: false } },
-        { rejected: false }
-      ],
+      $or: [{ rejected: { $exists: false } }, { rejected: false }],
     });
 
     product.bidCount = remainingBidCount;
@@ -94,14 +94,17 @@ export class SellerService {
     const removedCurrentWinner =
       product.currentBidder && product.currentBidder.toString() === bidderId;
 
+    // Emit socket event for rejected bidder
+    const io = (await import("../socket")).getIO();
+    io.to(`product_${productId}`).emit("bidder_rejected", {
+      bidderId,
+    });
+
     if (removedCurrentWinner || remainingBidCount === 0) {
       // Find next highest valid bid (non-rejected)
       const nextHighestBid = await Bid.findOne({
         product: productId,
-        $or: [
-          { rejected: { $exists: false } },
-          { rejected: false }
-        ],
+        $or: [{ rejected: { $exists: false } }, { rejected: false }],
       }).sort({ price: -1, createdAt: 1 });
 
       if (nextHighestBid) {
@@ -111,9 +114,40 @@ export class SellerService {
         product.currentPrice = product.startingPrice;
         product.currentBidder = null as any;
       }
+
+      // Emit new_bid event to update everyone's price
+      const endTime = product.endTime
+        ? new Date(product.endTime).toISOString()
+        : "";
+
+      // We need to fetch bidder info for the socket event
+      let currentBidderName = "Anonymous";
+      let currentBidderRating = 0;
+
+      if (product.currentBidder) {
+        const bidder = await User.findById(product.currentBidder);
+        if (bidder) {
+          currentBidderName = bidder.name;
+          const totalRatings =
+            (bidder.positiveRatings || 0) + (bidder.negativeRatings || 0);
+          const score =
+            totalRatings === 0
+              ? 0
+              : (bidder.positiveRatings || 0) / totalRatings;
+          currentBidderRating = totalRatings === 0 ? 0 : score * 5;
+        }
+      }
+
+      io.to(`product_${productId}`).emit("new_bid", {
+        currentPrice: product.currentPrice,
+        bidCount: remainingBidCount,
+        currentBidder: currentBidderName,
+        currentBidderRating: currentBidderRating,
+        endTime: endTime,
+      });
     } else if (remainingBidCount === 0) {
-      product.currentPrice = product.startingPrice;
-      product.currentBidder = null as any;
+      // This block seems redundant if covered above, but keeping logic consistent
+      // Logic handled above for remainingBidCount === 0
     }
 
     await product.save();
@@ -129,6 +163,9 @@ export class SellerService {
         "Seller rejected your bid."
       ).catch(console.error);
     }
+
+    // Remove AutoBid for this user on this product if exists
+    await AutoBid.deleteOne({ user: bidderId, product: productId });
 
     const updatedProduct = await Product.findById(productId)
       .populate([
@@ -471,17 +508,14 @@ export class SellerService {
     const skip = (safePage - 1) * safeLimit;
 
     // Build query based on whether we want rejected or valid bids
-    const bidQuery: any = { product: productId };
-    
+    const bidQuery: any = { product: new Types.ObjectId(productId) };
+
     if (includeRejected) {
       // Show ONLY rejected bids
       bidQuery.rejected = true;
     } else {
       // Show ONLY valid (non-rejected) bids
-      bidQuery.$or = [
-        { rejected: { $exists: false } },
-        { rejected: false }
-      ];
+      bidQuery.$or = [{ rejected: { $exists: false } }, { rejected: false }];
     }
 
     const [bids, totalBids, totalRejected] = await Promise.all([
@@ -489,7 +523,10 @@ export class SellerService {
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(safeLimit)
-        .populate("bidder", "name email rating positiveRatings negativeRatings"),
+        .populate(
+          "bidder",
+          "name email rating positiveRatings negativeRatings"
+        ),
       Bid.countDocuments(bidQuery),
       Bid.countDocuments({ product: productId, rejected: true }),
     ]);
@@ -497,10 +534,12 @@ export class SellerService {
     const bidHistory = bids.map((bid) => {
       const bidder = bid.bidder as any;
       let rating: number | undefined;
-      
+
       if (bidder) {
-        const totalRatings = (bidder.positiveRatings || 0) + (bidder.negativeRatings || 0);
-        const reputationScore = totalRatings === 0 ? 0 : (bidder.positiveRatings || 0) / totalRatings;
+        const totalRatings =
+          (bidder.positiveRatings || 0) + (bidder.negativeRatings || 0);
+        const reputationScore =
+          totalRatings === 0 ? 0 : (bidder.positiveRatings || 0) / totalRatings;
         rating = totalRatings === 0 ? undefined : reputationScore * 5;
       }
 
@@ -534,7 +573,12 @@ export class SellerService {
 
   static async updateProfile(
     userId: string,
-    updates: { name?: string; address?: string }
+    updates: {
+      name?: string;
+      address?: string;
+      contactEmail?: string;
+      dateOfBirth?: string;
+    }
   ) {
     const [User] = await Promise.all([import("../models/user.model")]);
     const seller = await User.User.findByIdAndUpdate(
@@ -925,7 +969,7 @@ export class SellerService {
 
     // 3. DELETE BIDS from this user (Clean up eligibility)
     const Bid = (await import("../models/bid.model")).Bid;
-    
+
     await Bid.updateMany(
       { product: productId, bidder: bidderId },
       { $set: { rejected: true } }
@@ -933,10 +977,7 @@ export class SellerService {
 
     const remainingBidCount = await Bid.countDocuments({
       product: productId,
-      $or: [
-        { rejected: { $exists: false } },
-        { rejected: false }
-      ],
+      $or: [{ rejected: { $exists: false } }, { rejected: false }],
     });
 
     console.log(
@@ -952,10 +993,7 @@ export class SellerService {
       // Find next highest
       const nextHighestBid = await Bid.findOne({
         product: productId,
-        $or: [
-          { rejected: { $exists: false } },
-          { rejected: false }
-        ],
+        $or: [{ rejected: { $exists: false } }, { rejected: false }],
       }).sort({
         price: -1,
         createdAt: 1,
@@ -978,12 +1016,12 @@ export class SellerService {
     try {
       await product.save();
       const updatedProduct = await Product.findById(productId)
-      .populate({
-        path: "currentBidder",
-        select: "name email positiveRatings negativeRatings",
-      })
-      .populate({ path: "category", select: "name" })
-      .lean();
+        .populate({
+          path: "currentBidder",
+          select: "name email positiveRatings negativeRatings",
+        })
+        .populate({ path: "category", select: "name" })
+        .lean();
     } catch (saveError) {
       console.error("Failed to save product during cancellation:", saveError);
       throw new Error("Failed to update product state after cancellation");

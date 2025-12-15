@@ -1,5 +1,6 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { ArrowLeft, ArrowRight } from "lucide-react";
+import ImageModal from "@components/ui/ImageModal";
 
 interface ProductImageCardProps {
   images: string[] | undefined | null; // Allow undefined/null input
@@ -13,8 +14,6 @@ const ProductImageCard: React.FC<ProductImageCardProps> = ({
   images,
   recentlyAdded,
 }) => {
-  console.log(images);
-
   const validImages = useMemo(() => {
     return (images || []).filter(
       (img) => typeof img === "string" && img.length > 0
@@ -22,6 +21,7 @@ const ProductImageCard: React.FC<ProductImageCardProps> = ({
   }, [images]);
 
   const [selectedIndex, setSelectedIndex] = useState<number>(0);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -46,11 +46,12 @@ const ProductImageCard: React.FC<ProductImageCardProps> = ({
   return (
     <div className="product-image-card w-full md:w-[500px] sticky top-20">
       {/* Main Image */}
-      <div className="w-full mb-4 flex justify-center relative group overflow-hidden rounded-lg shadow-md">
+      <div className="w-full mb-4 flex justify-center relative group overflow-hidden rounded-lg shadow-md cursor-pointer">
         <img
           src={currentImage}
           alt="Main product"
           className="w-full h-[400px] md:h-[500px] object-contain bg-white transition-transform duration-300 group-hover:scale-105"
+          onClick={() => setIsModalOpen(true)}
         />
         {recentlyAdded && (
           <span className="absolute bottom-4 right-4 bg-linear-to-r from-indigo-500 via-purple-500 to-pink-500 text-white text-sm font-semibold italic px-3 py-1.5 rounded-md shadow-lg z-10">
@@ -106,6 +107,14 @@ const ProductImageCard: React.FC<ProductImageCardProps> = ({
           )}
         </div>
       )}
+
+      {/* Image Modal */}
+      <ImageModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        imageUrl={currentImage}
+        altText="Product Full View"
+      />
     </div>
   );
 };

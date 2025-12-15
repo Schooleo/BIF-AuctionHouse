@@ -1,11 +1,12 @@
-import type { Product } from './product';
+import type { Product } from "./product";
 
 export interface BidderProfile {
   profile: {
     _id: string;
     name: string;
     email: string;
-    role: 'bidder' | 'seller' | 'admin';
+    role: "bidder" | "seller" | "admin";
+    avatar?: string;
     address: string;
     dateOfBirth?: string;
     contactEmail?: string;
@@ -18,6 +19,7 @@ export interface BidderProfile {
 
 export interface UpdateProfileDto {
   name?: string;
+  avatar?: string;
   address?: string;
   dateOfBirth?: string;
   contactEmail?: string;
@@ -30,7 +32,7 @@ export interface ChangePasswordDto {
 
 export interface RatingReceived {
   _id: string;
-  type: 'seller' | 'bidder';
+  type: "seller" | "bidder";
   rater: {
     _id: string;
     name: string;
@@ -67,7 +69,7 @@ export interface AuctionItem extends Product {
 export interface UpgradeRequestStatus {
   _id: string;
   user: string;
-  status: 'pending' | 'approved' | 'rejected';
+  status: "pending" | "approved" | "rejected";
   reason?: string;
   expiresAt?: string;
   rejectedAt?: string;
@@ -89,7 +91,7 @@ export interface BidItem extends Product {
   isEnded: boolean;
   isWinning: boolean;
   awaitingConfirmation: boolean;
-  bidStatus: 'active' | 'awaiting' | 'processing';
+  bidStatus: "active" | "awaiting" | "processing";
   inProcessing: boolean;
 }
 

@@ -76,7 +76,7 @@ const App = () => {
                 >
                   <Route index element={<HomePage />} />
                   <Route path="products" element={<ProductsPage />} />
-                  <Route path="product/:id" element={<ProductDetailsPage />} />
+                  <Route path="products/:id" element={<ProductDetailsPage />} />
                 </Route>
 
                 <Route element={<ProtectedRoute allowedRoles={["bidder"]} />}>

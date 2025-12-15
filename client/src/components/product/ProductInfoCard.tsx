@@ -6,7 +6,7 @@ import {
   formatPrice,
   maskName,
 } from "@utils/product";
-import { Heart, Star, ArrowRight } from "lucide-react";
+import { Heart, Star, ArrowRight, ShieldX } from "lucide-react";
 import { orderApi } from "@services/order.api";
 import Spinner from "@components/ui/Spinner";
 import AutoBidModal from "./AutoBidModal";
@@ -158,11 +158,25 @@ const ProductInfoCard: React.FC<ProductInfoCardProps> = ({
           setHighlightBadge(true);
           setTimeout(() => setHighlightBadge(false), 500); // Animation duration
         });
+
+        socket.on("bidder_rejected", (data: { bidderId: string }) => {
+          if (data.bidderId === currentUserId) {
+            // Force UI update for the rejected user
+            setProduct((prev) => ({
+              ...prev,
+              rejectedBidders: [...(prev.rejectedBidders || []), currentUserId],
+            }));
+            addAlert("error", "You have been rejected by the seller.");
+          }
+        });
       }
 
       return () => {
         leaveProductRoom(product._id);
-        if (socket) socket.off("new_bid");
+        if (socket) {
+          socket.off("new_bid");
+          socket.off("bidder_rejected");
+        }
       };
     }
   }, [
@@ -171,6 +185,8 @@ const ProductInfoCard: React.FC<ProductInfoCardProps> = ({
     joinProductRoom,
     leaveProductRoom,
     isBidHistoryOpen,
+    currentUserId,
+    addAlert,
   ]);
 
   const handleCompleteOrder = async () => {
@@ -552,17 +568,27 @@ const ProductInfoCard: React.FC<ProductInfoCardProps> = ({
         ) : (
           <button
             onClick={() => setIsAutoBidModalOpen(true)}
+            disabled={product.rejectedBidders?.includes(currentUserId)}
             className={`text-xl font-semibold w-full px-6 py-3 rounded-2xl shadow-md ${
-              myAutoBidMax &&
-              Math.round(myAutoBidMax) > Math.round(product.currentPrice)
-                ? "bg-green-600 hover:bg-green-700"
-                : "bg-primary-blue hover:scale-105"
-            } text-white transition-all duration-200 cursor-pointer flex items-center justify-center gap-2`}
+              product.rejectedBidders?.includes(currentUserId)
+                ? "bg-red-500 cursor-not-allowed opacity-80"
+                : myAutoBidMax &&
+                    Math.round(myAutoBidMax) > Math.round(product.currentPrice)
+                  ? "bg-green-600 hover:bg-green-700 hover:cursor-pointer"
+                  : "bg-primary-blue hover:scale-105 hover:cursor-pointer"
+            } text-white transition-all duration-200 flex items-center justify-center gap-2`}
           >
-            {myAutoBidMax &&
-            Math.round(myAutoBidMax) > Math.round(product.currentPrice)
-              ? "Auto Bidding..."
-              : "Set Auto Bid"}
+            {product.rejectedBidders?.includes(currentUserId) ? (
+              <>
+                <ShieldX className="w-5 h-5" />
+                Rejected by Seller
+              </>
+            ) : myAutoBidMax &&
+              Math.round(myAutoBidMax) > Math.round(product.currentPrice) ? (
+              "Auto Bidding..."
+            ) : (
+              "Set Auto Bid"
+            )}
           </button>
         )}
       </div>

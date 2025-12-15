@@ -1,17 +1,18 @@
-import { useState, useEffect } from 'react';
-import InputField from '@components/forms/InputField';
-import Button from '@components/forms/Button';
-import ConfirmationModal from '@components/ui/ConfirmationModal';
-import type { UpdateProfileDto } from '@interfaces/bidder';
-import { validateUsername, validateAddress, validateEmail } from "@utils/validation";
+import { useState, useEffect } from "react";
+import InputField from "@components/forms/InputField";
+import Button from "@components/forms/Button";
+import ConfirmationModal from "@components/ui/ConfirmationModal";
+import type { UpdateProfileDto } from "@interfaces/bidder";
+import { validateEmail } from "@utils/validation";
 
-const NAME_REGEX = /^[a-zA-Z\s,.\-]+$/;
-const SPECIAL_CHARS_REGEX = /[!@#$%^&*()_+=\[\]{};':"\\|<>?0-9]/;
+const NAME_REGEX = /^[a-zA-Z\s,.-]+$/;
+const SPECIAL_CHARS_REGEX = /[!@#$%^&*()_+=[\]{};':"\\|<>?0-9]/;
 
 interface ProfileInfoFormProps {
   initialData: {
     name: string;
     email: string;
+    avatar?: string;
     address?: string;
     dateOfBirth?: string;
     contactEmail?: string;
@@ -21,14 +22,20 @@ interface ProfileInfoFormProps {
 }
 
 const COOLDOWN_TIME = 60; // 60 seconds = 1 minute
-const COOLDOWN_KEY = 'profile_update_cooldown';
+const COOLDOWN_KEY = "profile_update_cooldown";
 
-const ProfileInfoForm: React.FC<ProfileInfoFormProps> = ({ initialData, onSubmit, loading = false }) => {
+const ProfileInfoForm: React.FC<ProfileInfoFormProps> = ({
+  initialData,
+  onSubmit,
+  loading = false,
+}) => {
   const [formData, setFormData] = useState({
     name: initialData.name,
-    address: initialData.address || '',
-    dateOfBirth: initialData.dateOfBirth ? new Date(initialData.dateOfBirth).toISOString().split('T')[0] : '',
-    contactEmail: initialData.contactEmail || '',
+    address: initialData.address || "",
+    dateOfBirth: initialData.dateOfBirth
+      ? new Date(initialData.dateOfBirth).toISOString().split("T")[0]
+      : "",
+    contactEmail: initialData.contactEmail || "",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
@@ -40,7 +47,10 @@ const ProfileInfoForm: React.FC<ProfileInfoFormProps> = ({ initialData, onSubmit
     const checkCooldown = () => {
       const cooldownEnd = localStorage.getItem(COOLDOWN_KEY);
       if (cooldownEnd) {
-        const remaining = Math.max(0, Math.floor((parseInt(cooldownEnd) - Date.now()) / 1000));
+        const remaining = Math.max(
+          0,
+          Math.floor((parseInt(cooldownEnd) - Date.now()) / 1000)
+        );
         if (remaining > 0) {
           setCooldownRemaining(remaining);
         } else {
@@ -51,6 +61,18 @@ const ProfileInfoForm: React.FC<ProfileInfoFormProps> = ({ initialData, onSubmit
 
     checkCooldown();
   }, []);
+
+  // Sync formData with initialData
+  useEffect(() => {
+    setFormData({
+      name: initialData.name,
+      address: initialData.address || "",
+      dateOfBirth: initialData.dateOfBirth
+        ? new Date(initialData.dateOfBirth).toISOString().split("T")[0]
+        : "",
+      contactEmail: initialData.contactEmail || "",
+    });
+  }, [initialData]);
 
   // Countdown timer
   useEffect(() => {
@@ -71,12 +93,14 @@ const ProfileInfoForm: React.FC<ProfileInfoFormProps> = ({ initialData, onSubmit
 
   // Check if form has changes
   const hasChanges = () => {
-    const initialDob = initialData.dateOfBirth ? new Date(initialData.dateOfBirth).toISOString().split('T')[0] : '';
+    const initialDob = initialData.dateOfBirth
+      ? new Date(initialData.dateOfBirth).toISOString().split("T")[0]
+      : "";
     return (
       formData.name.trim() !== initialData.name ||
-      (formData.address.trim() || '') !== (initialData.address || '') ||
+      (formData.address.trim() || "") !== (initialData.address || "") ||
       formData.dateOfBirth !== initialDob ||
-      (formData.contactEmail.trim() || '') !== (initialData.contactEmail || '')
+      (formData.contactEmail.trim() || "") !== (initialData.contactEmail || "")
     );
   };
 
@@ -84,15 +108,16 @@ const ProfileInfoForm: React.FC<ProfileInfoFormProps> = ({ initialData, onSubmit
     const newErrors: Record<string, string> = {};
 
     if (!formData.name.trim()) {
-      newErrors.name = 'Name cannot be empty';
+      newErrors.name = "Name cannot be empty";
     } else if (formData.name.trim().length < 2) {
-      newErrors.name = 'Name must be at least 2 characters';
+      newErrors.name = "Name must be at least 2 characters";
     } else if (formData.name.length > 100) {
-      newErrors.name = 'Name must be less than 100 characters';
+      newErrors.name = "Name must be less than 100 characters";
     } else if (!NAME_REGEX.test(formData.name)) {
-      newErrors.name = 'Name can only contain letters, spaces, and basic punctuation';
+      newErrors.name =
+        "Name can only contain letters, spaces, and basic punctuation";
     } else if (SPECIAL_CHARS_REGEX.test(formData.name)) {
-      newErrors.name = 'Name cannot contain numbers or special characters';
+      newErrors.name = "Name cannot contain numbers or special characters";
     }
 
     if (formData.contactEmail) {
@@ -101,7 +126,7 @@ const ProfileInfoForm: React.FC<ProfileInfoFormProps> = ({ initialData, onSubmit
     }
 
     if (formData.address && formData.address.length > 200) {
-      newErrors.address = 'Address must be less than 200 characters';
+      newErrors.address = "Address must be less than 200 characters";
     }
 
     if (formData.dateOfBirth) {
@@ -109,7 +134,7 @@ const ProfileInfoForm: React.FC<ProfileInfoFormProps> = ({ initialData, onSubmit
       const today = new Date();
       const age = today.getFullYear() - dob.getFullYear();
       if (age < 15 || age > 120) {
-        newErrors.dateOfBirth = 'You must be between 15 and 120 years old';
+        newErrors.dateOfBirth = "You must be between 15 and 120 years old";
       }
     }
 
@@ -134,8 +159,11 @@ const ProfileInfoForm: React.FC<ProfileInfoFormProps> = ({ initialData, onSubmit
       const cooldownEnd = Date.now() + COOLDOWN_TIME * 1000;
       localStorage.setItem(COOLDOWN_KEY, cooldownEnd.toString());
       setCooldownRemaining(COOLDOWN_TIME);
-    } catch (error: any) {
-      setErrors({ submit: error.message || 'An error occurred' });
+    } catch (error: unknown) {
+      console.error("Failed to update profile:", error);
+      setErrors({
+        submit: error instanceof Error ? error.message : "An error occurred",
+      });
     } finally {
       setSubmitting(false);
     }
@@ -149,98 +177,125 @@ const ProfileInfoForm: React.FC<ProfileInfoFormProps> = ({ initialData, onSubmit
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
+    return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
   const isFieldDisabled = cooldownRemaining > 0 || loading || submitting;
 
   return (
     <>
-      <form onSubmit={handleUpdateClick} className='space-y-4'>
+      <form onSubmit={handleUpdateClick} className="space-y-4">
         {cooldownRemaining > 0 && (
-          <div className='p-3 bg-yellow-50 border border-yellow-200 rounded-md'>
-            <p className='text-sm text-yellow-800'>
-              <span className='font-semibold'>⏱️ Cooldown:</span> You can update your profile again in{' '}
-              <span className='font-bold'>{formatTime(cooldownRemaining)}</span>
+          <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+            <p className="text-sm text-yellow-800">
+              <span className="font-semibold">⏱️ Cooldown:</span> You can update
+              your profile again in{" "}
+              <span className="font-bold">{formatTime(cooldownRemaining)}</span>
             </p>
           </div>
         )}
 
         {/* Row 1: Name and Date of Birth */}
-        <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className='block text-sm font-medium text-gray-700 mb-1'>
-              Name <span className='text-red-500'>*</span>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Name <span className="text-red-500">*</span>
             </label>
             <InputField
-              label='Name'
-              type='text'
+              label="Name"
+              type="text"
               value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, name: e.target.value })
+              }
               error={errors.name}
               disabled={isFieldDisabled}
-              placeholder='Enter your name'
+              placeholder="Enter your name"
             />
           </div>
 
           <div>
-            <label className='block text-sm font-medium text-gray-700 mb-1'>Date of Birth</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Date of Birth
+            </label>
             <input
-              type='date'
+              type="date"
               value={formData.dateOfBirth}
-              onChange={(e) => setFormData({ ...formData, dateOfBirth: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, dateOfBirth: e.target.value })
+              }
               disabled={isFieldDisabled}
-              className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed'
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
             />
           </div>
         </div>
 
         {/* Row 2: Email and Contact Email */}
-        <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className='block text-sm font-medium text-gray-700 mb-1'>Email</label>
-            <InputField label='Email' type='email' value={initialData.email} disabled className='bg-gray-100' />
-            <p className='mt-1 text-xs text-gray-500'>Email cannot be changed</p>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Email
+            </label>
+            <InputField
+              label="Email"
+              type="email"
+              value={initialData.email}
+              disabled
+              className="bg-gray-100"
+            />
+            <p className="mt-1 text-xs text-gray-500">
+              Email cannot be changed
+            </p>
           </div>
 
           <div>
-            <label className='block text-sm font-medium text-gray-700 mb-1'>Contact Email</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Contact Email
+            </label>
             <InputField
-              label='Contact Email'
-              type='email'
+              label="Contact Email"
+              type="email"
               value={formData.contactEmail}
-              onChange={(e) => setFormData({ ...formData, contactEmail: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, contactEmail: e.target.value })
+              }
               error={errors.contactEmail}
               disabled={isFieldDisabled}
-              placeholder='contact@example.com'
+              placeholder="contact@example.com"
             />
           </div>
         </div>
 
         {/* Row 3: Address (full width) */}
         <div>
-          <label className='block text-sm font-medium text-gray-700 mb-1'>Address</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Address
+          </label>
           <InputField
-            label='Address'
-            type='text'
+            label="Address"
+            type="text"
             value={formData.address}
-            onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+            onChange={(e) =>
+              setFormData({ ...formData, address: e.target.value })
+            }
             error={errors.address}
             disabled={isFieldDisabled}
-            placeholder='Enter your address'
+            placeholder="Enter your address"
           />
         </div>
 
         {errors.submit && (
-          <div className='p-3 bg-red-50 border border-red-200 rounded-md text-sm text-red-600'>{errors.submit}</div>
+          <div className="p-3 bg-red-50 border border-red-200 rounded-md text-sm text-red-600">
+            {errors.submit}
+          </div>
         )}
 
         {hasChanges() && cooldownRemaining === 0 && (
           <Button
-            type='submit'
-            label={submitting ? 'Updating...' : 'Update Information'}
+            type="submit"
+            label={submitting ? "Updating..." : "Update Information"}
             disabled={loading || submitting}
-            className='w-full'
+            className="w-full"
           />
         )}
       </form>
@@ -249,10 +304,10 @@ const ProfileInfoForm: React.FC<ProfileInfoFormProps> = ({ initialData, onSubmit
         isOpen={showConfirmModal}
         onClose={() => setShowConfirmModal(false)}
         onConfirm={handleSubmit}
-        title='Confirm Update'
-        message='Are you sure you want to update your information?'
-        confirmText='Update'
-        type='info'
+        title="Confirm Update"
+        message="Are you sure you want to update your information?"
+        confirmText="Update"
+        type="info"
       />
     </>
   );
