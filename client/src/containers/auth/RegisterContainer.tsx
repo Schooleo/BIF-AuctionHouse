@@ -14,6 +14,10 @@ import {
   validateOtp,
 } from "@utils/validation";
 
+const NAME_REGEX = /^[a-zA-Z\s,.\-]+$/;
+const SPECIAL_CHARS_REGEX = /[!@#$%^&*()_+=\[\]{};':"\\|<>?0-9]/;
+const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/;
+
 const RegisterContainer = () => {
   const [name, setName] = useState<string>("");
   const [email, setEmail] = useState<string>("");
@@ -44,30 +48,63 @@ const RegisterContainer = () => {
       address?: string;
     } = {};
 
-    const nameError = validateUsername(name);
-    if (nameError) newErrors.name = nameError;
-
-    const emailError = validateEmail(email);
-    if (emailError) newErrors.email = emailError;
-
-    const otpError = validateOtp(otp);
-    if (otpError) newErrors.otp = otpError;
-
-    const passwordError = validatePassword(password);
-    if (passwordError) newErrors.password = passwordError;
-
-    const addressError = validateAddress(address);
-    if (addressError) newErrors.address = addressError;
-
-    if (!confirmPassword)
-      newErrors.confirmPassword = "Confirm Password is required";
-
-    // Captcha validation via Alert
-    if (!recaptchaToken) {
+    // Name validation
+    if (!name) {
+      newErrors.name = "Username is required";
+    } else if (name.length < 2) {
+      newErrors.name = "Username must be at least 2 characters";
+    } else if (name.length > 100) {
+      newErrors.name = "Username must be less than 100 characters";
+    } else if (!NAME_REGEX.test(name)) {
+      newErrors.name = "Username can only contain letters, spaces, and basic punctuation";
+    } else if (SPECIAL_CHARS_REGEX.test(name)) {
+      newErrors.name = "Username cannot contain numbers or special characters";
     }
 
-    if (password !== confirmPassword) {
+    // Email validation
+    if (!email) {
+      newErrors.email = "Email is required";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      newErrors.email = "Invalid email format";
+    }
+
+    // OTP validation
+    if (!otp) {
+      newErrors.otp = "OTP is required";
+    } else if (!/^\d{6}$/.test(otp)) {
+      newErrors.otp = "OTP must be 6 digits";
+    }
+
+    // Password validation
+    if (!password) {
+      newErrors.password = "Password is required";
+    } else if (password.length < 8) {
+      newErrors.password = "Password must be at least 8 characters";
+    } else if (password.length > 128) {
+      newErrors.password = "Password must be less than 128 characters";
+    } else if (!PASSWORD_REGEX.test(password)) {
+      newErrors.password = "Password must contain at least one uppercase letter, one lowercase letter, and one number";
+    }
+
+    // Address validation
+    if (!address) {
+      newErrors.address = "Address is required";
+    } else if (address.length < 10) {
+      newErrors.address = "Address must be at least 10 characters";
+    } else if (address.length > 200) {
+      newErrors.address = "Address must be less than 200 characters";
+    }
+
+    // Confirm password validation
+    if (!confirmPassword) {
+      newErrors.confirmPassword = "Confirm Password is required";
+    } else if (password !== confirmPassword) {
       newErrors.confirmPassword = "Passwords do not match";
+    }
+
+    // reCAPTCHA validation
+    if (!recaptchaToken) {
+      newErrors.captcha = "Please complete the reCAPTCHA";
     }
 
     setError(newErrors);

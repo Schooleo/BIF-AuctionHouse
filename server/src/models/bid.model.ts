@@ -9,6 +9,7 @@ export interface IBid extends Document {
   maxPrice?: number; // Giá tối đa mà bidder này sẵn sàng trả
 
   createdAt: Date;
+  rejected?: boolean;
 }
 
 const bidSchema = new Schema<IBid>(
@@ -17,6 +18,7 @@ const bidSchema = new Schema<IBid>(
     bidder: { type: Schema.Types.ObjectId, ref: "User", required: true },
     price: { type: Number, required: true },
     maxPrice: { type: Number },
+    rejected: { type: Boolean, default: false },
   },
   {
     timestamps: { createdAt: true, updatedAt: false },

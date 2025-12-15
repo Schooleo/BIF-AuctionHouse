@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { ThumbsUp, ThumbsDown } from 'lucide-react';
 import PopUpWindow from '@components/ui/PopUpWindow';
 
+const URL_REGEX = /(https?:\/\/|www\.)/gi;
+
 interface RateSellerModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -33,9 +35,24 @@ const RateSellerModal: React.FC<RateSellerModalProps> = ({
   }, [isOpen, initialScore, initialComment]);
 
   const handleSubmit = async () => {
-    if (score) {
-      onSubmit(score, comment);
+    if (!score) {
+      // Optionally show an error
+      return;
     }
+
+    if (comment.trim().length > 0) {
+      if (comment.length > 500) {
+        // Show error: "Comment must be less than 500 characters"
+        return;
+      }
+      
+      if (URL_REGEX.test(comment)) {
+        // Show error: "Comment cannot contain URLs"
+        return;
+      }
+    }
+
+    onSubmit(score, comment.trim());
   };
 
   return (
