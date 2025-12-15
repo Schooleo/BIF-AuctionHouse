@@ -49,6 +49,8 @@ export const viewProducts = async (req: Request, res: Response) => {
       page: query.page,
       limit: query.limit,
       sort: query.sort,
+      min_price: query.min_price,
+      max_price: query.max_price,
     });
 
     return res.status(200).json(results);

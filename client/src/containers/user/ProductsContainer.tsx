@@ -7,8 +7,9 @@ import ErrorMessage from "@components/message/ErrorMessage";
 import EmptyMessage from "@components/message/EmptyMessage";
 import Spinner from "@components/ui/Spinner";
 import { productApi } from "@services/product.api";
-import type { Product, ProductSortOption } from "@interfaces/product";
+import type { Product, ProductSortOption, Category } from "@interfaces/product";
 import type { IPagination, IPaginatedResponse } from "@interfaces/ui";
+import ActiveFilters from "@components/ui/ActiveFilters";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -22,11 +23,13 @@ const defaultPagination: IPagination = {
 interface ProductsContainerProps {
   initialCategory?: string;
   initialQuery?: string;
+  categories?: Category[];
 }
 
 const ProductsContainer: React.FC<ProductsContainerProps> = ({
   initialCategory = "",
   initialQuery = "",
+  categories = [],
 }) => {
   const [searchParams] = useSearchParams();
 
@@ -42,6 +45,12 @@ const ProductsContainer: React.FC<ProductsContainerProps> = ({
   );
   const category = searchParams.get("category") || initialCategory;
   const query = searchParams.get("q") || initialQuery;
+  const minPrice = searchParams.get("min_price")
+    ? Number(searchParams.get("min_price"))
+    : undefined;
+  const maxPrice = searchParams.get("max_price")
+    ? Number(searchParams.get("max_price"))
+    : undefined;
 
   const [currentPage, setCurrentPage] = useState(
     Number(searchParams.get("page")) || 1
@@ -59,6 +68,8 @@ const ProductsContainer: React.FC<ProductsContainerProps> = ({
           categoryId: category,
           query: query,
           sort: sort,
+          minPrice,
+          maxPrice,
         });
 
         setData({
@@ -75,7 +86,7 @@ const ProductsContainer: React.FC<ProductsContainerProps> = ({
 
     fetchProducts();
     window.scrollTo(0, 0);
-  }, [category, query, sort, currentPage]);
+  }, [category, query, sort, currentPage, minPrice, maxPrice]);
 
   const handlePageChange = (newPage: number) => {
     if (newPage !== currentPage) {
@@ -97,6 +108,7 @@ const ProductsContainer: React.FC<ProductsContainerProps> = ({
 
   return (
     <>
+      <ActiveFilters categories={categories} />
       <SortBar sort={sort} setSort={handleSortChange} />
 
       <div className="products-container">

@@ -42,7 +42,7 @@ const MainLayout: React.FC = () => {
 
       <div className="flex flex-1 w-full px-4 md:px-8">
         {!hideSidebar && (
-          <div className="hidden md:block w-64 mt-8 mr-8 shrink-0">
+          <div className="hidden md:block w-64 mt-8 mr-8 shrink-0 sticky top-4 self-start h-fit max-h-[calc(100vh-2rem)] overflow-y-auto">
             <SideBarCategory categories={categories} />
           </div>
         )}
@@ -50,7 +50,7 @@ const MainLayout: React.FC = () => {
         <main
           className={`flex-1 min-w-0 ${hideSidebar ? "max-w-7xl mx-auto" : ""}`}
         >
-          <Outlet />
+          <Outlet context={{ categories }} />
         </main>
       </div>
 
