@@ -21,55 +21,32 @@ export default function NavbarMobileMenu({ closeMenu }: Props) {
   return (
     <div className='md:hidden absolute top-full left-0 w-full bg-primary-blue shadow-lg py-4 z-50 animate-slide-down'>
       <nav className='flex flex-col items-center space-y-4 text-white text-lg'>
-        <Link
-          to='/'
-          onClick={closeMenu}
-          className='hover:text-primary-yellow hover:font-semibold transition-all duration-200'
-        >
-          Home
-        </Link>
-        <Link
-          to='/watchlist'
-          onClick={closeMenu}
-          className='hover:text-primary-yellow hover:font-semibold transition-all duration-200'
-        >
+        <Link to='/watchlist' onClick={closeMenu} className='hover:text-primary-yellow transition-colors duration-200'>
           Watch list
         </Link>
-        <Link
-          to='/bidding'
-          onClick={closeMenu}
-          className='hover:text-primary-yellow hover:font-semibold transition-all duration-200'
-        >
+        <Link to='/bidding' onClick={closeMenu} className='hover:text-primary-yellow transition-colors duration-200'>
           Bidding
         </Link>
-
-        <div className='w-full px-6 py-2'>
-          <input
-            type='text'
-            placeholder='Search'
-            className='w-full px-4 py-2 rounded-full border border-white text-white placeholder-gray-300 focus:outline-none focus:ring-white bg-secondary-blue'
-          />
-        </div>
 
         {user ? (
           <>
             <Link
               to='/notifications'
               onClick={closeMenu}
-              className='hover:text-primary-yellow hover:font-semibold transition-all duration-200'
+              className='hover:text-primary-yellow transition-all duration-200'
             >
               Notifications
             </Link>
             <Link
               to={user.role === 'bidder' ? '/profile' : user.role === 'seller' ? '/seller/products' : '/profile'}
               onClick={closeMenu}
-              className='hover:text-primary-yellow hover:font-semibold transition-all duration-200'
+              className='hover:text-primary-yellow transition-all duration-200'
             >
               {user.name}
             </Link>
             <button
               onClick={() => setShowLogoutModal(true)}
-              className='hover:text-red-500 hover:font-semibold transition-all duration-200'
+              className='hover:text-red-500 transition-all duration-200'
             >
               Logout
             </button>
