@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { User, Lock, Star, Trophy, ThumbsUp, ThumbsDown } from 'lucide-react';
+import { User, Lock, Star, Trophy, ThumbsUp, ThumbsDown, AlertTriangle, Info } from 'lucide-react';
 import { useAuthStore } from '@stores/useAuthStore';
 import { bidderApi } from '@services/bidder.api';
 import type { UpdateProfileDto, ChangePasswordDto, UpgradeRequestStatus } from '@interfaces/bidder';
@@ -246,19 +246,44 @@ const ProfilePage: React.FC = () => {
               )}
 
               {/* Change Password Section */}
-              <div className='mt-8 pt-6 border-t border-gray-200'>
-                <h3 className='text-lg font-semibold mb-4 flex items-center gap-2'>
-                  <Lock size={20} />
-                  Change Password
-                </h3>
-                <div className='mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg'>
-                  <p className='text-yellow-800 text-sm'>
-                    <span className='font-semibold'>⚠️ Note:</span> After changing your password, you will need to log
-                    in again with your new password.
-                  </p>
+              {!user.googleId ? (
+                <div className="mt-8 pt-6 border-t border-gray-200">
+                  <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                    <Lock size={20} />
+                    Change Password
+                  </h3>
+                  <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <div className="text-yellow-800 text-sm flex items-start gap-2">
+                      <AlertTriangle size={18} className="shrink-0 mt-0.5" />
+                      <div>
+                        <span className="font-semibold">Note:</span> After
+                        changing your password, you will need to log in again with
+                        your new password.
+                      </div>
+                    </div>
+                  </div>
+                  <ProfilePasswordForm
+                    onSubmit={handleChangePassword}
+                    loading={loading}
+                  />
                 </div>
-                <ProfilePasswordForm onSubmit={handleChangePassword} loading={loading} />
-              </div>
+              ) : (
+                <div className="mt-8 pt-6 border-t border-gray-200">
+                  <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                    <Lock size={20} />
+                    Account Security
+                  </h3>
+                  <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <div className="text-blue-800 text-sm flex items-start gap-2">
+                      <Info size={18} className="shrink-0 mt-0.5" />
+                      <div>
+                        <span className="font-semibold">Google Account:</span>{" "}
+                        You are logged in via Google, so you do not have permission to change the password for this account.
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Upgrade to Seller Button */}
               {user.role === 'bidder' && (
