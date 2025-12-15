@@ -1,42 +1,56 @@
-import { useState } from "react";
-import Logo from "./Logo";
-import SearchBar from "../forms/SearchBar";
-import NavLinks from "../navbar/NavLinks";
-import NavAuthLinks from "../navbar/NavAuthLinks";
-import NavMobileMenu from "../navbar/NavMobileMenu";
-import MobileMenuButton from "../navbar/MobileMenuButton";
+import { useState } from 'react';
+import { Search } from 'lucide-react';
+import Logo from './Logo';
+import SearchBar from '../forms/SearchBar';
+import NavLinks from '../navbar/NavLinks';
+import NavAuthLinks from '../navbar/NavAuthLinks';
+import NavMobileMenu from '../navbar/NavMobileMenu';
+import MobileMenuButton from '../navbar/MobileMenuButton';
 
 export default function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [showMobileSearch, setShowMobileSearch] = useState(false);
 
   return (
-    <header className="bg-primary-blue shadow-md relative">
-      <div className="relative flex items-center w-full px-4 sm:px-6 md:px-8 py-1">
-        <div className="flex items-center space-x-6 z-10">
+    <header className='bg-primary-blue shadow-md relative'>
+      <div className='relative flex items-center justify-between w-full px-4 sm:px-6 md:px-8 py-1 gap-4'>
+        <div className='flex items-center space-x-6 shrink-0'>
           <Logo logoSizes={[12, 16, 20]} />
           <NavLinks />
         </div>
 
-        {/*Canh giữa*/}
-        <div className="absolute left-1/2 transform -translate-x-1/2 w-full max-w-md md:flex">
-          <SearchBar placeholder="Search..." />
+        {/* Desktop SearchBar */}
+        <div className='hidden md:flex flex-1 max-w-md mx-auto'>
+          <SearchBar placeholder='Search...' />
         </div>
 
-        <div className="ml-auto hidden md:flex items-center space-x-6 text-white text-xl z-10">
-          <NavAuthLinks />
-        </div>
+        <div className='flex items-center gap-4 shrink-0'>
+          {/* Mobile Search Button */}
+          <button
+            onClick={() => setShowMobileSearch(!showMobileSearch)}
+            className='md:hidden text-white hover:text-primary-yellow transition-colors'
+          >
+            <Search size={24} />
+          </button>
 
-        <div className="md:hidden ml-auto z-10">
-          <MobileMenuButton
-            isOpen={isMobileMenuOpen}
-            toggleMenu={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          />
+          <div className='hidden md:flex items-center space-x-6 text-white text-xl'>
+            <NavAuthLinks />
+          </div>
+
+          <div className='md:hidden'>
+            <MobileMenuButton isOpen={isMobileMenuOpen} toggleMenu={() => setIsMobileMenuOpen(!isMobileMenuOpen)} />
+          </div>
         </div>
       </div>
 
-      {isMobileMenuOpen && (
-        <NavMobileMenu closeMenu={() => setIsMobileMenuOpen(false)} />
+      {/* Mobile SearchBar Dropdown */}
+      {showMobileSearch && (
+        <div className='md:hidden bg-primary-blue border-t border-white/20 px-4 py-3'>
+          <SearchBar placeholder='Search...' />
+        </div>
       )}
+
+      {isMobileMenuOpen && <NavMobileMenu closeMenu={() => setIsMobileMenuOpen(false)} />}
     </header>
   );
 }

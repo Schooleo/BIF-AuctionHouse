@@ -21,8 +21,17 @@ export const bidHistoryQuerySchema = z.object({
 });
 
 export const updateProfileSchema = z.object({
-  name: z.string().min(1).optional(),
-  address: z.string().min(1).optional(),
+  name: z
+    .string()
+    .min(3)
+    .max(15)
+    .regex(/^[a-zA-Z0-9]+$/, "Username must contain only letters and numbers")
+    .optional(),
+  address: z
+    .string()
+    .min(15, "Address must be at least 15 characters long")
+    .optional()
+    .or(z.literal("")),
   dateOfBirth: z
     .string()
     .optional()

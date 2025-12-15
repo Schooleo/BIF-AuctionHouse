@@ -1,4 +1,5 @@
 import { Router } from "express";
+import passport from "passport";
 import {
   getUser,
   requestOtp,
@@ -6,6 +7,7 @@ import {
   login,
   requestPasswordReset,
   resetPassword,
+  googleCallback,
 } from "../controllers/auth.controller";
 import { validate } from "../middleware/validate";
 import {
@@ -15,11 +17,21 @@ import {
   resetPasswordSchema,
   requestPasswordResetSchema,
 } from "../schemas/auth.schema";
-import { protect } from "../middleware/auth.middleware";
+import { protect, googleAuthMiddleware } from "../middleware/auth.middleware";
+
+import { env } from "../config/env";
 
 const router = Router();
 
 router.get("/me", protect(), getUser);
+
+// Google Auth
+router.get(
+  "/google",
+  passport.authenticate("google", { scope: ["profile", "email"] })
+);
+
+router.get("/google/callback", googleAuthMiddleware, googleCallback);
 
 router.post("/request-otp", validate(requestOtpSchema, "body"), requestOtp);
 router.post("/register", validate(registerSchema, "body"), register);

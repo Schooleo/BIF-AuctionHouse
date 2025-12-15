@@ -3,6 +3,7 @@ import InputField from '@components/forms/InputField';
 import Button from '@components/forms/Button';
 import ConfirmationModal from '@components/ui/ConfirmationModal';
 import type { UpdateProfileDto } from '@interfaces/bidder';
+import { validateUsername, validateAddress, validateEmail } from "@utils/validation";
 
 const NAME_REGEX = /^[a-zA-Z\s,.\-]+$/;
 const SPECIAL_CHARS_REGEX = /[!@#$%^&*()_+=\[\]{};':"\\|<>?0-9]/;
@@ -94,8 +95,9 @@ const ProfileInfoForm: React.FC<ProfileInfoFormProps> = ({ initialData, onSubmit
       newErrors.name = 'Name cannot contain numbers or special characters';
     }
 
-    if (formData.contactEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.contactEmail)) {
-      newErrors.contactEmail = 'Invalid email format';
+    if (formData.contactEmail) {
+      const emailError = validateEmail(formData.contactEmail);
+      if (emailError) newErrors.contactEmail = emailError;
     }
 
     if (formData.address && formData.address.length > 200) {

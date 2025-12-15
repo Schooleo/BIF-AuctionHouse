@@ -4,6 +4,8 @@ import { paginationSchema } from "./pagination.schema";
 export const viewProductsSchema = paginationSchema.extend({
   q: z.string().optional(),
   category: z.string().optional(),
+  min_price: z.coerce.number().min(0).optional(),
+  max_price: z.coerce.number().min(0).optional(),
 
   sort: z
     .enum(["default", "endingSoon", "mostBidOn", "highestPriced"])

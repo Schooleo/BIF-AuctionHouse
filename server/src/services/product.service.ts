@@ -177,6 +177,8 @@ export const ProductService = {
       limit = 12,
       sort = "default",
       newMinutes = 60,
+      min_price,
+      max_price,
     } = params;
 
     const safePage = Math.max(1, Math.floor(page));
@@ -186,22 +188,43 @@ export const ProductService = {
 
     const filter: any = {};
     if (category) {
-      if (Types.ObjectId.isValid(category)) {
-        const catId = new Types.ObjectId(category);
-        const childCats = await Category.find({ parent: catId }).select("_id");
+      const categoryIds = category.split(",").map((id) => id.trim()).filter((id) => Types.ObjectId.isValid(id));
+      
+      if (categoryIds.length > 0) {
+        // Find ALL children/grandchildren for these categories
+        const catObjectIds = categoryIds.map((id) => new Types.ObjectId(id));
+        
+        // Find children of selected categories
+        const childCats = await Category.find({ parent: { $in: catObjectIds } }).select("_id");
+        
+        // Find grandchildren (children of children)
         const grandChildCats = await Category.find({
           parent: { $in: childCats.map((c) => c._id) },
         }).select("_id");
+
         const allCategoryIds = [
-          catId,
+          ...catObjectIds,
           ...childCats.map((c) => c._id),
           ...grandChildCats.map((c) => c._id),
         ];
+
         filter.category = { $in: allCategoryIds };
-      } else {
-        filter.category = category;
       }
     }
+
+    if (
+      (min_price !== undefined && !isNaN(min_price)) ||
+      (max_price !== undefined && !isNaN(max_price))
+    ) {
+      filter.currentPrice = {};
+      if (min_price !== undefined && !isNaN(min_price))
+        filter.currentPrice.$gte = min_price;
+      if (max_price !== undefined && !isNaN(max_price))
+        filter.currentPrice.$lte = max_price;
+    }
+
+    console.log("Search params received:", { min_price, max_price });
+    console.log("Constructed MongoDB Filter:", JSON.stringify(filter, null, 2));
 
     const pipeline: any[] = [];
     if (q.trim().length > 0) {
