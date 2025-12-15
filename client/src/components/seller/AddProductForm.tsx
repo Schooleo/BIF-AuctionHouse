@@ -9,12 +9,24 @@ import RichTextEditor from "@components/shared/RichTextEditor";
 import ImageUpload from "@components/shared/ImageUpload";
 import { z } from "zod";
 
+const NAME_REGEX = /^[a-zA-Z0-9\s,.\-]+$/;
+const URL_REGEX = /(https?:\/\/|www\.)/gi;
+const SPECIAL_CHARS_REGEX = /[!@#$%^&*()_+=\[\]{};':"\\|<>?]/;
+
 const productSchema = z
   .object({
     name: z
       .string()
       .min(1, "Product name is required")
-      .max(100, "Name must be less than 100 characters"),
+      .max(100, "Name must be less than 100 characters")
+      .refine(
+        (val) => NAME_REGEX.test(val),
+        "Name can only contain letters, numbers, spaces, and basic punctuation (comma, period, hyphen)"
+      )
+      .refine(
+        (val) => !SPECIAL_CHARS_REGEX.test(val),
+        "Name cannot contain special characters like ! @ # $ % ^ & *"
+      ),
     category: z.string().min(1, "Category is required"),
     mainImage: z.url("Main image must be a valid URL"),
     subImages: z.array(z.string()).superRefine((items, ctx) => {
@@ -39,11 +51,18 @@ const productSchema = z
         ctx.addIssue({
           code: "custom",
           message: "At least 3 sub-images are required",
-          path: [], // General error for the array
+          path: [],
         });
       }
     }),
-    description: z.string().min(1, "Description is required"),
+    description: z
+      .string()
+      .min(10, "Description must be at least 10 characters")
+      .max(3000, "Description must be less than 3000 characters")
+      .refine(
+        (val) => !URL_REGEX.test(val),
+        "Description cannot contain URLs or hyperlinks"
+      ),
     startingPrice: z
       .string()
       .min(1, "Starting price is required")
@@ -89,7 +108,6 @@ const productSchema = z
       }
     }
   });
-
 type ProductFormErrors = {
   [key: string]: string;
 };

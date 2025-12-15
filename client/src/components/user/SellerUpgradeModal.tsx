@@ -1,5 +1,7 @@
 import { useState } from 'react';
 
+const URL_REGEX = /(https?:\/\/|www\.)/gi;
+
 interface SellerUpgradeModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -17,6 +19,21 @@ const SellerUpgradeModal: React.FC<SellerUpgradeModalProps> = ({ isOpen, onClose
 
     if (!reason.trim()) {
       setError('Please enter your reason for wanting to become a seller');
+      return;
+    }
+
+    if (reason.trim().length < 20) {
+      setError('Reason must be at least 20 characters');
+      return;
+    }
+
+    if (reason.length > 1000) {
+      setError('Reason must be less than 1000 characters');
+      return;
+    }
+
+    if (URL_REGEX.test(reason)) {
+      setError('Reason cannot contain URLs or hyperlinks');
       return;
     }
 

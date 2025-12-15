@@ -4,6 +4,9 @@ import Button from '@components/forms/Button';
 import ConfirmationModal from '@components/ui/ConfirmationModal';
 import type { UpdateProfileDto } from '@interfaces/bidder';
 
+const NAME_REGEX = /^[a-zA-Z\s,.\-]+$/;
+const SPECIAL_CHARS_REGEX = /[!@#$%^&*()_+=\[\]{};':"\\|<>?0-9]/;
+
 interface ProfileInfoFormProps {
   initialData: {
     name: string;
@@ -83,10 +86,29 @@ const ProfileInfoForm: React.FC<ProfileInfoFormProps> = ({ initialData, onSubmit
       newErrors.name = 'Name cannot be empty';
     } else if (formData.name.trim().length < 2) {
       newErrors.name = 'Name must be at least 2 characters';
+    } else if (formData.name.length > 100) {
+      newErrors.name = 'Name must be less than 100 characters';
+    } else if (!NAME_REGEX.test(formData.name)) {
+      newErrors.name = 'Name can only contain letters, spaces, and basic punctuation';
+    } else if (SPECIAL_CHARS_REGEX.test(formData.name)) {
+      newErrors.name = 'Name cannot contain numbers or special characters';
     }
 
     if (formData.contactEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.contactEmail)) {
       newErrors.contactEmail = 'Invalid email format';
+    }
+
+    if (formData.address && formData.address.length > 200) {
+      newErrors.address = 'Address must be less than 200 characters';
+    }
+
+    if (formData.dateOfBirth) {
+      const dob = new Date(formData.dateOfBirth);
+      const today = new Date();
+      const age = today.getFullYear() - dob.getFullYear();
+      if (age < 15 || age > 120) {
+        newErrors.dateOfBirth = 'You must be between 15 and 120 years old';
+      }
     }
 
     setErrors(newErrors);

@@ -4,6 +4,9 @@ import { bidderApi } from "@services/bidder.api";
 import { useAuthStore } from "@stores/useAuthStore";
 import { useAlertStore } from "@stores/useAlertStore";
 
+const URL_REGEX = /(https?:\/\/|www\.)/gi;
+const SPECIAL_CHARS_EXCESSIVE_REGEX = /[!@#$%^&*]{3,}/; // Detect excessive special chars
+
 interface AskQuestionModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -38,6 +41,16 @@ const AskQuestionModal: React.FC<AskQuestionModalProps> = ({
 
     if (question.trim().length > 500) {
       setError("Question cannot exceed 500 characters.");
+      return;
+    }
+
+    if (URL_REGEX.test(question)) {
+      setError("Questions cannot contain URLs or hyperlinks.");
+      return;
+    }
+
+    if (SPECIAL_CHARS_EXCESSIVE_REGEX.test(question)) {
+      setError("Please avoid excessive special characters.");
       return;
     }
 
