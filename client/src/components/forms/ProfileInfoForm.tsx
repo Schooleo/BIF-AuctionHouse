@@ -5,9 +5,6 @@ import ConfirmationModal from '@components/ui/ConfirmationModal';
 import type { UpdateProfileDto } from '@interfaces/bidder';
 import { validateUsername, validateAddress, validateEmail } from "@utils/validation";
 
-const NAME_REGEX = /^[a-zA-Z\s,.\-]+$/;
-const SPECIAL_CHARS_REGEX = /[!@#$%^&*()_+=\[\]{};':"\\|<>?0-9]/;
-
 interface ProfileInfoFormProps {
   initialData: {
     name: string;
@@ -83,17 +80,8 @@ const ProfileInfoForm: React.FC<ProfileInfoFormProps> = ({ initialData, onSubmit
   const validate = () => {
     const newErrors: Record<string, string> = {};
 
-    if (!formData.name.trim()) {
-      newErrors.name = 'Name cannot be empty';
-    } else if (formData.name.trim().length < 2) {
-      newErrors.name = 'Name must be at least 2 characters';
-    } else if (formData.name.length > 100) {
-      newErrors.name = 'Name must be less than 100 characters';
-    } else if (!NAME_REGEX.test(formData.name)) {
-      newErrors.name = 'Name can only contain letters, spaces, and basic punctuation';
-    } else if (SPECIAL_CHARS_REGEX.test(formData.name)) {
-      newErrors.name = 'Name cannot contain numbers or special characters';
-    }
+    const nameError = validateUsername(formData.name.trim());
+    if (nameError) newErrors.name = nameError;
 
     if (formData.contactEmail) {
       const emailError = validateEmail(formData.contactEmail);
