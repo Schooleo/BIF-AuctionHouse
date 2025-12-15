@@ -147,7 +147,10 @@ const SellerProfilePage: React.FC = () => {
 
           {activeTab === "ratings" && (
             <div>
-              <SellerRatingList />
+              <SellerRatingList
+                positiveRatings={stats?.positiveRatings || 0}
+                negativeRatings={stats?.negativeRatings || 0}
+              />
             </div>
           )}
         </div>

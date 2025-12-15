@@ -302,7 +302,8 @@ export const sellerApi = {
 
   getReceivedRatings: async (
     page: number = 1,
-    limit: number = 10
+    limit: number = 10,
+    score?: 1 | -1
   ): Promise<{
     data: RatingReceived[];
     pagination: {
@@ -312,7 +313,10 @@ export const sellerApi = {
       totalPages: number;
     };
   }> => {
-    const url = `${API_BASE}/api/seller/ratings-received?page=${page}&limit=${limit}`;
+    let url = `${API_BASE}/api/seller/ratings-received?page=${page}&limit=${limit}`;
+    if (score) {
+      url += `&score=${score}`;
+    }
     const token = localStorage.getItem("token");
 
     const res = await fetch(url, {

@@ -323,15 +323,26 @@ export const bidderApi = {
   // Ratings
   getReceivedRatings: async (
     page: number = 1,
-    limit: number = 10
-  ): Promise<IPaginatedResponse<RatingReceived>> => {
-    const res = await fetch(
-      `${API_BASE}/api/bidder/profile/ratings?page=${page}&limit=${limit}`,
-      {
-        method: "GET",
-        headers: getAuthHeaders(),
-      }
-    );
+    limit: number = 10,
+    score?: 1 | -1
+  ): Promise<{
+    data: RatingReceived[];
+    pagination: {
+      page: number;
+      limit: number;
+      total: number;
+      totalPages: number;
+    };
+  }> => {
+    let url = `${API_BASE}/api/bidder/profile/ratings?page=${page}&limit=${limit}`;
+    if (score) {
+      url += `&score=${score}`;
+    }
+
+    const res = await fetch(url, {
+      method: "GET",
+      headers: getAuthHeaders(),
+    });
     return handleResponse(res);
   },
 
