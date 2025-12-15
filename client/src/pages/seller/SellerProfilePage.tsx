@@ -3,7 +3,7 @@ import { Lock } from "lucide-react";
 import { useAuthStore } from "@stores/useAuthStore";
 import { useAlertStore } from "@stores/useAlertStore";
 import { sellerApi } from "@services/seller.api";
-
+import ProfileImage from "@components/shared/ProfileImage";
 import ProfileInfoForm from "@components/forms/ProfileInfoForm";
 import ProfilePasswordForm from "@components/forms/ProfilePasswordForm";
 import SellerRatingList from "@components/seller/SellerRatingList";
@@ -95,11 +95,24 @@ const SellerProfilePage: React.FC = () => {
     <div className="py-8">
       {/* Main Content */}
       <div className="w-full">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-800">
-            Seller Profile: {user.name}
-          </h1>
-          <p className="text-gray-500">{user.email}</p>
+        <div className="mb-6 flex items-center gap-4">
+          <ProfileImage
+            src={user.avatar}
+            alt={user.name}
+            onImageUpdate={(newUrl) => setUser({ ...user, avatar: newUrl })}
+          />
+          <div>
+            <h1 className="text-2xl font-bold text-gray-800">
+              Seller: {user.name}
+            </h1>
+            {user.contactEmail ? (
+              <p className="text-gray-500 truncate">
+                Contact: {user.contactEmail}
+              </p>
+            ) : (
+              <p className="text-gray-500 truncate">Email: {user.email}</p>
+            )}
+          </div>
         </div>
 
         <div className="bg-white rounded-lg shadow-md p-6">
@@ -112,7 +125,10 @@ const SellerProfilePage: React.FC = () => {
                 initialData={{
                   name: user.name,
                   email: user.email,
+                  avatar: user.avatar,
                   address: user.address || "",
+                  contactEmail: user.contactEmail,
+                  dateOfBirth: user.dateOfBirth,
                 }}
                 onSubmit={handleUpdateProfile}
                 loading={loading}
@@ -131,7 +147,10 @@ const SellerProfilePage: React.FC = () => {
 
           {activeTab === "ratings" && (
             <div>
-              <SellerRatingList />
+              <SellerRatingList
+                positiveRatings={stats?.positiveRatings || 0}
+                negativeRatings={stats?.negativeRatings || 0}
+              />
             </div>
           )}
         </div>

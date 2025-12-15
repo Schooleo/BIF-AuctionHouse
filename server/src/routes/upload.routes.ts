@@ -1,6 +1,6 @@
 import { Router } from "express";
 import multer from "multer";
-import { uploadImage } from "../controllers/upload.controller";
+import { uploadImage, deleteImage } from "../controllers/upload.controller";
 import { protect } from "../middleware/auth.middleware";
 
 const router = Router();
@@ -22,5 +22,6 @@ const upload = multer({
 router.use(protect());
 
 router.post("/", upload.single("image"), uploadImage);
+router.post("/delete", deleteImage);
 
 export default router;

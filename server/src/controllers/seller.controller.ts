@@ -408,7 +408,11 @@ export const viewSellerBidHistory = async (req: Request, res: Response) => {
     }
 
     const { productId } = req.params;
-    const { page = 1, limit = 10, includeRejected = "false" } = req.query as any;
+    const {
+      page = 1,
+      limit = 10,
+      includeRejected = "false",
+    } = req.query as any;
 
     const result = await SellerService.getProductBidHistory(
       String(sellerId),
@@ -428,6 +432,8 @@ export const viewSellerBidHistory = async (req: Request, res: Response) => {
   }
 };
 
+// Update viewReceivedRatings in seller.controller.ts
+
 export const viewReceivedRatings = async (req: Request, res: Response) => {
   try {
     const sellerId = (req.user as any)?._id;
@@ -437,17 +443,23 @@ export const viewReceivedRatings = async (req: Request, res: Response) => {
 
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
+    const score = parseInt(req.query.score as string); // 1 or -1 or undefined
 
     const { Rating } = await import("../models/rating.model");
     const skip = (page - 1) * limit;
 
+    const query: any = { type: "seller", ratee: sellerId };
+    if (!isNaN(score) && (score === 1 || score === -1)) {
+      query.score = score;
+    }
+
     const [ratings, total] = await Promise.all([
-      Rating.find({ type: "seller", ratee: sellerId })
+      Rating.find(query)
         .populate("rater", "name email")
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit),
-      Rating.countDocuments({ type: "seller", ratee: sellerId }),
+      Rating.countDocuments(query),
     ]);
 
     res.status(200).json({

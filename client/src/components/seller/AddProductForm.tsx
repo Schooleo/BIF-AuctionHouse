@@ -11,7 +11,7 @@ import { z } from "zod";
 
 const NAME_REGEX = /^[a-zA-Z0-9\s,.\-]+$/;
 const URL_REGEX = /(https?:\/\/|www\.)/gi;
-const SPECIAL_CHARS_REGEX = /[!@#$%^&*()_+=\[\]{};':"\\|<>?]/;
+const SPECIAL_CHARS_REGEX = /[!@$%^&*()_+=\[\]{};':"\\|<>?]/;
 
 const productSchema = z
   .object({
@@ -25,7 +25,7 @@ const productSchema = z
       )
       .refine(
         (val) => !SPECIAL_CHARS_REGEX.test(val),
-        "Name cannot contain special characters like ! @ # $ % ^ & *"
+        "Name cannot contain special characters like ! @ $ % ^ & *"
       ),
     category: z.string().min(1, "Category is required"),
     mainImage: z.url("Main image must be a valid URL"),

@@ -23,20 +23,20 @@ export const bidHistoryQuerySchema = z.object({
 export const updateProfileSchema = z.object({
   name: z
     .string()
-    .min(3)
-    .max(15)
+    .min(2, "Name must be at least 2 characters")
+    .max(100, "Name must be less than 100 characters")
     .regex(/^[a-zA-Z0-9]+$/, "Username must contain only letters and numbers")
     .optional(),
   address: z
     .string()
-    .min(15, "Address must be at least 15 characters long")
+    .max(200, "Address must be less than 200 characters")
     .optional()
     .or(z.literal("")),
   dateOfBirth: z
     .string()
     .optional()
     .transform((val) => (val ? new Date(val) : undefined)),
-  contactEmail: z.email().optional().or(z.literal("")),
+  contactEmail: z.email("Invalid email format").optional().or(z.literal("")),
 });
 
 export const changePasswordSchema = z.object({

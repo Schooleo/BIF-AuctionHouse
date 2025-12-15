@@ -5,11 +5,13 @@ import { formatDateTime } from "@utils/time";
 import {
   CalendarDays,
   Crown,
-  Gavel,
+  History,
   Loader2,
   User,
   Star,
   Box,
+  Flame,
+  Gavel,
 } from "lucide-react";
 
 interface SellerProductSummaryProps {
@@ -22,6 +24,7 @@ interface SellerProductSummaryProps {
   winnerConfirmed: boolean;
   categoryName?: string;
   onManageTransaction?: () => void;
+  showFire?: boolean;
 }
 
 const SellerProductSummary: React.FC<SellerProductSummaryProps> = ({
@@ -34,6 +37,7 @@ const SellerProductSummary: React.FC<SellerProductSummaryProps> = ({
   winnerConfirmed,
   categoryName,
   onManageTransaction,
+  showFire,
 }) => {
   const displayCategory =
     categoryName ??
@@ -57,8 +61,6 @@ const SellerProductSummary: React.FC<SellerProductSummaryProps> = ({
     ? "bg-red-100 text-red-700"
     : "bg-green-100 text-green-700";
 
-  //const rejectedCount = product.rejectedBidders?.length ?? 0;
-
   return (
     <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6 space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
@@ -79,11 +81,18 @@ const SellerProductSummary: React.FC<SellerProductSummaryProps> = ({
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="p-4 bg-gray-50 rounded-lg border border-gray-100">
+        <div className="p-4 bg-gray-50 rounded-lg border border-gray-100 relative overflow-hidden">
+          {showFire && (
+            <div className="absolute top-2 right-2 animate-bounce">
+              <Flame className="w-6 h-6 text-red-500 animate-pulse" />
+            </div>
+          )}
           <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
             Current Price
           </p>
-          <p className="text-2xl font-bold text-primary-blue mt-1">
+          <p
+            className={`text-2xl font-bold mt-1 ${showFire ? "text-red-600 transition-colors duration-300" : "text-primary-blue"}`}
+          >
             {formatPrice(product.currentPrice ?? product.startingPrice)}
           </p>
           <p className="text-xs text-gray-500 mt-2 flex items-center gap-1">
@@ -91,8 +100,8 @@ const SellerProductSummary: React.FC<SellerProductSummaryProps> = ({
             Step price: {formatPrice(product.stepPrice ?? 0)}
           </p>
         </div>
-        <div className="p-4 bg-gray-50 rounded-lg border border-gray-100">
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+        <div className="flex flex-col items-start justify-around p-4 bg-gray-50 rounded-lg border border-gray-100">
+          <p className="text-xs font-semibold text-gray-800 uppercase tracking-wide">
             Auction Timeline
           </p>
           <p className="text-sm text-gray-700 flex items-center gap-2 mt-1">
@@ -111,53 +120,55 @@ const SellerProductSummary: React.FC<SellerProductSummaryProps> = ({
         </div>
       </div>
 
-      <div className="p-4 bg-gray-50 rounded-lg border border-gray-100">
-        <p
-          className={
-            winnerConfirmed
-              ? "text-base font-bold text-emerald-600 uppercase tracking-wide"
-              : "text-sm font-bold text-indigo-500 uppercase tracking-wide"
-          }
-        >
-          {bidderLabel}
-        </p>
-        <div className="mt-2 flex flex-wrap items-baseline gap-3">
-          <span className="flex items-center gap-2 text-gray-800 font-semibold">
-            <User className="w-4 h-4 text-gray-400" />
-            {highestBidderDisplay}
-          </span>
-          {highestBidderRating !== undefined && (
-            <span className="flex items-center gap-2 text-s text-yellow-600 font-medium">
-              <Star className="w-4 h-4 text-yellow-600" />
-              {highestBidderRating.toFixed(2)}
-            </span>
-          )}
-          {/* <span className="text-xs text-gray-500">
-            Total bids: {product.bidCount}
-          </span>
-            <span className="text-xs flex items-center gap-1 text-gray-500">
-              <ShieldX className="w-3 h-3 text-gray-400" />
-              Rejected bidders: {rejectedCount}
-            </span> */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="p-4 bg-gray-50 rounded-lg border border-gray-100 flex justify-between items-center">
+          <div>
+            <p
+              className={
+                winnerConfirmed
+                  ? "text-base font-bold text-emerald-600 uppercase tracking-wide"
+                  : "text-sm font-bold text-indigo-600 uppercase tracking-wide"
+              }
+            >
+              {bidderLabel}
+            </p>
+            <div className="mt-2 flex flex-wrap items-baseline gap-3">
+              <span className="flex items-center gap-2 text-gray-800 font-semibold">
+                <User className="w-4 h-4 text-gray-400" />
+                {highestBidderDisplay}
+              </span>
+              {highestBidderRating !== undefined && (
+                <span className="flex items-center gap-2 text-s text-yellow-600 font-medium">
+                  <Star className="w-4 h-4 text-yellow-600" />
+                  {highestBidderRating.toFixed(2)}
+                </span>
+              )}
+            </div>
+          </div>
         </div>
-      </div>
 
-      <div className="flex flex-col sm:flex-row gap-3">
         <button
           type="button"
           onClick={onOpenBidHistory}
-          className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold text-primary-blue bg-primary-blue/10 hover:bg-primary-blue/20 rounded-lg transition"
+          className="flex items-center justify-start gap-4 px-6 py-4 w-full h-full text-left text-sm font-semibold text-gray-800 bg-gray-50 hover:bg-gray-100 rounded-lg border border-gray-100 transition"
         >
-          <Gavel className="w-4 h-4" />
-          View Bid History
+          <History className="w-7 h-7 text-gray-500 shrink-0" />
+          <div className="flex flex-col gap-2">
+            <span className="text-primary-blue">View Bid History</span>
+            <span className="text-md tracking-wide font-medium text-gray-600">
+              Total bids: {product.bidCount}
+            </span>
+          </div>
         </button>
+      </div>
 
+      <div className="flex flex-col sm:flex-row gap-3">
         {isEnded && (
           <button
             type="button"
             onClick={onConfirmWinner}
             disabled={confirmDisabled || confirmLoading}
-            className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold text-white rounded-lg transition disabled:opacity-60 disabled:cursor-not-allowed bg-emerald-600 hover:bg-emerald-700"
+            className="flex-1 inline-flex items-center justify-center gap-2 p-4 text-lg font-semibold text-white rounded-lg transition disabled:opacity-60 disabled:cursor-not-allowed bg-emerald-600 hover:bg-emerald-700"
           >
             {confirmLoading ? (
               <>

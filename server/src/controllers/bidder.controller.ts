@@ -378,13 +378,34 @@ export const viewReceivedRatings = async (req: Request, res: Response) => {
 
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
+    const score = parseInt(req.query.score as string); // 1 or -1 or undefined
 
-    const result = await bidderService.getReceivedRatings(
-      bidderId,
-      page,
-      limit
-    );
-    res.json(result);
+    const { Rating } = await import("../models/rating.model");
+    const skip = (page - 1) * limit;
+
+    const query: any = { type: "bidder", ratee: bidderId };
+    if (!isNaN(score) && (score === 1 || score === -1)) {
+      query.score = score;
+    }
+
+    const [ratings, total] = await Promise.all([
+      Rating.find(query)
+        .populate("rater", "name email")
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit),
+      Rating.countDocuments(query),
+    ]);
+
+    res.json({
+      data: ratings,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    });
   } catch (error: any) {
     res.status(500).json({ message: error.message });
   }

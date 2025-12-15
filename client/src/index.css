@@ -1,8 +1,27 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
-html {
+/* html {
   scrollbar-gutter: stable;
+} */
+
+/* Custom Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #002147; /* secondary-blue */
+  border-radius: 2px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #002147; /* secondary-blue */
 }
 
 @tailwind base;

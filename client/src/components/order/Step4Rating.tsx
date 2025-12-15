@@ -61,7 +61,11 @@ const Step4Rating: React.FC<Step4Props> = ({ order, isSeller, onUpdate }) => {
         </p>
 
         <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-4 text-left max-w-lg mx-auto">
-          <div className="bg-gray-50 p-4 rounded border">
+          <div
+            className={`bg-gray-50 p-4 rounded border-2
+            ${myRating.score === 1 ? "border-green-500/50" : "border-red-500/50"}
+          `}
+          >
             <span className="text-xs font-bold text-gray-400 uppercase">
               You Rated
             </span>
@@ -85,7 +89,11 @@ const Step4Rating: React.FC<Step4Props> = ({ order, isSeller, onUpdate }) => {
               Edit Rating
             </button>
           </div>
-          <div className="bg-gray-50 p-4 rounded border">
+          <div
+            className={`bg-gray-50 p-4 rounded border-2
+            ${partnerRating?.score === 1 ? "border-green-500/50" : partnerRating?.score === -1 ? "border-red-500/50" : "border-gray-200"}
+          `}
+          >
             <span className="text-xs font-bold text-gray-400 uppercase">
               {partnerName} Rated
             </span>

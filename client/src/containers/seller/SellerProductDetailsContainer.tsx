@@ -20,11 +20,20 @@ import type {
   ProductDetails,
   QuestionAnswer,
 } from "@interfaces/product";
-import RichTextEditor from "@components/shared/RichTextEditor";
-import { Loader2, X } from "lucide-react";
+import { Loader2 } from "lucide-react";
+import AppendDescriptionModal from "@components/seller/AppendDescriptionModal";
+import { useSocket } from "@contexts/SocketContext";
 
 interface SellerProductDetailsContainerProps {
   id: string;
+}
+
+interface BidUpdateData {
+  currentPrice: number;
+  bidCount: number;
+  currentBidder: string;
+  currentBidderRating: number;
+  endTime: string;
 }
 
 const SellerProductDetailsContainer: React.FC<
@@ -51,9 +60,10 @@ const SellerProductDetailsContainer: React.FC<
   );
 
   const [isAppendModalOpen, setIsAppendModalOpen] = useState(false);
-  const [appendDescription, setAppendDescription] = useState("");
-  const [isAppendingDescription, setIsAppendingDescription] = useState(false);
-  const [appendError, setAppendError] = useState<string | null>(null);
+
+  // Real-time state
+  const { socket, joinProductRoom, leaveProductRoom } = useSocket();
+  const [showFire, setShowFire] = useState(false);
 
   const fetchDetails = useCallback(
     async (withLoader: boolean = true) => {
@@ -95,6 +105,50 @@ const SellerProductDetailsContainer: React.FC<
   useEffect(() => {
     fetchDetails();
   }, [fetchDetails]);
+
+  // Socket Integration
+  useEffect(() => {
+    if (id) {
+      joinProductRoom(id);
+
+      if (socket) {
+        socket.on("new_bid", (data: BidUpdateData) => {
+          setDetails((prev) => {
+            if (!prev) return prev;
+            return {
+              ...prev,
+              product: {
+                ...prev.product,
+                currentPrice: data.currentPrice,
+                bidCount: data.bidCount,
+                endTime: data.endTime,
+                // Update current bidder with dummy data for display
+                currentBidder: {
+                  ...prev.product.currentBidder,
+                  _id: "socket-update",
+                  name: data.currentBidder,
+                  rating: data.currentBidderRating,
+                  email: "",
+                  role: "bidder",
+                  isVerified: true,
+                  createdAt: new Date().toISOString(),
+                  updatedAt: new Date().toISOString(),
+                } as unknown as Product["currentBidder"],
+              },
+            };
+          });
+
+          setShowFire(true);
+          setTimeout(() => setShowFire(false), 3000); // Show fire for 3s
+        });
+      }
+
+      return () => {
+        leaveProductRoom(id);
+        if (socket) socket.off("new_bid");
+      };
+    }
+  }, [id, socket, joinProductRoom, leaveProductRoom]);
 
   const product: Product | null = details?.product ?? null;
 
@@ -220,10 +274,10 @@ const SellerProductDetailsContainer: React.FC<
 
       // Close modal before refresh to prevent stale data
       setIsBidHistoryOpen(false);
-    
+
       // Fetch updated product data
       await fetchDetails(false);
-      
+
       // Reopen modal with fresh data
       setTimeout(() => setIsBidHistoryOpen(true), 100);
     } catch (err: unknown) {
@@ -265,50 +319,18 @@ const SellerProductDetailsContainer: React.FC<
     }
   };
 
-  const handleAppendDescription = async (
-    event: React.FormEvent<HTMLFormElement>
-  ) => {
-    event.preventDefault();
-    if (!product) return;
-
-    if (!appendDescription.trim()) {
-      setAppendError("Description update cannot be empty.");
-      return;
-    }
-
-    try {
-      setIsAppendingDescription(true);
-      setAppendError(null);
-      const updatedProduct = await sellerApi.appendDescription(
-        product._id,
-        appendDescription
-      );
-
-      addAlert("success", "Description appended successfully.");
-
-      setDetails((prev) =>
-        prev
-          ? {
-              ...prev,
-              product: {
-                ...prev.product,
-                ...updatedProduct,
-              },
-            }
-          : prev
-      );
-
-      setAppendDescription("");
-      setIsAppendModalOpen(false);
-    } catch (err: unknown) {
-      const message =
-        (err as { message?: string })?.message ||
-        "Failed to append description. Please try again.";
-      addAlert("error", message);
-      setAppendError(message);
-    } finally {
-      setIsAppendingDescription(false);
-    }
+  const handleProductUpdate = (updatedProduct: Product) => {
+    setDetails((prev) =>
+      prev
+        ? {
+            ...prev,
+            product: {
+              ...prev.product,
+              ...updatedProduct,
+            },
+          }
+        : prev
+    );
   };
 
   const handleManageTransaction = async () => {
@@ -379,6 +401,7 @@ const SellerProductDetailsContainer: React.FC<
               confirmLoading={confirmingWinner}
               winnerConfirmed={winnerConfirmed}
               onManageTransaction={handleManageTransaction}
+              showFire={showFire}
             />
           </div>
         </div>
@@ -393,18 +416,6 @@ const SellerProductDetailsContainer: React.FC<
             </p>
           </div>
           <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
-            <p className="text-sm text-gray-500 font-semibold">Current Price</p>
-            <p className="text-xl font-semibold text-blue-700">
-              {formatPrice(product.currentPrice)}
-            </p>
-          </div>
-          <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
-            <p className="text-sm text-gray-500 font-semibold">Step Price</p>
-            <p className="text-xl font-semibold text-blue-900">
-              {formatPrice(product.stepPrice)}
-            </p>
-          </div>
-          <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
             <p className="text-sm text-gray-500 font-semibold">Buy Now Price</p>
             <p className="text-xl font-semibold text-yellow-600">
               {product.buyNowPrice
@@ -413,10 +424,21 @@ const SellerProductDetailsContainer: React.FC<
             </p>
           </div>
           <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
-            <p className="text-sm text-gray-500 font-semibold">Total Bids</p>
-            <p className="text-xl font-semibold text-gray-900">
-              {product.bidCount}
-            </p>
+            <div className="flex justify-between items-center">
+              <div>
+                <p className="text-sm text-gray-500 font-semibold">
+                  Highest Bidder / Bids
+                </p>
+                <p className="text-xl font-semibold text-gray-900 flex items-center gap-2">
+                  <span>{product.bidCount} bids</span>
+                  {product.currentBidder && (
+                    <span className="text-sm text-gray-600 font-normal">
+                      (by {maskName(product.currentBidder.name)})
+                    </span>
+                  )}
+                </p>
+              </div>
+            </div>
           </div>
           <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
             <p className="text-sm text-gray-500 font-semibold">
@@ -461,10 +483,7 @@ const SellerProductDetailsContainer: React.FC<
             </h2>
             <button
               type="button"
-              onClick={() => {
-                setAppendError(null);
-                setIsAppendModalOpen(true);
-              }}
+              onClick={() => setIsAppendModalOpen(true)}
               className="inline-flex items-center px-4 py-2 text-sm font-semibold text-white bg-primary-blue rounded-lg hover:bg-primary-blue/90 transition"
             >
               Append Description
@@ -502,61 +521,12 @@ const SellerProductDetailsContainer: React.FC<
           </div>
         )}
 
-        {isAppendModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-            <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
-              <div className="flex justify-between items-center p-4 border-b border-gray-100">
-                <h3 className="text-lg font-bold text-gray-900">
-                  Append Description
-                </h3>
-                <button
-                  onClick={() => setIsAppendModalOpen(false)}
-                  className="text-gray-400 hover:text-gray-600 transition-colors"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-              <form
-                onSubmit={handleAppendDescription}
-                className="p-4 space-y-4"
-              >
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    New Information
-                  </label>
-                  <RichTextEditor
-                    value={appendDescription}
-                    onChange={(value) => {
-                      setAppendDescription(value);
-                      setAppendError(null);
-                    }}
-                    limit={80}
-                    placeholder="Enter additional details about the product..."
-                  />
-                </div>
-                {appendError && (
-                  <p className="text-sm text-red-500">{appendError}</p>
-                )}
-                <div className="flex justify-end gap-3 pt-2">
-                  <button
-                    type="button"
-                    onClick={() => setIsAppendModalOpen(false)}
-                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={isAppendingDescription}
-                    className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {isAppendingDescription ? "Appending..." : "Append"}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
+        <AppendDescriptionModal
+          isOpen={isAppendModalOpen}
+          onClose={() => setIsAppendModalOpen(false)}
+          productId={product._id}
+          onUpdate={handleProductUpdate}
+        />
 
         <div className="mt-10">
           <SellerQnaManager
@@ -580,8 +550,8 @@ const SellerProductDetailsContainer: React.FC<
           typeof product.currentBidder === "object"
             ? product.currentBidder?._id
             : product.currentBidder
-            ? String(product.currentBidder)
-            : undefined
+              ? String(product.currentBidder)
+              : undefined
         }
         rejectingBidderId={rejectingBidderId}
         winnerConfirmed={winnerConfirmed}

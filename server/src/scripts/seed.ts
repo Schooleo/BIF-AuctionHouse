@@ -144,6 +144,28 @@ const PRODUCT_CATALOG: Record<string, any[]> = {
   ],
 };
 
+const SAMPLE_COMMENTS = {
+  positive: [
+    "Great product, fast shipping!",
+    "Seller was very communicated. Highly recommended.",
+    "Excellent quality, better than described.",
+    "Smooth transaction. A+ seller.",
+    "Item arrived safely and on time. Thanks!",
+    "Very happy with my purchase.",
+    "Honest bidder, prompt payment.",
+    "Great buyer, fast payment.",
+    "Pleasure doing business with.",
+    "Recommended!",
+  ],
+  negative: [
+    "Item was not as described.",
+    "Shipping took way too long.",
+    "Seller stopped responding after payment.",
+    "Product arrived damaged.",
+    "Buyer never paid.",
+  ],
+};
+
 // --- HELPER FUNCTIONS ---
 
 const generateDescription = (name: string, category: string) => {
@@ -168,6 +190,9 @@ Fast shipping available worldwide. 30-day return policy if the item does not mat
 
 const randomInt = (min: number, max: number) =>
   Math.floor(Math.random() * (max - min + 1)) + min;
+
+const getRandomElement = (arr: any[]) =>
+  arr[Math.floor(Math.random() * arr.length)];
 
 const seed = async () => {
   await connectDB();
@@ -198,9 +223,9 @@ const seed = async () => {
   const seller1Id = new mongoose.Types.ObjectId("64b0f1a9e1b9b1a2b3c4d5e7");
   const seller2Id = new mongoose.Types.ObjectId("64b0f1a9e1b9b1a2b3c4d5e8");
 
-  const admin = await User.create({
+  await User.create({
     _id: adminId,
-    name: "System Admin",
+    name: "SystemAdmin",
     email: "admin@gmail.com",
     password: commonPassword,
     role: "admin",
@@ -211,39 +236,38 @@ const seed = async () => {
 
   const seller1 = await User.create({
     _id: seller1Id,
-    name: "Tech World Seller",
+    name: "TechWorldSeller",
     email: "seller1@gmail.com",
     password: commonPassword,
     role: "seller",
     address: "Hanoi, Vietnam",
     dateOfBirth: new Date("1990-05-20"),
     contactEmail: "techworld.contact@gmail.com",
-    positiveRatings: 10,
-    negativeRatings: 1,
+    positiveRatings: 0,
+    negativeRatings: 0,
   });
 
   const seller2 = await User.create({
     _id: seller2Id,
-    name: "Fashion Boutique",
+    name: "FashionBoutique",
     email: "seller2@gmail.com",
     password: commonPassword,
+    role: "seller",
     address: "HCMC, Vietnam",
     dateOfBirth: new Date("1988-08-10"),
-    positiveRatings: 50,
+    positiveRatings: 0,
     negativeRatings: 0,
   });
 
   // Tạo Bidders
   let bidders = [];
   for (let i = 1; i <= NUM_BIDDERS; i++) {
-    // Tạo ID xác định cho bidder dựa trên index
-    // Sử dụng chuỗi hex cơ sở và thay thế ký tự cuối cùng
     const hex = `64b0f1a9e1b9b1a2b3c4d5f${i}`;
     const bidderId = new mongoose.Types.ObjectId(hex);
 
     const bidder = await User.create({
       _id: bidderId,
-      name: `Bidder ${String.fromCharCode(64 + i)}`,
+      name: `Bidder${String.fromCharCode(64 + i)}`,
       email: `bidder${i}@gmail.com`,
       password: commonPassword,
       role: "bidder",
@@ -252,9 +276,23 @@ const seed = async () => {
       contactEmail: i % 2 === 0 ? `bidder${i}.contact@gmail.com` : undefined,
       positiveRatings: 0,
       negativeRatings: 0,
-      reputationScore: 0.8 / (Math.random() + 0.1),
+      reputationScore: 0,
     });
     bidders.push(bidder);
+  }
+
+  // --- DUMMY USERS FOR HISTORY ---
+  console.log("👤 Creating Dummy Users for History...");
+  const dummyPartners: any[] = [];
+  for (let i = 1; i <= 20; i++) {
+    const dummy = await User.create({
+      name: `HistoricalPartner${i}`,
+      email: `dummy${i}@history.com`,
+      password: commonPassword,
+      role: i % 2 === 0 ? "seller" : "bidder",
+      address: `History Lane ${i}`,
+    });
+    dummyPartners.push(dummy);
   }
 
   console.log("📂 Creating Categories...");
@@ -283,7 +321,6 @@ const seed = async () => {
     parent: home._id,
   });
 
-  // Map tên danh mục sang ID để tra cứu dễ dàng
   const catMap: Record<string, any> = {
     Phones: phones._id,
     Laptops: laptops._id,
@@ -292,7 +329,136 @@ const seed = async () => {
     Furniture: furniture._id,
   };
 
-  console.log("📦 Creating Products & Bids...");
+  // --- GENERATE TRANSACTION HISTORY ---
+  // Calculates rating and creates dummy products/orders to back it up
+  const generateTransactionHistory = async (
+    targetUser: any,
+    targetRole: "seller" | "bidder", // Role of targetUser in this transaction
+    count: number
+  ) => {
+    for (let i = 0; i < count; i++) {
+      const partner = getRandomElement(dummyPartners);
+      const isPositive = Math.random() > 0.1; // 90% positive
+
+      const seller = targetRole === "seller" ? targetUser : partner;
+      const bidder = targetRole === "bidder" ? targetUser : partner;
+
+      // Create dummy product
+      const catKeys = Object.keys(PRODUCT_CATALOG);
+      const catKey = getRandomElement(catKeys);
+      const item = getRandomElement(PRODUCT_CATALOG[catKey] ?? []);
+
+      const product = await Product.create({
+        name: `Historical: ${item.name} Number ${randomInt(1000, 9999)}`,
+        category: catMap[catKey],
+        seller: seller._id,
+        mainImage: item.img,
+        subImages: ["Phones", "Laptops"].includes(catKey)
+          ? TECH_SUB_IMAGES
+          : FASHION_SUB_IMAGES,
+        description: "Historical item for rating generation.",
+        startTime: new Date(Date.now() - 100000000), // Long ago
+        endTime: new Date(Date.now() - 90000000),
+        startingPrice: item.price,
+        stepPrice: 50000,
+        currentPrice: item.price * 1.2,
+        winnerConfirmed: true,
+        transactionCompleted: true,
+        bidCount: 5,
+        rejectedBidders: [],
+        currentBidder: bidder._id, // Add this
+        highestBidder: bidder._id, // And this
+      });
+
+      // Create Order
+      const order = await Order.create({
+        product: product._id,
+        seller: seller._id,
+        buyer: bidder._id,
+        amount: product.currentPrice,
+        status: OrderStatus.COMPLETED,
+        step: 4,
+        createdAt: new Date(product.endTime.getTime() + 10000),
+        updatedAt: new Date(product.endTime.getTime() + 100000),
+      });
+
+      // Create Chat for this order (to prevent "Loading chat..." loop)
+      const chat = await Chat.create({
+        participants: [bidder._id, seller._id],
+        product: product._id,
+        order: order._id,
+        messages: [
+          {
+            sender: bidder._id,
+            content: "I'm so happy I won this Item!",
+            timestamp: new Date(product.endTime.getTime() + 20000),
+          },
+          {
+            sender: seller._id,
+            content: "Congratulations! I will ship it immediately.",
+            timestamp: new Date(product.endTime.getTime() + 100000),
+          },
+        ],
+      });
+
+      order.chat = chat._id as any;
+      await order.save();
+
+      const score: 1 | -1 = isPositive ? 1 : -1;
+      const comment = getRandomElement(
+        isPositive ? SAMPLE_COMMENTS.positive : SAMPLE_COMMENTS.negative
+      );
+
+      // Create Rating linking to product
+      // If target is seller, they receive rating from buyer (partner)
+      // If target is bidder, they receive rating from seller (partner)
+      const rater = partner;
+      const ratee = targetUser;
+      const type = targetRole === "seller" ? "seller" : "bidder"; // Type of rating received
+
+      try {
+        const rating = await Rating.create({
+          rater: rater._id,
+          ratee: ratee._id,
+          product: product._id,
+          type: type,
+          score: score,
+          comment: comment,
+        });
+
+        // Update Order with rating
+        // Note: order.ratingByBuyer means 'Rating GIVEN BY Buyer'
+        // If target is seller, partner is buyer. So partner gives ratingByBuyer.
+        if (targetRole === "seller") {
+          order.ratingByBuyer = {
+            score: score,
+            comment: comment,
+            updatedAt: new Date(),
+          };
+        } else {
+          // Target is bidder. Partner is seller. Partner gives ratingBySeller.
+          order.ratingBySeller = {
+            score: score,
+            comment: comment,
+            updatedAt: new Date(),
+          };
+        }
+        await order.save();
+      } catch (e) {
+        // Ignore duplicate key errors if any random collisions
+      }
+    }
+  };
+
+  console.log("⭐ Generating Historical Ratings...");
+  await generateTransactionHistory(seller1, "seller", 15);
+  await generateTransactionHistory(seller2, "seller", 25);
+
+  for (const b of bidders) {
+    await generateTransactionHistory(b, "bidder", randomInt(3, 8));
+  }
+
+  console.log("📦 Creating Active Products & Bids...");
 
   let totalProducts = 0;
   let totalBids = 0;
@@ -305,11 +471,11 @@ const seed = async () => {
 
     const isTech = ["Phones", "Laptops"].includes(catKey);
     const subImages = isTech ? TECH_SUB_IMAGES : FASHION_SUB_IMAGES;
-    const targetCount = 10; // 10 products per category for volume
+    const targetCount = 10;
 
     for (let i = 0; i < targetCount; i++) {
       const item = items[i % items.length];
-      const productName = `${item.name} #${i + 1}`;
+      const productName = `${item.name} Number ${i + 1}`;
 
       // Thiết lập kịch bản dựa trên Index
       // 0: Đã kết thúc, 0 Bid (Lịch sử/Chưa bán)
@@ -560,7 +726,7 @@ const seed = async () => {
             order.step = 4;
             product.transactionCompleted = true;
 
-            const buyerScore = 1;
+            const buyerScore: 1 | -1 = 1;
             order.ratingByBuyer = {
               score: buyerScore,
               comment: "This seller guy is awesome!",
@@ -581,7 +747,7 @@ const seed = async () => {
               }
             }
 
-            const sellerScore = 1;
+            const sellerScore: 1 | -1 = 1;
             order.ratingBySeller = {
               score: sellerScore,
               comment: "This buyer guy is awesome with fast payment!",
@@ -642,7 +808,7 @@ const seed = async () => {
     ];
 
     for (const { item, cat, seller, step } of zeroBidItems) {
-      const productName = `${item.name} #ZeroBid`;
+      const productName = `${item.name} Number ZeroBid`;
       const isTech = ["Phones", "Laptops"].includes(cat);
       const subImages = isTech ? TECH_SUB_IMAGES : FASHION_SUB_IMAGES;
 
@@ -674,10 +840,32 @@ const seed = async () => {
     console.error("❌ FAILED TO CREATE ZERO BID ITEMS:", error);
   }
 
+  // --- UPDATE USER RATINGS ---
+  console.log("📊 Updating User Ratings...");
+  const allUsers = await User.find({});
+  for (const user of allUsers) {
+    const positiveCount = await Rating.countDocuments({
+      ratee: user._id,
+      score: 1,
+    });
+    const negativeCount = await Rating.countDocuments({
+      ratee: user._id,
+      score: -1,
+    });
+
+    const totalRatings = positiveCount + negativeCount;
+    const reputationScore = totalRatings > 0 ? positiveCount / totalRatings : 0;
+
+    user.positiveRatings = positiveCount;
+    user.negativeRatings = negativeCount;
+    user.reputationScore = reputationScore;
+    await user.save();
+  }
+
   console.log("-----------------------------------------");
   console.log(`✅ Seeding Complete!`);
   console.log(`📊 Stats:`);
-  console.log(`   - Users: ${3 + NUM_BIDDERS}`);
+  console.log(`   - Users: ${3 + NUM_BIDDERS + dummyPartners.length}`);
   console.log(`   - Categories: 9`);
   console.log(`   - Products: ${totalProducts}`);
   console.log(`   - Bids: ${totalBids}`);

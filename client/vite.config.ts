@@ -31,4 +31,11 @@ export default defineConfig({
       '@stores': path.resolve(__dirname, 'src/stores'),
     },
   },
+  server: {
+    host: true,
+    watch: {
+      usePolling: true,
+      interval: 100,
+    },
+  },
 });

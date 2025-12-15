@@ -70,8 +70,8 @@ const BiddingProductCard: React.FC<BiddingProductCardProps> = ({ bid }) => {
     <div className="group bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-all duration-200">
       <div className="flex flex-col sm:flex-row gap-4 p-4">
         {/* ========== LEFT: IMAGE WITH BADGE ========== */}
-        <div className="relative flex-shrink-0 w-full sm:w-48 h-48 sm:h-36">
-          <Link to={`/product/${_id}`}>
+        <div className="relative shrink-0 w-full sm:w-48 h-48 sm:h-36">
+          <Link to={`/products/${_id}`}>
             <img
               src={mainImage || "/placeholder.jpg"}
               alt={name}
@@ -89,7 +89,7 @@ const BiddingProductCard: React.FC<BiddingProductCardProps> = ({ bid }) => {
 
         {/* ========== CENTER: PRODUCT INFO ========== */}
         <div className="flex-1 min-w-0">
-          <Link to={`/product/${_id}`}>
+          <Link to={`/products/${_id}`}>
             <h3 className="text-base sm:text-lg font-bold text-gray-900 hover:text-blue-600 line-clamp-2 mb-2">
               {name}
             </h3>
@@ -143,7 +143,7 @@ const BiddingProductCard: React.FC<BiddingProductCardProps> = ({ bid }) => {
         </div>
 
         {/* ========== RIGHT: TIME & ACTIONS ========== */}
-        <div className="flex-shrink-0 flex flex-col justify-between items-end sm:w-40 gap-3">
+        <div className="shrink-0 flex flex-col justify-between items-end sm:w-40 gap-3">
           {/* Time Remaining */}
           <div className={`text-right ${timeColor}`}>
             <div className="text-xs text-gray-500 mb-1">Time Left</div>
@@ -156,7 +156,7 @@ const BiddingProductCard: React.FC<BiddingProductCardProps> = ({ bid }) => {
 
           {/* View Details Button */}
           <Link
-            to={`/product/${_id}`}
+            to={`/products/${_id}`}
             className="w-full px-4 py-2 bg-primary-blue text-white rounded-md hover:bg-primary-blue-dark transition text-center text-sm font-medium"
           >
             View Details <ArrowRight className="inline-block w-4 h-4" />

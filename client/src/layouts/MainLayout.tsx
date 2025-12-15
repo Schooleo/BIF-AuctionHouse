@@ -2,13 +2,17 @@
 import React from "react";
 import { useState, useEffect } from "react";
 import type { Category } from "@interfaces/product";
-import { Outlet, useLocation, useSearchParams, useNavigate } from "react-router-dom";
+import {
+  Outlet,
+  useLocation,
+  useSearchParams,
+  useNavigate,
+} from "react-router-dom";
 import Navbar from "@components/ui/Navbar";
 import Footer from "@components/ui/Footer";
 import SideBarCategory from "@components/ui/LeftSideBar";
 import { productApi } from "@services/product.api";
 import { useAuthStore } from "@stores/useAuthStore";
-
 
 const MainLayout: React.FC = () => {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -18,8 +22,10 @@ const MainLayout: React.FC = () => {
   const setToken = useAuthStore((state) => state.setToken);
   const refreshUser = useAuthStore((state) => state.refreshUser);
 
-  const hideSidebar = location.pathname.startsWith("/product/") ||
-    location.pathname === "/watchlist";
+  const hideSidebar =
+    location.pathname.startsWith("/products/") ||
+    location.pathname === "/watchlist" ||
+    location.pathname.startsWith("/orders/");
 
   useEffect(() => {
     const token = searchParams.get("token");
@@ -37,24 +43,32 @@ const MainLayout: React.FC = () => {
   }, []);
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
-      <Navbar />
-
-      <div className="flex flex-1 w-full px-4 md:px-8">
-        {!hideSidebar && (
-          <div className="hidden md:block w-64 mt-8 mr-8 shrink-0 sticky top-4 self-start h-fit max-h-[calc(100vh-2rem)] overflow-y-auto">
-            <SideBarCategory categories={categories} />
-          </div>
-        )}
-
-        <main
-          className={`flex-1 min-w-0 ${hideSidebar ? "max-w-7xl mx-auto" : ""}`}
-        >
-          <Outlet context={{ categories }} />
-        </main>
+    <div className="h-screen flex flex-col bg-gray-50 overflow-hidden">
+      {/* Navbar stays fixed at the top */}
+      <div className="shrink-0 z-50">
+        <Navbar />
       </div>
 
-      <Footer />
+      {/* Scrollable Content Area */}
+      <div className="flex-1 overflow-y-auto overflow-x-hidden flex flex-col">
+        <div className="flex flex-1 w-full px-4 md:px-8">
+          {!hideSidebar && (
+            <div className="hidden md:block w-64 mt-8 mr-8 shrink-0 sticky top-4 self-start h-fit max-h-[calc(100vh-2rem)] overflow-y-auto">
+              <SideBarCategory categories={categories} />
+            </div>
+          )}
+
+          <main
+            className={`flex-1 min-w-0 ${
+              hideSidebar ? "max-w-7xl mx-auto" : ""
+            }`}
+          >
+            <Outlet context={{ categories }} />
+          </main>
+        </div>
+
+        <Footer />
+      </div>
     </div>
   );
 };

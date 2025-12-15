@@ -22,7 +22,10 @@ export interface SellerBidHistoryResponse {
 
 export interface UpdateSellerProfileDto {
   name?: string;
+  avatar?: string;
   address?: string;
+  contactEmail?: string;
+  dateOfBirth?: string;
 }
 
 export interface ChangeSellerPasswordDto {
@@ -56,6 +59,7 @@ export interface SellerProfileResponse {
     name: string;
     email: string;
     role: "seller";
+    avatar?: string;
     address?: string;
     createdAt: string;
     updatedAt: string;
