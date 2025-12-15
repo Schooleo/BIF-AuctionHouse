@@ -31,7 +31,7 @@ const ProductsContainer: React.FC<ProductsContainerProps> = ({
   initialQuery = "",
   categories = [],
 }) => {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const [data, setData] = useState<IPaginatedResponse<Product>>({
     data: [],
@@ -40,9 +40,7 @@ const ProductsContainer: React.FC<ProductsContainerProps> = ({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const [sort, setSort] = useState<ProductSortOption>(
-    (searchParams.get("sort") as ProductSortOption) || "default"
-  );
+  const sort = (searchParams.get("sort") as ProductSortOption) || "default";
   const category = searchParams.get("category") || initialCategory;
   const query = searchParams.get("q") || initialQuery;
   const minPrice = searchParams.get("min_price")
@@ -51,18 +49,7 @@ const ProductsContainer: React.FC<ProductsContainerProps> = ({
   const maxPrice = searchParams.get("max_price")
     ? Number(searchParams.get("max_price"))
     : undefined;
-
-  const [currentPage, setCurrentPage] = useState(
-    Number(searchParams.get("page")) || 1
-  );
-
-  // Sync pagination with URL (Source of Truth)
-  useEffect(() => {
-    const pageInUrl = Number(searchParams.get("page")) || 1;
-    if (pageInUrl !== currentPage) {
-      setCurrentPage(pageInUrl);
-    }
-  }, [searchParams]);
+  const currentPage = Number(searchParams.get("page")) || 1;
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -93,18 +80,20 @@ const ProductsContainer: React.FC<ProductsContainerProps> = ({
     };
 
     fetchProducts();
-    window.scrollTo(0, 0);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }, [category, query, sort, currentPage, minPrice, maxPrice]);
 
   const handlePageChange = (newPage: number) => {
-    if (newPage !== currentPage) {
-      setCurrentPage(newPage);
-    }
+    const newParams = new URLSearchParams(searchParams);
+    newParams.set("page", newPage.toString());
+    setSearchParams(newParams);
   };
 
   const handleSortChange = (newSort: ProductSortOption) => {
-    setSort(newSort);
-    setCurrentPage(1);
+    const newParams = new URLSearchParams(searchParams);
+    newParams.set("sort", newSort);
+    newParams.set("page", "1");
+    setSearchParams(newParams);
   };
 
   console.log(data);
