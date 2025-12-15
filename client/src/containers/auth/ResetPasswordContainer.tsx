@@ -5,6 +5,8 @@ import { authApi } from "@services/auth.api";
 import type { ResetPasswordDto } from "@interfaces/auth";
 import EmailCard from "@components/forms/EmailCard";
 import ConfirmationModal from "@components/ui/ConfirmationModal";
+import { validateEmail, validateOtp, validatePassword } from "@utils/validation";
+import { useAlertStore } from "@stores/useAlertStore";
 
 const ResetPasswordContainer = () => {
   const [email, setEmail] = useState("");
@@ -12,13 +14,12 @@ const ResetPasswordContainer = () => {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const { addAlert } = useAlertStore();
   const [error, setError] = useState<{
     email?: string;
     otp?: string;
     password?: string;
     confirmPassword?: string;
-    captcha?: string;
-    general?: string;
   }>({});
 
   // Dùng để điều hướng sau khi đặt lại mật khẩu thành công
@@ -32,14 +33,17 @@ const ResetPasswordContainer = () => {
       otp?: string;
       password?: string;
       confirmPassword?: string;
-      captcha?: string;
     } = {};
 
-    if (!email) newErrors.email = "Email is required";
-    if (!otp) newErrors.otp = "OTP is required";
-    if (!password) newErrors.password = "Password is required";
-    if (password.length < 8)
-      newErrors.password = "Password must be at least 8 characters";
+    const emailError = validateEmail(email);
+    if (emailError) newErrors.email = emailError;
+
+    const otpError = validateOtp(otp);
+    if (otpError) newErrors.otp = otpError;
+
+    const passwordError = validatePassword(password);
+    if (passwordError) newErrors.password = passwordError;
+
     if (!confirmPassword)
       newErrors.confirmPassword = "Confirm Password is required";
 
@@ -58,9 +62,9 @@ const ResetPasswordContainer = () => {
         }
       } catch (err: unknown) {
         if (err instanceof Error) {
-          setError({ general: err.message });
+          addAlert("error", err.message);
         } else {
-          setError({ general: "An unknown error occurred" });
+          addAlert("error", "An unknown error occurred");
         }
       }
     }
@@ -107,8 +111,6 @@ const ResetPasswordContainer = () => {
               setConfirmPassword(e.target.value),
             isRequired: true,
             error: error.confirmPassword
-              ? error.confirmPassword
-              : error.general,
           },
         ]}
         buttonProps={{
@@ -131,5 +133,4 @@ const ResetPasswordContainer = () => {
     </>
   );
 };
-
 export default ResetPasswordContainer;

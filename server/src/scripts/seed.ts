@@ -10,6 +10,7 @@ import { Order, OrderStatus } from "../models/order.model";
 import { Chat } from "../models/chat.model";
 import { AutoBid } from "../models/autoBid.model";
 import { connectDB } from "../config/db";
+import { Watchlist } from "../models/watchlist.model";
 
 dotenv.config();
 
@@ -181,6 +182,7 @@ const seed = async () => {
   await Order.deleteMany({});
   await Chat.deleteMany({});
   await AutoBid.deleteMany({});
+  await Watchlist.deleteMany({});
 
   console.log("⚙️ Creating System Config...");
   await SystemConfig.create({
@@ -190,7 +192,7 @@ const seed = async () => {
   });
 
   console.log("👤 Creating Users...");
-  const commonPassword = "12345678";
+  const commonPassword = "Password@123";
 
   const adminId = new mongoose.Types.ObjectId("64b0f1a9e1b9b1a2b3c4d5e6");
   const seller1Id = new mongoose.Types.ObjectId("64b0f1a9e1b9b1a2b3c4d5e7");

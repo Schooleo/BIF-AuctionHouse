@@ -5,6 +5,7 @@ export interface IUser extends Document {
   name: string;
   email: string;
   password: string;
+  googleId?: string;
   address: string;
   role: 'bidder' | 'seller' | 'admin';
   dateOfBirth?: Date;
@@ -25,7 +26,8 @@ const userSchema = new Schema<IUser>(
     name: { type: String, required: true },
     email: { type: String, required: true, unique: true },
     // 'select: false' để không tự động trả về mật khẩu khi truy vấn
-    password: { type: String, required: true, select: false },
+    password: { type: String, required: false, select: false },
+    googleId: { type: String, unique: true, sparse: true },
     address: { type: String },
     role: {
       type: String,

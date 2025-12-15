@@ -138,6 +138,8 @@ export interface FetchProductsDto extends PaginatedFetchDto {
   categoryId?: string;
   query?: string;
   sort?: ProductSortOption;
+  minPrice?: number;
+  maxPrice?: number;
 }
 
 export interface FetchProductDetailsDto {

@@ -1,22 +1,40 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import FormCard from "@components/forms/FormCard";
 import { authApi } from "@services/auth.api";
 import type { LoginDto } from "@interfaces/auth";
+import { useSearchParams } from "react-router-dom";
+import { useAlertStore } from "@stores/useAlertStore";
+import GoogleAuthButton from "@components/ui/GoogleAuthButton";
 
 const LoginContainer = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { addAlert } = useAlertStore();
   const [error, setError] = useState<{
     email?: string;
     password?: string;
-    general?: string;
   }>({});
+  
+  // Ref để chặn việc hiển thị alert 2 lần do React Strict Mode
+  const errorHandled = useRef(false);
+
+  useEffect(() => {
+    const errorParam = searchParams.get("error");
+    if (errorParam && !errorHandled.current) {
+      addAlert("error", decodeURIComponent(errorParam));
+      // Đánh dấu đã xử lý để lần render thứ 2 (của StrictMode) không chạy lại
+      errorHandled.current = true; 
+      
+      // Clean URL
+      setSearchParams({});
+    }
+  }, [searchParams, setSearchParams, addAlert]);
 
   const handleSubmit = async () => {
     const newErrors: {
       email?: string;
       password?: string;
-      general?: string;
     } = {};
     if (!email) newErrors.email = "Email is required";
     if (!password) newErrors.password = "Password is required";
@@ -33,13 +51,13 @@ const LoginContainer = () => {
           localStorage.setItem("token", response.token);
           window.location.href = "/";
         } else {
-          setError({ general: response.message });
+          addAlert("error", response.message!);
         }
       } catch (err: unknown) {
         if (err instanceof Error) {
-          setError({ general: err.message });
+          addAlert("error", err.message);
         } else {
-          setError({ general: "An unknown error occurred" });
+          addAlert("error", "An unknown error occurred");
         }
       }
     }
@@ -65,13 +83,28 @@ const LoginContainer = () => {
           onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
             setPassword(e.target.value),
           isRequired: true,
-          error: error.password ? error.password : error.general,
+          error: error.password,
         },
       ]}
       buttonProps={{ label: "LOGIN", variant: "primary", type: "submit" }}
       className="p-6 shadow-lg"
       onSubmit={handleSubmit}
-    />
+    >
+      <div className="mt-4">
+        <div className="relative">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-gray-300" />
+          </div>
+          <div className="relative flex justify-center text-sm">
+            <span className="px-2 bg-white text-gray-500">Or continue with</span>
+          </div>
+        </div>
+
+        <div className="mt-4">
+          <GoogleAuthButton text="Login with Google" />
+        </div>
+      </div>
+    </FormCard>
   );
 };
 

@@ -2,6 +2,8 @@ import { Request, Response } from "express";
 import { authService } from "../services/auth.service";
 import { AuthMessages } from "../constants/messages";
 import { User } from "../models/user.model";
+import { generateToken } from "../utils/jwt.util";
+import { env } from "../config/env";
 
 export const getUser = async (req: Request, res: Response) => {
   if (!req.user) return res.status(200).json({ user: null });
@@ -72,5 +74,22 @@ export const resetPassword = async (req: Request, res: Response) => {
     });
   } catch (e: any) {
     res.status(400).json({ message: e.message });
+  }
+};
+
+export const googleCallback = async (req: Request, res: Response) => {
+  try {
+    const user = req.user as any;
+    if (!user) return res.redirect(`${env.FRONTEND_URL}/login?error=auth_failed`);
+
+    const token = generateToken({
+      id: user.id,
+      role: user.role,
+      email: user.email,
+    });
+
+    res.redirect(`${env.FRONTEND_URL}?token=${token}`);
+  } catch (e: any) {
+    res.redirect(`${env.FRONTEND_URL}/login?error=${encodeURIComponent(e.message)}`);
   }
 };

@@ -11,4 +11,6 @@ export const env = {
   RECAPTCHA_SECRET_KEY: process.env.RECAPTCHA_SECRET_KEY || "",
   CLOUDINARY_URL: process.env.CLOUDINARY_URL || "",
   EMAIL_WEBHOOK_URL: process.env.EMAIL_WEBHOOK_URL || "",
+  GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID || "",
+  GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET || "",
 };
