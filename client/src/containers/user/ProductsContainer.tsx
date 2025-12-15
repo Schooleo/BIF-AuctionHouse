@@ -56,6 +56,14 @@ const ProductsContainer: React.FC<ProductsContainerProps> = ({
     Number(searchParams.get("page")) || 1
   );
 
+  // Sync pagination with URL (Source of Truth)
+  useEffect(() => {
+    const pageInUrl = Number(searchParams.get("page")) || 1;
+    if (pageInUrl !== currentPage) {
+      setCurrentPage(pageInUrl);
+    }
+  }, [searchParams]);
+
   useEffect(() => {
     const fetchProducts = async () => {
       try {

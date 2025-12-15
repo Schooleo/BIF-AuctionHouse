@@ -189,10 +189,6 @@ const WatchlistContainer: React.FC = () => {
     return true;
   });
 
-  if (!data || !filteredItems.length) {
-    return <EmptyMessage text="No items match your filter." />;
-  }
-
   // Count items for sidebar
   const activeCount = validItems.filter(i => i.product && new Date(i.product.endTime).getTime() >= Date.now()).length;
   // Ended includes valid expired products AND null products
@@ -210,7 +206,8 @@ const WatchlistContainer: React.FC = () => {
       <div className="mb-6">
         <h1 className="text-3xl font-bold text-gray-900">My Watchlist</h1>
         <p className="text-gray-600 mt-1">
-          Tracking {data.pagination.total} item{data.pagination.total !== 1 ? "s" : ""}
+          Tracking {data?.pagination.total || 0} item
+          {(data?.pagination.total || 0) !== 1 ? "s" : ""}
         </p>
       </div>
 
@@ -254,44 +251,61 @@ const WatchlistContainer: React.FC = () => {
             </div>
           </div>
 
-          {/* Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {filteredItems.map((item) => {
-              if (!item.product) {
-                // Unavailable Item Card
-                return (
-                  <div key={item._id} className="bg-gray-50 rounded-lg border border-gray-200 p-6 flex flex-col items-center justify-center text-center h-full min-h-[360px]">
-                     <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mb-4">
-                        <AlertCircle className="w-8 h-8 text-gray-400" />
-                     </div>
-                     <h3 className="text-gray-900 font-semibold mb-2">Item Unavailable</h3>
-                     <p className="text-gray-500 text-sm mb-4">
-                       This product is no longer available or was deleted.
-                     </p>
-                  </div>
-                );
-              }
-              
-              return (
-                <ProductCard
-                  key={item._id}
-                  product={item.product}
-                  showRemoveButton={true}
-                  onRemove={() => handleRemoveFromWatchlist(item.product._id)}
-                  isRemoving={removingProductIds.has(item.product._id)}
-                />
-              );
-            })}
-          </div>
+          {filteredItems.length > 0 ? (
+            <>
+              {/* Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {filteredItems.map((item) => {
+                  if (!item.product) {
+                    // Unavailable Item Card
+                    return (
+                      <div
+                        key={item._id}
+                        className="bg-gray-50 rounded-lg border border-gray-200 p-6 flex flex-col items-center justify-center text-center h-full min-h-[360px]"
+                      >
+                        <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mb-4">
+                          <AlertCircle className="w-8 h-8 text-gray-400" />
+                        </div>
+                        <h3 className="text-gray-900 font-semibold mb-2">
+                          Item Unavailable
+                        </h3>
+                        <p className="text-gray-500 text-sm mb-4">
+                          This product is no longer available or was deleted.
+                        </p>
+                      </div>
+                    );
+                  }
 
-          {/* Pagination */}
-          {filterStatus === "all" && data.pagination.totalPages > 1 && (
-            <div className="mt-8 flex justify-center">
-              <Pagination
-                currentPage={data.pagination.page}
-                totalPages={data.pagination.totalPages}
-                onPageChange={handlePageChange}
-              />
+                  return (
+                    <ProductCard
+                      key={item._id}
+                      product={item.product}
+                      showRemoveButton={true}
+                      onRemove={() =>
+                        handleRemoveFromWatchlist(item.product._id)
+                      }
+                      isRemoving={removingProductIds.has(item.product._id)}
+                    />
+                  );
+                })}
+              </div>
+
+              {/* Pagination */}
+              {filterStatus === "all" &&
+                data &&
+                data.pagination.totalPages > 1 && (
+                  <div className="mt-8 flex justify-center">
+                    <Pagination
+                      currentPage={data.pagination.page}
+                      totalPages={data.pagination.totalPages}
+                      onPageChange={handlePageChange}
+                    />
+                  </div>
+                )}
+            </>
+          ) : (
+            <div className="py-12 bg-white rounded-lg border border-dashed border-gray-300 flex justify-center items-center">
+              <EmptyMessage text="No items match your filter." />
             </div>
           )}
         </div>
