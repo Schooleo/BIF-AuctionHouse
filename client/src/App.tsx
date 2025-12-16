@@ -24,6 +24,16 @@ import SellerProductsPage from "./pages/seller/SellerProductsPage";
 import AddProductPage from "./pages/seller/AddProductPage";
 import SellerLayout from "./layouts/SellerLayout";
 import SellerProfilePage from "./pages/seller/SellerProfilePage";
+import AdminLayout from "./layouts/AdminLayout";
+import AdminDashboardPage from "./pages/admin/AdminDashboardPage";
+import AdminProductsPage from "./pages/admin/AdminProductsPage";
+import AdminProductDetailsPage from "./pages/admin/AdminProductDetailsPage";
+import AdminCategoriesPage from "./pages/admin/AdminCategoriesPage";
+import AdminCategoryDetailsPage from "./pages/admin/AdminCategoryDetailsPage";
+import AdminUsersPage from "./pages/admin/AdminUsersPage";
+import AdminUserDetailsPage from "./pages/admin/AdminUserDetailsPage";
+import AdminUpgradeRequestsPage from "./pages/admin/UpgradeRequestsPage";
+import AdminProfilePage from "./pages/admin/AdminProfilePage";
 import { useEffect } from "react";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import UnauthorizedPage from "./pages/shared/UnauthorizedPage";
@@ -43,6 +53,12 @@ const RoleBasedRedirect = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     if (user?.role === "seller" && location.pathname === "/") {
       navigate("/seller/products");
+    }
+    if (
+      user?.role === "admin" &&
+      (location.pathname === "/" || location.pathname === "/admin/")
+    ) {
+      if (location.pathname === "/") navigate("/admin");
     }
   }, [user, navigate, location]);
 
@@ -118,6 +134,35 @@ const App = () => {
                       element={<OrderCompletionPage />}
                     />
                     <Route path="profile" element={<SellerProfilePage />} />
+                  </Route>
+                </Route>
+
+                <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
+                  <Route path="admin" element={<AdminLayout />}>
+                    <Route index element={<AdminDashboardPage />} />
+                    <Route path="products" element={<AdminProductsPage />} />
+                    <Route
+                      path="products/:id"
+                      element={<AdminProductDetailsPage />}
+                    />
+                    <Route
+                      path="categories"
+                      element={<AdminCategoriesPage />}
+                    />
+                    <Route
+                      path="categories/:id"
+                      element={<AdminCategoryDetailsPage />}
+                    />
+                    <Route path="users" element={<AdminUsersPage />} />
+                    <Route
+                      path="users/:id"
+                      element={<AdminUserDetailsPage />}
+                    />
+                    <Route
+                      path="upgrade-requests"
+                      element={<AdminUpgradeRequestsPage />}
+                    />
+                    <Route path="profile" element={<AdminProfilePage />} />
                   </Route>
                 </Route>
 
