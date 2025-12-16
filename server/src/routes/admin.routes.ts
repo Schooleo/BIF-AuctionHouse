@@ -7,6 +7,7 @@ import {
   listUsers,
   manageUserUpgradeRequests,
   approveUserUpgrade,
+  getDashboardStats,
 } from "../controllers/admin.controller";
 import { protect } from "../middleware/auth.middleware";
 
@@ -15,6 +16,7 @@ const router = Router();
 // Bao vệ tất cả các route bên dưới cho role "admin"
 router.use(protect(["admin"]));
 
+router.get("/dashboard-stats", getDashboardStats);
 router.get("/categories", listCategories);
 router.post("/categories", manageCategory);
 router.get("/products", listProducts);
