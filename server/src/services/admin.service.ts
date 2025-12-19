@@ -3,6 +3,7 @@ import { Product } from "../models/product.model";
 import { Order } from "../models/order.model";
 import { Bid } from "../models/bid.model";
 import { AutoBid } from "../models/autoBid.model";
+import { Rating } from "../models/rating.model";
 import mongoose from "mongoose";
 
 export const getDashboardStats = async (timeRange: string = "24h") => {
@@ -211,4 +212,218 @@ export const getDashboardStats = async (timeRange: string = "24h") => {
       top10: top10Bids,
     },
   };
+};
+
+// ==========================================
+// USER MANAGEMENT
+// ==========================================
+
+export const getAllUsers = async ({
+  page = 1,
+  limit = 10,
+  search = "",
+  role,
+  status,
+}: {
+  page?: number;
+  limit?: number;
+  search?: string;
+  role?: string;
+  status?: string;
+}) => {
+  const query: any = {
+    $or: [{ isDeleted: false }, { isDeleted: { $exists: false } }],
+  }; // Default: filter out soft-deleted users (handle legacy docs)
+
+  // Search by name or email
+  if (search) {
+    query.$and = [
+      {
+        $or: [
+          { name: { $regex: search, $options: "i" } },
+          { email: { $regex: search, $options: "i" } },
+        ],
+      },
+    ];
+  }
+
+  // Filter by role
+  if (role) {
+    query.role = role;
+  }
+
+  // Filter by status (ACTIVE/BLOCKED)
+  if (status) {
+    query.status = status;
+  }
+
+  const skip = (page - 1) * limit;
+
+  const [users, totalDocs] = await Promise.all([
+    User.find(query)
+      .select("-password") // Exclude sensitive data
+      .skip(skip)
+      .limit(limit)
+      .sort({ createdAt: -1 }), // Newest first
+    User.countDocuments(query),
+  ]);
+
+  const totalPages = Math.ceil(totalDocs / limit);
+
+  return {
+    users, // reputationScore is a virtual, so it's included if toJSON: { virtuals: true } is set in schema
+    totalDocs,
+    totalPages,
+    currentPage: page,
+  };
+};
+
+export const toggleUserStatus = async (userId: string) => {
+  const user = await User.findById(userId);
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  // Toggle Logic
+  user.status = user.status === "ACTIVE" ? "BLOCKED" : "ACTIVE";
+  await user.save();
+
+  return user.status;
+};
+
+export const softDeleteUser = async (userId: string, reason: string) => {
+  if (!reason) {
+    throw new Error("Delete reason is mandatory");
+  }
+
+  const user = await User.findById(userId);
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  if (user.isDeleted) {
+    throw new Error("User is already deleted");
+  }
+
+  user.isDeleted = true;
+  user.deletedAt = new Date();
+  user.deleteReason = reason;
+
+  await user.save();
+
+  return { message: "User soft deleted successfully", userId };
+};
+
+export const getUserDetail = async (userId: string) => {
+  const user = await User.findById(userId).select("-password -googleId"); // Exclude secrets using standard select
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  // Parallel Fetching
+  const [bids, ratings, products, ratingStats] = await Promise.all([
+    // 1. Bid History (Last 10)
+    Bid.find({ bidder: userId })
+      .sort({ createdAt: -1 })
+      .limit(10)
+      .populate(
+        "product",
+        "name endTime currentPrice winnerConfirmed currentBidder"
+      ) // Populate minimal fields
+      .lean(),
+
+    // 2. Ratings Received (Last 5)
+    Rating.find({ ratee: userId })
+      .sort({ createdAt: -1 })
+      .limit(5)
+      .populate("rater", "name avatar")
+      .lean(),
+
+    // 3. Selling Info (If Seller) - Active products
+    user.role === "seller"
+      ? Product.find({ seller: userId, endTime: { $gt: new Date() } })
+          .select("name currentPrice mainImage endTime bidCount")
+          .limit(10)
+          .lean()
+      : Promise.resolve([]),
+
+    // 4. Rating Stats (To calculate percentage if needed beyond user model)
+    // We can rely on user model fields (positiveRatings, negativeRatings) but finding recent ones helps
+    Rating.aggregate([
+      { $match: { ratee: new mongoose.Types.ObjectId(userId) } },
+      {
+        $group: {
+          _id: null,
+          avgScore: { $avg: "$score" },
+          count: { $sum: 1 },
+        },
+      },
+    ]),
+  ]);
+
+  // Process Bids to determine status
+  const bidHistory = bids.map((bid: any) => {
+    const product = bid.product;
+    let status = "Ongoing";
+
+    if (product) {
+      const now = new Date();
+      const isEnded = new Date(product.endTime) < now;
+
+      if (isEnded) {
+        // Winning logic: Product ended, and this bid matched currentPrice (simplified) OR user is currentBidder
+        // Note: Optimally we check if bid._id matches product.winningBid but lacking that ref,
+        // we check if user is currentBidder AND this bid price == currentPrice.
+        const isWinner =
+          product.currentBidder?.toString() === userId &&
+          bid.price === product.currentPrice;
+        status = isWinner ? "Won" : "Lost";
+      } else {
+        // If ongoing, check if outbid
+        if (bid.price < product.currentPrice) {
+          status = "Outbid";
+        } else {
+          status = "Leading";
+        }
+      }
+    } else {
+      status = "Unknown (Product Deleted)";
+    }
+
+    return {
+      _id: bid._id,
+      productName: product?.name || "Unknown Product",
+      amount: bid.price,
+      date: bid.createdAt,
+      status,
+    };
+  });
+
+  return {
+    profile: {
+      ...user.toObject(),
+      // Manual calculation or usage of virtuals if toObject doesn't catch it perfectly
+      reputationParam: {
+        positive: user.positiveRatings || 0,
+        negative: user.negativeRatings || 0,
+        score: user.reputationScore,
+      },
+    },
+    bidHistory,
+    ratings,
+    sellingHistory: products,
+    stats: ratingStats[0] || { avgScore: 0, count: 0 },
+  };
+};
+
+export const updateUser = async (userId: string, data: any) => {
+  const user = await User.findById(userId);
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  // Prevent updating sensitive fields directly if needed, strictly generic for now as per request
+  Object.assign(user, data);
+  await user.save();
+  return user;
 };

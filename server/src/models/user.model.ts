@@ -11,9 +11,15 @@ export interface IUser extends Document {
   avatar?: string;
   dateOfBirth?: Date;
   contactEmail?: string;
+  status: "ACTIVE" | "BLOCKED";
 
   positiveRatings: number; // Yêu cầu 2.2
   negativeRatings: number; // Yêu cầu 2.2
+
+  // Soft Delete
+  isDeleted: boolean;
+  deletedAt?: Date;
+  deleteReason?: string;
 
   // Thuộc tính ảo
   reputationScore: number;
@@ -38,8 +44,18 @@ const userSchema = new Schema<IUser>(
     avatar: { type: String },
     dateOfBirth: { type: Date },
     contactEmail: { type: String },
+    status: {
+      type: String,
+      enum: ["ACTIVE", "BLOCKED"],
+      default: "ACTIVE",
+    },
     positiveRatings: { type: Number, default: 0 },
     negativeRatings: { type: Number, default: 0 },
+
+    // Soft Delete
+    isDeleted: { type: Boolean, default: false },
+    deletedAt: { type: Date },
+    deleteReason: { type: String },
   },
   {
     timestamps: true,

@@ -24,9 +24,65 @@ export const removeProduct = async (req: Request, res: Response) => {
   res.status(501).json({ message: "Not implemented" });
 };
 
-export const listUsers = async (req: Request, res: Response) => {
-  // TODO: implement list users logic
-  res.status(501).json({ message: "Not implemented" });
+export const getUsers = async (req: Request, res: Response) => {
+  try {
+    const { page, limit, search, role, status } = req.query;
+    const result = await AdminService.getAllUsers({
+      page: page ? Number(page) : 1,
+      limit: limit ? Number(limit) : 10,
+      search: (search as string) || "",
+      role: role as string,
+      status: status as string,
+    });
+    res.status(200).json(result);
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const getUserDetail = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    if (!id) {
+      res.status(400).json({ message: "User ID is required" });
+      return;
+    }
+    const userDetail = await AdminService.getUserDetail(id);
+    res.status(200).json(userDetail);
+  } catch (error: any) {
+    res.status(404).json({ message: error.message });
+  }
+};
+
+export const updateUser = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    if (!id) {
+      res.status(400).json({ message: "User ID is required" });
+      return;
+    }
+    const updateData = req.body;
+
+    const updatedUser = await AdminService.updateUser(id, updateData);
+    res.status(200).json(updatedUser);
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const deleteUser = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    if (!id) {
+      res.status(400).json({ message: "User ID is required" });
+      return;
+    }
+    const { reason } = req.body;
+    const result = await AdminService.softDeleteUser(id, reason);
+    res.status(200).json(result);
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
 };
 
 export const manageUserUpgradeRequests = async (

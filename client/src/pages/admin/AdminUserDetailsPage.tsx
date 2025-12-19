@@ -1,16 +1,487 @@
-import React from "react";
-import { useParams } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { adminApi, type UserDetailResponse } from "../../services/admin.api";
+import DeleteReasonModal from "../../components/admin/DeleteReasonModal";
+import Spinner from "../../components/ui/Spinner";
+import {
+  ArrowLeft,
+  ShieldCheck,
+  ShieldAlert,
+  Star,
+  Trash2,
+  Clock,
+  MapPin,
+  Calendar,
+  Mail,
+  MoreHorizontal,
+} from "lucide-react";
+
+type TabType = "activity" | "selling";
 
 const AdminUserDetailsPage: React.FC = () => {
-  const { id } = useParams();
-  return (
-    <div className="space-y-6">
-      <h1 className="text-3xl font-bold text-gray-800">
-        User Details {id && `- ${id}`}
-      </h1>
-      <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
-        <p className="text-gray-500">To be implemented...</p>
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+
+  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState<UserDetailResponse | null>(null);
+  const [activeTab, setActiveTab] = useState<TabType>("activity");
+
+  // Delete State
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  // Fetch Data
+  useEffect(() => {
+    if (!id) return;
+    const fetchDetail = async () => {
+      try {
+        const res = await adminApi.getUserDetail(id);
+        setData(res);
+      } catch (error) {
+        console.error(error);
+        alert("Failed to load user details");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchDetail();
+  }, [id]);
+
+  // Actions
+  const handleToggleStatus = async () => {
+    if (!data || !id) return;
+    const currentStatus = data.profile.status;
+    const newStatus = currentStatus === "ACTIVE" ? "BLOCKED" : "ACTIVE";
+
+    // Optimistic
+    setData((prev) =>
+      prev ? { ...prev, profile: { ...prev.profile, status: newStatus } } : null
+    );
+
+    try {
+      await adminApi.updateUser(id, { status: newStatus });
+    } catch (error) {
+      alert("Failed to update status");
+      // Revert active state
+      setData((prev) =>
+        prev
+          ? { ...prev, profile: { ...prev.profile, status: currentStatus } }
+          : null
+      );
+    }
+  };
+
+  const handleDelete = async (reason: string) => {
+    if (!id) return;
+    setIsDeleting(true);
+    try {
+      await adminApi.deleteUser(id, reason);
+      alert("User deleted successfully");
+      navigate("/admin/users");
+    } catch (error) {
+      alert("Failed to delete user");
+    } finally {
+      setIsDeleting(false);
+      setIsDeleteModalOpen(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center p-20">
+        <Spinner />
       </div>
+    );
+  }
+
+  if (!data) return <div className="text-center p-10">User not found.</div>;
+
+  const { profile, bidHistory, sellingHistory, ratings } = data;
+
+  return (
+    <div className="space-y-6 animate-fade-in pb-10">
+      {/* Header / Back */}
+      <div>
+        <button
+          onClick={() => navigate("/admin/users")}
+          className="flex items-center gap-2 text-gray-500 hover:text-primary-blue transition-colors mb-4 group"
+        >
+          <ArrowLeft
+            size={18}
+            className="group-hover:-translate-x-1 transition-transform"
+          />{" "}
+          Back to Users
+        </button>
+        <h1 className="text-2xl font-bold text-gray-800">User Profile</h1>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left Column: Profile Card */}
+        <div className="lg:col-span-1 space-y-6">
+          <div className="bg-white rounded-lg shadow-md border border-gray-100 overflow-hidden">
+            {/* Top Section */}
+            <div className="p-8 flex flex-col items-center text-center border-b border-gray-100">
+              <div className="w-32 h-32 rounded-full bg-primary-blue/10 flex items-center justify-center text-primary-blue text-4xl font-bold mb-4 overflow-hidden border-4 border-white shadow-sm ring-1 ring-gray-100">
+                {profile.avatar ? (
+                  <img
+                    src={profile.avatar}
+                    alt={profile.name}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  profile.name.charAt(0).toUpperCase()
+                )}
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-1">
+                {profile.name}
+              </h2>
+              <div className="flex items-center gap-2 mb-4">
+                <span className="px-3 py-1 bg-gray-100 rounded-full text-xs font-semibold uppercase text-gray-600 tracking-wide">
+                  {profile.role}
+                </span>
+                <span
+                  className={`px-3 py-1 rounded-full text-xs font-semibold uppercase flex items-center gap-1 ${
+                    profile.isDeleted
+                      ? "bg-gray-100 text-gray-500"
+                      : profile.status === "ACTIVE"
+                        ? "bg-green-50 text-green-700"
+                        : "bg-red-50 text-red-700"
+                  }`}
+                >
+                  {profile.isDeleted ? (
+                    "Deleted"
+                  ) : profile.status === "ACTIVE" ? (
+                    <>
+                      <ShieldCheck size={12} /> Active
+                    </>
+                  ) : (
+                    <>
+                      <ShieldAlert size={12} /> Blocked
+                    </>
+                  )}
+                </span>
+              </div>
+
+              {/* Stats Row */}
+              <div className="grid grid-cols-2 gap-4 w-full mt-2">
+                <div className="text-center p-3 bg-gray-50 rounded-lg">
+                  <div className="text-xl font-bold text-primary-blue">
+                    {bidHistory.length}
+                  </div>
+                  <div className="text-xs text-gray-500 uppercase font-semibold">
+                    Bids
+                  </div>
+                </div>
+                <div className="text-center p-3 bg-gray-50 rounded-lg">
+                  <div className="text-xl font-bold text-yellow-500 flex items-center justify-center gap-1">
+                    {(profile.reputationParam.score * 10).toFixed(1)}{" "}
+                    <Star size={14} fill="currentColor" />
+                  </div>
+                  <div className="text-xs text-gray-500 uppercase font-semibold">
+                    Reputation
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Details Section */}
+            <div className="p-6 space-y-4">
+              <div className="flex items-start gap-3">
+                <Mail className="text-gray-400 mt-0.5" size={18} />
+                <div>
+                  <span className="block text-xs text-gray-500 uppercase font-bold">
+                    Email
+                  </span>
+                  <span className="text-gray-900 text-sm break-all">
+                    {profile.email}
+                  </span>
+                  {profile.contactEmail && (
+                    <span className="block text-gray-500 text-xs mt-1">
+                      {profile.contactEmail}
+                    </span>
+                  )}
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <MapPin className="text-gray-400 mt-0.5" size={18} />
+                <div>
+                  <span className="block text-xs text-gray-500 uppercase font-bold">
+                    Address
+                  </span>
+                  <span className="text-gray-900 text-sm">
+                    {profile.address || "No address provided"}
+                  </span>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <Calendar className="text-gray-400 mt-0.5" size={18} />
+                <div>
+                  <span className="block text-xs text-gray-500 uppercase font-bold">
+                    Joined
+                  </span>
+                  <span className="text-gray-900 text-sm">
+                    {new Date(profile.createdAt).toLocaleDateString()}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Actions Footer */}
+            <div className="p-6 bg-gray-50 border-t border-gray-100 flex flex-col gap-3">
+              {profile.isDeleted ? (
+                <div className="p-3 bg-red-100 text-red-800 text-sm rounded-lg text-center font-medium">
+                  User deleted on{" "}
+                  {new Date(profile.deletedAt!).toLocaleDateString()}
+                </div>
+              ) : (
+                <>
+                  <button
+                    onClick={handleToggleStatus}
+                    className={`w-full py-2.5 rounded-lg font-bold text-sm transition-all border shadow-sm ${
+                      profile.status === "ACTIVE"
+                        ? "bg-white border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-red-600"
+                        : "bg-green-600 border-transparent text-white hover:bg-green-700"
+                    }`}
+                  >
+                    {profile.status === "ACTIVE"
+                      ? "Block Access"
+                      : "Activate User"}
+                  </button>
+                  <button
+                    onClick={() => setIsDeleteModalOpen(true)}
+                    className="w-full py-2.5 rounded-lg font-bold text-sm text-red-600 bg-red-50 hover:bg-red-100 transition-colors flex items-center justify-center gap-2"
+                  >
+                    <Trash2 size={16} /> Soft Delete Account
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Right Column: Tabs & Content */}
+        <div className="lg:col-span-2 space-y-6">
+          <div className="bg-white rounded-lg shadow-md border border-gray-100 overflow-hidden min-h-[500px]">
+            {/* Tab Headers */}
+            <div className="flex border-b border-gray-200">
+              <button
+                onClick={() => setActiveTab("activity")}
+                className={`flex-1 py-4 text-sm font-bold text-center border-b-2 transition-colors flex items-center justify-center gap-2 ${
+                  activeTab === "activity"
+                    ? "border-primary-blue text-primary-blue bg-blue-50/30"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+                }`}
+              >
+                <MoreHorizontal size={18} /> Activity Overview
+              </button>
+              {profile.role === "seller" && (
+                <button
+                  onClick={() => setActiveTab("selling")}
+                  className={`flex-1 py-4 text-sm font-bold text-center border-b-2 transition-colors ${
+                    activeTab === "selling"
+                      ? "border-primary-blue text-primary-blue bg-blue-50/30"
+                      : "border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+                  }`}
+                >
+                  Selling History
+                </button>
+              )}
+            </div>
+
+            <div className="p-6">
+              {/* Tab 1: Activity Overview */}
+              {activeTab === "activity" && (
+                <div className="space-y-8">
+                  {/* Mini-table: Recent Bids */}
+                  <section>
+                    <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                      <span className="w-1 h-6 bg-primary-blue rounded-full"></span>{" "}
+                      Recent Bids
+                    </h3>
+                    <div className="overflow-x-auto border border-gray-100 rounded-lg">
+                      <table className="w-full text-sm text-left">
+                        <thead className="bg-gray-50 text-gray-500 font-semibold uppercase text-xs tracking-wider">
+                          <tr>
+                            <th className="p-3">Product</th>
+                            <th className="p-3">Amount</th>
+                            <th className="p-3">Date</th>
+                            <th className="p-3">Status</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100">
+                          {bidHistory.length === 0 ? (
+                            <tr>
+                              <td
+                                colSpan={4}
+                                className="p-6 text-center text-gray-400 italic"
+                              >
+                                No recent activity.
+                              </td>
+                            </tr>
+                          ) : (
+                            bidHistory.slice(0, 5).map(
+                              (
+                                bid // Limit to 5 just in case
+                              ) => (
+                                <tr
+                                  key={bid._id}
+                                  className="hover:bg-gray-50/50"
+                                >
+                                  <td className="p-3 font-medium text-gray-900">
+                                    {bid.productName}
+                                  </td>
+                                  <td className="p-3 font-mono text-gray-600">
+                                    ${bid.amount.toLocaleString()}
+                                  </td>
+                                  <td className="p-3 text-gray-500">
+                                    {new Date(bid.date).toLocaleDateString()}
+                                  </td>
+                                  <td className="p-3">
+                                    <span
+                                      className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold ${
+                                        bid.status === "Won"
+                                          ? "bg-green-100 text-green-800"
+                                          : bid.status === "Lost"
+                                            ? "bg-gray-100 text-gray-600"
+                                            : bid.status === "Leading"
+                                              ? "bg-blue-100 text-blue-800"
+                                              : "bg-yellow-100 text-yellow-800"
+                                      }`}
+                                    >
+                                      {bid.status}
+                                    </span>
+                                  </td>
+                                </tr>
+                              )
+                            )
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </section>
+
+                  {/* Mini-table: Recent Ratings */}
+                  <section>
+                    <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                      <span className="w-1 h-6 bg-yellow-500 rounded-full"></span>{" "}
+                      Recent Ratings
+                    </h3>
+                    {ratings.length === 0 ? (
+                      <p className="text-gray-400 italic text-sm p-4 border border-dashed rounded-lg text-center">
+                        No reviews yet.
+                      </p>
+                    ) : (
+                      <div className="space-y-3">
+                        {ratings.map((rating) => (
+                          <div
+                            key={rating._id}
+                            className="flex gap-4 p-4 border border-gray-100 rounded-lg hover:shadow-sm transition-shadow"
+                          >
+                            <div className="shrink-0">
+                              <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
+                                {rating.rater.avatar ? (
+                                  <img
+                                    src={rating.rater.avatar}
+                                    alt={rating.rater.name}
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  <span className="text-xs font-bold text-gray-500">
+                                    {rating.rater.name.charAt(0)}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex-1">
+                              <div className="flex justify-between items-start mb-1">
+                                <div>
+                                  <span className="font-bold text-gray-900 text-sm">
+                                    {rating.rater.name}
+                                  </span>
+                                  <span className="text-xs text-gray-500 ml-2">
+                                    {new Date(
+                                      rating.createdAt
+                                    ).toLocaleDateString()}
+                                  </span>
+                                </div>
+                                <span
+                                  className={`px-2 py-0.5 rounded text-xs font-bold ${
+                                    rating.score > 0
+                                      ? "bg-green-100 text-green-700"
+                                      : "bg-red-100 text-red-700"
+                                  }`}
+                                >
+                                  {rating.score > 0
+                                    ? "+ Positive"
+                                    : "- Negative"}
+                                </span>
+                              </div>
+                              <p className="text-sm text-gray-600 leading-relaxed">
+                                "{rating.comment}"
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </section>
+                </div>
+              )}
+
+              {/* Tab 2: Selling */}
+              {activeTab === "selling" && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {sellingHistory.length === 0 ? (
+                    <div className="col-span-2 text-center py-12 text-gray-400">
+                      <p>No active listings found.</p>
+                    </div>
+                  ) : (
+                    sellingHistory.map((prod) => (
+                      <div
+                        key={prod._id}
+                        className="flex flex-col group border border-gray-100 rounded-lg hover:border-primary-blue/30 hover:shadow-md transition-all"
+                      >
+                        <div className="relative h-40 w-full bg-gray-100 rounded-t-lg overflow-hidden">
+                          <img
+                            src={prod.mainImage}
+                            alt={prod.name}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          />
+                          <div className="absolute top-2 right-2 bg-black/50 text-white text-xs px-2 py-1 rounded backdrop-blur-sm">
+                            {prod.bidCount} Bids
+                          </div>
+                        </div>
+                        <div className="p-3 flex-1 flex flex-col">
+                          <h4 className="font-semibold text-gray-800 line-clamp-2 mb-2 group-hover:text-primary-blue">
+                            {prod.name}
+                          </h4>
+                          <div className="mt-auto flex items-center justify-between">
+                            <span className="text-primary-blue font-bold">
+                              ${prod.currentPrice.toLocaleString()}
+                            </span>
+                            <span className="text-xs text-gray-500 flex items-center gap-1">
+                              <Clock size={12} />{" "}
+                              {new Date(prod.endTime).toLocaleDateString()}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <DeleteReasonModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={handleDelete}
+        title={`Delete User: ${profile.name}`}
+        isLoading={isDeleting}
+      />
     </div>
   );
 };

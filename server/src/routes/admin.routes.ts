@@ -4,7 +4,10 @@ import {
   manageCategory,
   listProducts,
   removeProduct,
-  listUsers,
+  getUsers,
+  getUserDetail,
+  updateUser,
+  deleteUser,
   manageUserUpgradeRequests,
   approveUserUpgrade,
   getDashboardStats,
@@ -22,7 +25,11 @@ router.post("/categories", manageCategory);
 router.get("/products", listProducts);
 router.delete("/products/:id", removeProduct);
 
-router.get("/users", listUsers);
+// User Management Routes
+router.get("/users", getUsers);
+router.get("/users/:id", getUserDetail);
+router.patch("/users/:id/update", updateUser);
+router.delete("/users/:id/delete", deleteUser);
 router.get("/upgrade-requests", manageUserUpgradeRequests);
 router.post("/upgrade-requests/:userId/approve", approveUserUpgrade);
 
