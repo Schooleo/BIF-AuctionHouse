@@ -15,14 +15,12 @@ export interface IUser extends Document {
 
   positiveRatings: number; // Yêu cầu 2.2
   negativeRatings: number; // Yêu cầu 2.2
+  reputationScore: number;
 
   // Soft Delete
   isDeleted: boolean;
   deletedAt?: Date;
   deleteReason?: string;
-
-  // Thuộc tính ảo
-  reputationScore: number;
 
   // Methods
   comparePassword(candidatePassword: string): Promise<boolean>;

@@ -1,5 +1,5 @@
-import React, { useEffect, useState, useCallback } from "react";
-import { Link } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import type { User } from "../../services/admin.api";
 import { adminApi } from "../../services/admin.api";
 import DeleteReasonModal from "../../components/admin/DeleteReasonModal";
@@ -10,8 +10,8 @@ import {
   ShieldAlert,
   ChevronLeft,
   ChevronRight,
-  Eye,
   Filter,
+  Users,
 } from "lucide-react";
 
 interface QueryParams {
@@ -24,20 +24,35 @@ interface QueryParams {
   sortOrder: "asc" | "desc";
 }
 
+const DEFAULT_PARAMS: QueryParams = {
+  page: 1,
+  limit: 10,
+  search: "",
+  role: "",
+  status: "",
+  sortBy: "createdAt",
+  sortOrder: "desc",
+};
+
 const AdminUsersPage: React.FC = () => {
-  // Consolidated query state
-  const [queryParams, setQueryParams] = useState<QueryParams>({
-    page: 1,
-    limit: 10,
-    search: "",
-    role: "",
-    status: "",
-    sortBy: "createdAt",
-    sortOrder: "desc",
-  });
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Initialize query state from URL params or defaults
+  const [queryParams, setQueryParams] = useState<QueryParams>(() => ({
+    page: Number(searchParams.get("page")) || DEFAULT_PARAMS.page,
+    limit: Number(searchParams.get("limit")) || DEFAULT_PARAMS.limit,
+    search: searchParams.get("search") || DEFAULT_PARAMS.search,
+    role: searchParams.get("role") || DEFAULT_PARAMS.role,
+    status: searchParams.get("status") || DEFAULT_PARAMS.status,
+    sortBy: searchParams.get("sortBy") || DEFAULT_PARAMS.sortBy,
+    sortOrder:
+      (searchParams.get("sortOrder") as "asc" | "desc") ||
+      DEFAULT_PARAMS.sortOrder,
+  }));
 
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [totalPages, setTotalPages] = useState(1);
   const [totalDocs, setTotalDocs] = useState(0);
 
@@ -48,47 +63,79 @@ const AdminUsersPage: React.FC = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  // Helper to update query params
-  const updateQuery = useCallback((updates: Partial<QueryParams>) => {
-    setQueryParams((prev) => ({
-      ...prev,
+  // Update query params and sync with URL
+  const updateQuery = (updates: Partial<QueryParams>) => {
+    const newParams = {
+      ...queryParams,
       ...updates,
       // Reset to page 1 when filters/sort change (unless page is explicitly set)
       page: updates.page !== undefined ? updates.page : 1,
-    }));
-  }, []);
+    };
 
-  // Fetch Data
-  const fetchUsers = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await adminApi.getUsers({
-        page: queryParams.page,
-        limit: queryParams.limit,
-        q: queryParams.search || undefined,
-        role: queryParams.role || undefined,
-        status: queryParams.status || undefined,
-        sortBy: queryParams.sortBy,
-        sortOrder: queryParams.sortOrder,
-      });
-      setUsers(res.users);
-      setTotalPages(res.totalPages);
-      setTotalDocs(res.totalDocs);
-    } catch (error) {
-      console.error("Failed to fetch users:", error);
-    } finally {
-      setLoading(false);
-    }
+    setQueryParams(newParams);
+
+    // Sync URL - only include non-default values
+    const urlParams = new URLSearchParams();
+    Object.entries(newParams).forEach(([key, value]) => {
+      const defaultValue = DEFAULT_PARAMS[key as keyof QueryParams];
+      if (
+        value !== "" &&
+        value !== undefined &&
+        value !== null &&
+        value !== defaultValue
+      ) {
+        urlParams.set(key, String(value));
+      }
+    });
+    setSearchParams(urlParams, { replace: true });
+  };
+
+  // Fetch users with debouncing and abort controller
+  useEffect(() => {
+    const abortController = new AbortController();
+
+    const timer = setTimeout(async () => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const res = await adminApi.getUsers({
+          page: queryParams.page,
+          limit: queryParams.limit,
+          q: queryParams.search,
+          role: queryParams.role,
+          status: queryParams.status,
+          sortBy: queryParams.sortBy,
+          sortOrder: queryParams.sortOrder,
+        });
+
+        if (!abortController.signal.aborted) {
+          setUsers(res.users);
+          setTotalPages(res.totalPages);
+          setTotalDocs(res.totalDocs);
+        }
+      } catch (err: any) {
+        if (err.name === "AbortError") return;
+        console.error("Failed to fetch users:", err);
+        setError(err.message || "Failed to load users");
+      } finally {
+        if (!abortController.signal.aborted) {
+          setLoading(false);
+        }
+      }
+    }, 400); // 400ms debounce
+
+    return () => {
+      clearTimeout(timer);
+      abortController.abort();
+    };
   }, [queryParams]);
 
-  // Debounced fetch on queryParams change
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      fetchUsers();
-    }, 400); // 400ms debounce for search
-
-    return () => clearTimeout(timer);
-  }, [fetchUsers]);
+  // Refetch users by updating queryParams
+  const refetchUsers = () => {
+    // Trigger re-fetch by updating queryParams with same values
+    setQueryParams({ ...queryParams });
+  };
 
   // Handlers
   const handleToggleStatus = async (user: User) => {
@@ -127,7 +174,7 @@ const AdminUsersPage: React.FC = () => {
       await adminApi.deleteUser(selectedUserToDelete._id, reason);
       setIsDeleteModalOpen(false);
       setSelectedUserToDelete(null);
-      fetchUsers(); // Refetch list
+      refetchUsers(); // ✅ Use refetch function
     } catch (error) {
       console.error("Failed to delete user:", error);
       alert("Failed to delete user");
@@ -147,6 +194,19 @@ const AdminUsersPage: React.FC = () => {
           Manage all registered users in the system
         </p>
       </div>
+
+      {/* Error Alert */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-center justify-between">
+          <span>{error}</span>
+          <button
+            onClick={() => setError(null)}
+            className="text-red-500 hover:text-red-700"
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
       {/* Filter & Sort Toolbar */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-4">
@@ -218,6 +278,11 @@ const AdminUsersPage: React.FC = () => {
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
+            {/* Screen reader caption */}
+            <caption className="sr-only">
+              List of users with their roles and status
+            </caption>
+
             <thead>
               <tr className="bg-gray-50/50 border-b border-gray-100">
                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
@@ -229,35 +294,44 @@ const AdminUsersPage: React.FC = () => {
                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                   Status
                 </th>
-                <th className="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                {/* Actions column */}
+                <th className="px-6 py-4 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
+              {/* Loading state */}
               {loading ? (
                 <tr>
-                  <td
-                    colSpan={4}
-                    className="px-6 py-10 text-center text-gray-500"
-                  >
-                    Loading...
+                  <td colSpan={4} className="px-6 py-12 text-center">
+                    <div className="inline-flex items-center gap-3 text-gray-500">
+                      {/* CSS spinner */}
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+                      <span>Loading users...</span>
+                    </div>
                   </td>
                 </tr>
               ) : users.length === 0 ? (
+                /* Empty state */
                 <tr>
-                  <td
-                    colSpan={4}
-                    className="px-6 py-10 text-center text-gray-500"
-                  >
-                    No users found.
+                  <td colSpan={4} className="px-6 py-12 text-center">
+                    <div className="space-y-3">
+                      <Users className="mx-auto h-12 w-12 text-gray-300" />
+                      <p className="text-gray-500 font-medium">
+                        No users found
+                      </p>
+                      <p className="text-sm text-gray-400">
+                        Try adjusting your filters
+                      </p>
+                    </div>
                   </td>
                 </tr>
               ) : (
                 users.map((user) => (
                   <tr
                     key={user._id}
-                    className="hover:bg-gray-50 transition-colors group"
+                    className="border-b border-gray-100 last:border-0 hover:bg-gray-50/50 focus-within:bg-blue-50/30 focus-within:ring-2 focus-within:ring-inset focus-within:ring-blue-200 transition-colors duration-150"
                   >
                     <td className="px-6 py-4">
                       <Link
@@ -318,21 +392,32 @@ const AdminUsersPage: React.FC = () => {
                         {user.status}
                       </button>
                     </td>
-                    <td className="px-6 py-4 text-right flex items-center justify-end gap-2">
-                      <Link
-                        to={`/admin/users/${user._id}`}
-                        className="p-2 text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-all"
-                        title="View Details"
-                      >
-                        <Eye size={18} />
-                      </Link>
-                      <button
-                        onClick={() => handleDeleteClick(user)}
-                        className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
-                        title="Delete User"
-                      >
-                        <Trash2 size={18} />
-                      </button>
+                    {/* Actions column with constrained spread */}
+                    <td className="px-3 py-4 align-middle">
+                      <div className="max-w-[200px] mx-auto">
+                        <div className="flex items-center justify-between">
+                          <Link to={`/admin/users/${user._id}`}>
+                            <button
+                              className="group flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-600 bg-white border border-slate-300 rounded-md hover:border-blue-500 hover:text-blue-600 transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1"
+                              aria-label={`View details for ${user.name}`}
+                            >
+                              <span>View Details</span>
+                              <ChevronRight
+                                size={14}
+                                className="opacity-50 group-hover:opacity-100 transition-opacity duration-200"
+                              />
+                            </button>
+                          </Link>
+
+                          <button
+                            onClick={() => handleDeleteClick(user)}
+                            className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-1"
+                            aria-label={`Delete user ${user.name}`}
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </div>
                     </td>
                   </tr>
                 ))

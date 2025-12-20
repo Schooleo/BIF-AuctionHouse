@@ -98,9 +98,22 @@ export const adminApi = {
     sortOrder?: string;
   }): Promise<GetUsersResponse> => {
     const { q, ...rest } = params;
-    // Construct query string
-    const query = new URLSearchParams(rest as any);
-    if (q) query.append("search", q);
+
+    // Build clean query params
+    const cleanParams: Record<string, string> = {};
+
+    Object.entries(rest).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== "") {
+        cleanParams[key] = String(value);
+      }
+    });
+
+    // Add search param if provided
+    if (q && q.trim() !== "") {
+      cleanParams.search = q.trim();
+    }
+
+    const query = new URLSearchParams(cleanParams);
 
     const response = await fetch(
       `${API_BASE}/api/admin/users?${query.toString()}`,

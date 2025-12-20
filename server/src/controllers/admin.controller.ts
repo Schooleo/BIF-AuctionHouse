@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import * as AdminService from "../services/admin.service";
+import { UserSearchParams } from "../types/admin";
 
 // Thêm các kiểu dữ liệu cho Request và Response nếu có sử dụng trong src/types/admin.ts
 // Thêm các biến constants cho messages nếu có sử dụng trong src/constants/messages.ts
@@ -24,41 +25,23 @@ export const removeProduct = async (req: Request, res: Response) => {
   res.status(501).json({ message: "Not implemented" });
 };
 
+// --- User Management ---
+
+// Get users with filtering and pagination
 export const getUsers = async (req: Request, res: Response) => {
   try {
     const { page, limit, search, role, status, sortBy, sortOrder } = req.query;
 
-    // Helper to filter empty strings and undefined
-    const cleanString = (val: any): string | undefined => {
-      if (!val || val === "" || val === "undefined") return undefined;
-      return val as string;
-    };
-
-    const params: {
-      page?: number;
-      limit?: number;
-      search?: string;
-      role?: string;
-      status?: string;
-      sortBy?: string;
-      sortOrder?: "asc" | "desc";
-    } = {
+    // Build params object
+    const params: UserSearchParams = {
       page: page ? Number(page) : 1,
       limit: limit ? Number(limit) : 10,
-      search: cleanString(search) || "",
-      sortBy: cleanString(sortBy) || "createdAt",
-      sortOrder: (cleanString(sortOrder) as "asc" | "desc") || "desc",
+      ...(search && { search: String(search) }),
+      ...(role && { role: String(role) }),
+      ...(status && { status: String(status) }),
+      ...(sortBy && { sortBy: String(sortBy) }),
+      ...(sortOrder && { sortOrder: String(sortOrder) as "asc" | "desc" }),
     };
-
-    const cleanedRole = cleanString(role);
-    if (cleanedRole) {
-      params.role = cleanedRole;
-    }
-
-    const cleanedStatus = cleanString(status);
-    if (cleanedStatus) {
-      params.status = cleanedStatus;
-    }
 
     const result = await AdminService.getAllUsers(params);
     res.status(200).json(result);
@@ -71,28 +54,33 @@ export const getUserDetail = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { page, limit } = req.query;
+
     if (!id) {
       res.status(400).json({ message: "User ID is required" });
       return;
     }
-    const userDetail = await AdminService.getUserDetail(id, {
+
+    const result = await AdminService.getUserDetail(id, {
       page: page ? Number(page) : 1,
       limit: limit ? Number(limit) : 10,
     });
-    res.status(200).json(userDetail);
+
+    res.status(200).json(result);
   } catch (error: any) {
     res.status(404).json({ message: error.message });
   }
 };
 
+// Update user information
 export const updateUser = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
+    const updateData = req.body;
+
     if (!id) {
       res.status(400).json({ message: "User ID is required" });
       return;
     }
-    const updateData = req.body;
 
     const updatedUser = await AdminService.updateUser(id, updateData);
     res.status(200).json(updatedUser);
@@ -101,14 +89,17 @@ export const updateUser = async (req: Request, res: Response) => {
   }
 };
 
+// Soft delete user
 export const deleteUser = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
+    const { reason } = req.body;
+
     if (!id) {
       res.status(400).json({ message: "User ID is required" });
       return;
     }
-    const { reason } = req.body;
+
     const result = await AdminService.softDeleteUser(id, reason);
     res.status(200).json(result);
   } catch (error: any) {

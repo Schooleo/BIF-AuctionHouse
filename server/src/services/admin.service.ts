@@ -228,58 +228,36 @@ export const getDashboardStats = async (timeRange: string = "24h") => {
 // USER MANAGEMENT
 // ==========================================
 
-export const getAllUsers = async ({
-  page = 1,
-  limit = 10,
-  search = "",
-  role,
-  status,
-  sortBy = "createdAt",
-  sortOrder = "desc",
-}: {
-  page?: number;
-  limit?: number;
-  search?: string;
-  role?: string;
-  status?: string;
-  sortBy?: string;
-  sortOrder?: "asc" | "desc";
-}) => {
-  // Build query with proper $and structure to avoid conflicts
-  // All conditions must be inside $and array for proper evaluation
-  const query: any = {
-    $and: [
-      // Always filter out soft-deleted users (handle legacy docs)
-      {
-        $or: [{ isDeleted: false }, { isDeleted: { $exists: false } }],
-      },
-    ],
-  };
+import { UserSearchParams } from "../types/admin";
+
+export const getAllUsers = async (params: UserSearchParams) => {
+  const {
+    page = 1,
+    limit = 10,
+    search,
+    role,
+    status,
+    sortBy = "createdAt",
+    sortOrder = "desc",
+  } = params;
+  const query: any = { isDeleted: false };
 
   // Search by name or email
   if (search) {
-    query.$and.push({
-      $or: [
-        { name: { $regex: search, $options: "i" } },
-        { email: { $regex: search, $options: "i" } },
-      ],
-    });
+    query.$or = [
+      { name: { $regex: search, $options: "i" } },
+      { email: { $regex: search, $options: "i" } },
+    ];
   }
 
   // Filter by role
   if (role) {
-    query.$and.push({ role: role });
+    query.role = role;
   }
 
   // Filter by status (ACTIVE/BLOCKED)
-  // Handle legacy data: treat users without status field as valid
   if (status) {
-    query.$and.push({
-      $or: [
-        { status: status }, // Match explicit status
-        { status: { $exists: false } }, // Legacy data without status field
-      ],
-    });
+    query.status = status;
   }
 
   const skip = (page - 1) * limit;
@@ -300,17 +278,17 @@ export const getAllUsers = async ({
 
   const [users, totalDocs] = await Promise.all([
     User.find(query)
-      .select("-password") // Exclude sensitive data
+      .select("-password")
       .skip(skip)
       .limit(limit)
-      .sort(sortOptions), // Dynamic sort
+      .sort(sortOptions),
     User.countDocuments(query),
   ]);
 
   const totalPages = Math.ceil(totalDocs / limit);
 
   return {
-    users, // reputationScore is a virtual, so it's included if toJSON: { virtuals: true } is set in schema
+    users,
     totalDocs,
     totalPages,
     currentPage: page,
@@ -323,7 +301,6 @@ export const toggleUserStatus = async (userId: string) => {
     throw new Error("User not found");
   }
 
-  // Toggle Logic
   user.status = user.status === "ACTIVE" ? "BLOCKED" : "ACTIVE";
   await user.save();
 
@@ -364,11 +341,9 @@ export const getUserDetail = async (
     throw new Error("User not found");
   }
 
-  // Calculate star rating (0-5 scale)
-  const totalRatings = user.positiveRatings + user.negativeRatings;
-  const starRating =
-    totalRatings === 0 ? 0 : (user.positiveRatings / totalRatings) * 5; // 0 stars if no ratings
-  const ratingCount = totalRatings;
+  // Calculate star rating (0-5 scale) using stored reputationScore
+  const starRating = (user.reputationScore || 0) * 5;
+  const ratingCount = user.positiveRatings + user.negativeRatings;
 
   // Pagination setup for reviews
   const skip = (page - 1) * limit;
@@ -478,7 +453,7 @@ export const getUserDetail = async (
       reputationParam: {
         positive: user.positiveRatings || 0,
         negative: user.negativeRatings || 0,
-        score: user.reputationScore,
+        score: user.reputationScore || 0,
       },
     },
     bidHistory,
