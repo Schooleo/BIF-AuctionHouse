@@ -26,14 +26,41 @@ export const removeProduct = async (req: Request, res: Response) => {
 
 export const getUsers = async (req: Request, res: Response) => {
   try {
-    const { page, limit, search, role, status } = req.query;
-    const result = await AdminService.getAllUsers({
+    const { page, limit, search, role, status, sortBy, sortOrder } = req.query;
+
+    // Helper to filter empty strings and undefined
+    const cleanString = (val: any): string | undefined => {
+      if (!val || val === "" || val === "undefined") return undefined;
+      return val as string;
+    };
+
+    const params: {
+      page?: number;
+      limit?: number;
+      search?: string;
+      role?: string;
+      status?: string;
+      sortBy?: string;
+      sortOrder?: "asc" | "desc";
+    } = {
       page: page ? Number(page) : 1,
       limit: limit ? Number(limit) : 10,
-      search: (search as string) || "",
-      role: role as string,
-      status: status as string,
-    });
+      search: cleanString(search) || "",
+      sortBy: cleanString(sortBy) || "createdAt",
+      sortOrder: (cleanString(sortOrder) as "asc" | "desc") || "desc",
+    };
+
+    const cleanedRole = cleanString(role);
+    if (cleanedRole) {
+      params.role = cleanedRole;
+    }
+
+    const cleanedStatus = cleanString(status);
+    if (cleanedStatus) {
+      params.status = cleanedStatus;
+    }
+
+    const result = await AdminService.getAllUsers(params);
     res.status(200).json(result);
   } catch (error: any) {
     res.status(500).json({ message: error.message });
@@ -43,11 +70,15 @@ export const getUsers = async (req: Request, res: Response) => {
 export const getUserDetail = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
+    const { page, limit } = req.query;
     if (!id) {
       res.status(400).json({ message: "User ID is required" });
       return;
     }
-    const userDetail = await AdminService.getUserDetail(id);
+    const userDetail = await AdminService.getUserDetail(id, {
+      page: page ? Number(page) : 1,
+      limit: limit ? Number(limit) : 10,
+    });
     res.status(200).json(userDetail);
   } catch (error: any) {
     res.status(404).json({ message: error.message });

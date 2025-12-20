@@ -6,6 +6,16 @@ import { AutoBid } from "../models/autoBid.model";
 import { Rating } from "../models/rating.model";
 import mongoose from "mongoose";
 
+// Enum for bid status from admin perspective
+enum BidStatus {
+  WON = "Won",
+  LOST = "Lost",
+  LEADING = "Leading",
+  OUTBID = "Outbid",
+  ONGOING = "Ongoing",
+  UNKNOWN = "Unknown (Product Deleted)",
+}
+
 export const getDashboardStats = async (timeRange: string = "24h") => {
   const now = new Date();
   let startDate = new Date(now.getTime() - 24 * 60 * 60 * 1000); // Default 24h
@@ -224,47 +234,76 @@ export const getAllUsers = async ({
   search = "",
   role,
   status,
+  sortBy = "createdAt",
+  sortOrder = "desc",
 }: {
   page?: number;
   limit?: number;
   search?: string;
   role?: string;
   status?: string;
+  sortBy?: string;
+  sortOrder?: "asc" | "desc";
 }) => {
+  // Build query with proper $and structure to avoid conflicts
+  // All conditions must be inside $and array for proper evaluation
   const query: any = {
-    $or: [{ isDeleted: false }, { isDeleted: { $exists: false } }],
-  }; // Default: filter out soft-deleted users (handle legacy docs)
+    $and: [
+      // Always filter out soft-deleted users (handle legacy docs)
+      {
+        $or: [{ isDeleted: false }, { isDeleted: { $exists: false } }],
+      },
+    ],
+  };
 
   // Search by name or email
   if (search) {
-    query.$and = [
-      {
-        $or: [
-          { name: { $regex: search, $options: "i" } },
-          { email: { $regex: search, $options: "i" } },
-        ],
-      },
-    ];
+    query.$and.push({
+      $or: [
+        { name: { $regex: search, $options: "i" } },
+        { email: { $regex: search, $options: "i" } },
+      ],
+    });
   }
 
   // Filter by role
   if (role) {
-    query.role = role;
+    query.$and.push({ role: role });
   }
 
   // Filter by status (ACTIVE/BLOCKED)
+  // Handle legacy data: treat users without status field as valid
   if (status) {
-    query.status = status;
+    query.$and.push({
+      $or: [
+        { status: status }, // Match explicit status
+        { status: { $exists: false } }, // Legacy data without status field
+      ],
+    });
   }
 
   const skip = (page - 1) * limit;
+
+  // Build sort object
+  const sortOptions: any = {};
+
+  // Map frontend sortBy values to DB fields
+  const sortFieldMap: Record<string, string> = {
+    createdAt: "createdAt",
+    name: "name",
+    email: "email",
+    reputation: "reputationScore",
+  };
+
+  const dbSortField = sortFieldMap[sortBy] || "createdAt";
+  sortOptions[dbSortField] = sortOrder === "asc" ? 1 : -1;
 
   const [users, totalDocs] = await Promise.all([
     User.find(query)
       .select("-password") // Exclude sensitive data
       .skip(skip)
       .limit(limit)
-      .sort({ createdAt: -1 }), // Newest first
+      .sort(sortOptions), // Dynamic sort
     User.countDocuments(query),
   ]);
 
@@ -314,80 +353,102 @@ export const softDeleteUser = async (userId: string, reason: string) => {
   return { message: "User soft deleted successfully", userId };
 };
 
-export const getUserDetail = async (userId: string) => {
-  const user = await User.findById(userId).select("-password -googleId"); // Exclude secrets using standard select
+export const getUserDetail = async (
+  userId: string,
+  options: { page?: number; limit?: number } = {}
+) => {
+  const { page = 1, limit = 10 } = options;
+
+  const user = await User.findById(userId).select("-password -googleId");
   if (!user) {
     throw new Error("User not found");
   }
 
+  // Calculate star rating (0-5 scale)
+  const totalRatings = user.positiveRatings + user.negativeRatings;
+  const starRating =
+    totalRatings === 0 ? 0 : (user.positiveRatings / totalRatings) * 5; // 0 stars if no ratings
+  const ratingCount = totalRatings;
+
+  // Pagination setup for reviews
+  const skip = (page - 1) * limit;
+
   // Parallel Fetching
-  const [bids, ratings, products, ratingStats] = await Promise.all([
-    // 1. Bid History (Last 10)
-    Bid.find({ bidder: userId })
-      .sort({ createdAt: -1 })
-      .limit(10)
-      .populate(
-        "product",
-        "name endTime currentPrice winnerConfirmed currentBidder"
-      ) // Populate minimal fields
-      .lean(),
+  const [bids, reviewsData, totalReviews, products, statsAggregation] =
+    await Promise.all([
+      // 1. Bid History (Last 10)
+      Bid.find({ bidder: userId })
+        .sort({ createdAt: -1 })
+        .limit(10)
+        .populate(
+          "product",
+          "name endTime currentPrice winnerConfirmed currentBidder"
+        )
+        .lean(),
 
-    // 2. Ratings Received (Last 5)
-    Rating.find({ ratee: userId })
-      .sort({ createdAt: -1 })
-      .limit(5)
-      .populate("rater", "name avatar")
-      .lean(),
+      // 2. Paginated Reviews (ALL types: + and -)
+      Rating.find({ ratee: userId })
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .populate("rater", "name avatar")
+        .lean(),
 
-    // 3. Selling Info (If Seller) - Active products
-    user.role === "seller"
-      ? Product.find({ seller: userId, endTime: { $gt: new Date() } })
-          .select("name currentPrice mainImage endTime bidCount")
-          .limit(10)
-          .lean()
-      : Promise.resolve([]),
+      // 4. Total review count
+      Rating.countDocuments({ ratee: userId }),
 
-    // 4. Rating Stats (To calculate percentage if needed beyond user model)
-    // We can rely on user model fields (positiveRatings, negativeRatings) but finding recent ones helps
-    Rating.aggregate([
-      { $match: { ratee: new mongoose.Types.ObjectId(userId) } },
-      {
-        $group: {
-          _id: null,
-          avgScore: { $avg: "$score" },
-          count: { $sum: 1 },
+      // 5. Selling Info (If Seller) - Active products
+      user.role === "seller"
+        ? Product.find({ seller: userId, endTime: { $gt: new Date() } })
+            .select("name currentPrice mainImage endTime bidCount")
+            .limit(10)
+            .lean()
+        : Promise.resolve([]),
+
+      // 6. Stats from actual ratings (not user fields which may be stale)
+      Rating.aggregate([
+        { $match: { ratee: new mongoose.Types.ObjectId(userId) } },
+        {
+          $group: {
+            _id: null,
+            positiveCount: {
+              $sum: { $cond: [{ $eq: ["$score", 1] }, 1, 0] },
+            },
+            negativeCount: {
+              $sum: { $cond: [{ $eq: ["$score", -1] }, 1, 0] },
+            },
+          },
         },
-      },
-    ]),
-  ]);
+      ]),
+    ]);
 
-  // Process Bids to determine status
+  // Process Bids to determine status from admin perspective
+  // Status represents the state of INDIVIDUAL BID, not the auction
   const bidHistory = bids.map((bid: any) => {
     const product = bid.product;
-    let status = "Ongoing";
+    let status: string = BidStatus.ONGOING;
 
-    if (product) {
+    if (!product) {
+      // Product was deleted
+      status = BidStatus.UNKNOWN;
+    } else {
       const now = new Date();
       const isEnded = new Date(product.endTime) < now;
 
       if (isEnded) {
-        // Winning logic: Product ended, and this bid matched currentPrice (simplified) OR user is currentBidder
-        // Note: Optimally we check if bid._id matches product.winningBid but lacking that ref,
-        // we check if user is currentBidder AND this bid price == currentPrice.
+        // Auction has ended - determine if this bid won or lost
         const isWinner =
           product.currentBidder?.toString() === userId &&
           bid.price === product.currentPrice;
-        status = isWinner ? "Won" : "Lost";
+        status = isWinner ? BidStatus.WON : BidStatus.LOST;
       } else {
-        // If ongoing, check if outbid
+        // Auction is still ongoing - check if bid is leading or outbid
         if (bid.price < product.currentPrice) {
-          status = "Outbid";
+          status = BidStatus.OUTBID; // Someone bid higher
         } else {
-          status = "Leading";
+          status = BidStatus.LEADING; // This bid is currently winning
         }
       }
-    } else {
-      status = "Unknown (Product Deleted)";
     }
 
     return {
@@ -399,10 +460,21 @@ export const getUserDetail = async (userId: string) => {
     };
   });
 
+  // Stats breakdown from actual Rating collection
+  const statsResult = statsAggregation[0] || {
+    positiveCount: 0,
+    negativeCount: 0,
+  };
+  const stats = {
+    positiveCount: statsResult.positiveCount,
+    negativeCount: statsResult.negativeCount,
+  };
+
   return {
     profile: {
       ...user.toObject(),
-      // Manual calculation or usage of virtuals if toObject doesn't catch it perfectly
+      starRating,
+      ratingCount,
       reputationParam: {
         positive: user.positiveRatings || 0,
         negative: user.negativeRatings || 0,
@@ -410,9 +482,15 @@ export const getUserDetail = async (userId: string) => {
       },
     },
     bidHistory,
-    ratings,
+    reviews: {
+      docs: reviewsData,
+      totalDocs: totalReviews,
+      totalPages: Math.ceil(totalReviews / limit),
+      page,
+      limit,
+    },
     sellingHistory: products,
-    stats: ratingStats[0] || { avgScore: 0, count: 0 },
+    stats,
   };
 };
 

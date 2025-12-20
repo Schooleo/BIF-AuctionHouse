@@ -94,6 +94,8 @@ export const adminApi = {
     q?: string;
     role?: string;
     status?: string;
+    sortBy?: string;
+    sortOrder?: string;
   }): Promise<GetUsersResponse> => {
     const { q, ...rest } = params;
     // Construct query string
@@ -128,17 +130,30 @@ export const adminApi = {
     return handleResponse(response);
   },
 
-  getUserDetail: async (id: string): Promise<UserDetailResponse> => {
-    const response = await fetch(`${API_BASE}/api/admin/users/${id}`, {
-      method: "GET",
-      headers: getAuthHeaders(),
+  getUserDetail: async (
+    id: string,
+    page: number = 1,
+    limit: number = 10
+  ): Promise<UserDetailResponse> => {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
     });
+    const response = await fetch(
+      `${API_BASE}/api/admin/users/${id}?${params.toString()}`,
+      {
+        method: "GET",
+        headers: getAuthHeaders(),
+      }
+    );
     return handleResponse<UserDetailResponse>(response);
   },
 };
 
 export interface UserDetailResponse {
   profile: User & {
+    starRating: number; // 0-5 scale
+    ratingCount: number; // Total number of reviews
     reputationParam: {
       positive: number;
       negative: number;
@@ -152,13 +167,19 @@ export interface UserDetailResponse {
     date: string;
     status: string;
   }[];
-  ratings: {
-    _id: string;
-    rater: { name: string; avatar?: string };
-    score: number;
-    comment: string;
-    createdAt: string;
-  }[];
+  reviews: {
+    docs: {
+      _id: string;
+      rater: { name: string; avatar?: string };
+      score: number; // +1 or -1 (binary)
+      comment: string;
+      createdAt: string;
+    }[];
+    totalDocs: number;
+    totalPages: number;
+    page: number;
+    limit: number;
+  };
   sellingHistory: {
     _id: string;
     name: string;
@@ -168,7 +189,7 @@ export interface UserDetailResponse {
     bidCount: number;
   }[];
   stats: {
-    avgScore: number;
-    count: number;
+    positiveCount: number;
+    negativeCount: number;
   };
 }

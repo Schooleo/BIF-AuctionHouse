@@ -11,26 +11,35 @@ import {
   ChevronLeft,
   ChevronRight,
   Eye,
+  Filter,
 } from "lucide-react";
 
-interface PaginationState {
+interface QueryParams {
   page: number;
   limit: number;
-  totalPages: number;
-  totalDocs: number;
+  search: string;
+  role: string;
+  status: string;
+  sortBy: string;
+  sortOrder: "asc" | "desc";
 }
 
 const AdminUsersPage: React.FC = () => {
-  // State
-  const [users, setUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [pagination, setPagination] = useState<PaginationState>({
+  // Consolidated query state
+  const [queryParams, setQueryParams] = useState<QueryParams>({
     page: 1,
     limit: 10,
-    totalPages: 1,
-    totalDocs: 0,
+    search: "",
+    role: "",
+    status: "",
+    sortBy: "createdAt",
+    sortOrder: "desc",
   });
+
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalDocs, setTotalDocs] = useState(0);
 
   // Delete State
   const [selectedUserToDelete, setSelectedUserToDelete] = useState<User | null>(
@@ -39,43 +48,49 @@ const AdminUsersPage: React.FC = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  // Helper to update query params
+  const updateQuery = useCallback((updates: Partial<QueryParams>) => {
+    setQueryParams((prev) => ({
+      ...prev,
+      ...updates,
+      // Reset to page 1 when filters/sort change (unless page is explicitly set)
+      page: updates.page !== undefined ? updates.page : 1,
+    }));
+  }, []);
+
   // Fetch Data
   const fetchUsers = useCallback(async () => {
     setLoading(true);
     try {
       const res = await adminApi.getUsers({
-        page: pagination.page,
-        limit: pagination.limit,
-        q: searchTerm,
+        page: queryParams.page,
+        limit: queryParams.limit,
+        q: queryParams.search || undefined,
+        role: queryParams.role || undefined,
+        status: queryParams.status || undefined,
+        sortBy: queryParams.sortBy,
+        sortOrder: queryParams.sortOrder,
       });
       setUsers(res.users);
-      setPagination((prev) => ({
-        ...prev,
-        totalPages: res.totalPages,
-        totalDocs: res.totalDocs,
-        page: res.currentPage,
-      }));
+      setTotalPages(res.totalPages);
+      setTotalDocs(res.totalDocs);
     } catch (error) {
       console.error("Failed to fetch users:", error);
     } finally {
       setLoading(false);
     }
-  }, [pagination.page, pagination.limit, searchTerm]);
+  }, [queryParams]);
 
+  // Debounced fetch on queryParams change
   useEffect(() => {
     const timer = setTimeout(() => {
       fetchUsers();
-    }, 400);
+    }, 400); // 400ms debounce for search
 
     return () => clearTimeout(timer);
   }, [fetchUsers]);
 
   // Handlers
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(e.target.value);
-    setPagination((prev) => ({ ...prev, page: 1 }));
-  };
-
   const handleToggleStatus = async (user: User) => {
     const newStatus = user.status === "ACTIVE" ? "BLOCKED" : "ACTIVE";
     const previousStatus = user.status;
@@ -124,26 +139,78 @@ const AdminUsersPage: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-primary-blue">
-            Users Management
-          </h1>
-          <p className="text-gray-500 mt-1">
-            Manage all registered users in the system
-          </p>
-        </div>
+      <div>
+        <h1 className="text-3xl font-bold text-primary-blue">
+          Users Management
+        </h1>
+        <p className="text-gray-500 mt-1">
+          Manage all registered users in the system
+        </p>
+      </div>
 
-        {/* Search */}
-        <div className="relative w-full md:w-64">
-          <input
-            type="text"
-            placeholder="Search users..."
-            className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-blue focus:border-transparent transition-all"
-            value={searchTerm}
-            onChange={handleSearchChange}
-          />
-          <Search className="absolute left-3 top-2.5 text-gray-400" size={18} />
+      {/* Filter & Sort Toolbar */}
+      <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-4">
+        <div className="flex flex-wrap gap-4 justify-between items-center">
+          {/* Left: Search */}
+          <div className="relative flex-1 min-w-[250px]">
+            <Search
+              className="absolute left-3 top-2.5 text-gray-400"
+              size={18}
+            />
+            <input
+              type="text"
+              placeholder="Search by name, email..."
+              className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-blue focus:border-transparent transition-all"
+              value={queryParams.search}
+              onChange={(e) => updateQuery({ search: e.target.value })}
+            />
+          </div>
+
+          {/* Right: Filters Group */}
+          <div className="flex flex-wrap gap-3 items-center">
+            <Filter size={18} className="text-gray-400" />
+
+            {/* Role Filter */}
+            <select
+              value={queryParams.role}
+              onChange={(e) => updateQuery({ role: e.target.value })}
+              className="px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-blue text-sm bg-white cursor-pointer"
+            >
+              <option value="">All Roles</option>
+              <option value="bidder">BIDDER</option>
+              <option value="seller">SELLER</option>
+              <option value="admin">ADMIN</option>
+            </select>
+
+            {/* Status Filter */}
+            <select
+              value={queryParams.status}
+              onChange={(e) => updateQuery({ status: e.target.value })}
+              className="px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-blue text-sm bg-white cursor-pointer"
+            >
+              <option value="">All Status</option>
+              <option value="ACTIVE">ACTIVE</option>
+              <option value="BLOCKED">BLOCKED</option>
+            </select>
+
+            {/* Sort Dropdown */}
+            <select
+              value={`${queryParams.sortBy}-${queryParams.sortOrder}`}
+              onChange={(e) => {
+                const [sortBy, sortOrder] = e.target.value.split("-");
+                updateQuery({
+                  sortBy,
+                  sortOrder: sortOrder as "asc" | "desc",
+                });
+              }}
+              className="px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-blue text-sm bg-white cursor-pointer"
+            >
+              <option value="createdAt-desc">Newest Joined</option>
+              <option value="createdAt-asc">Oldest Joined</option>
+              <option value="reputation-desc">High Reputation</option>
+              <option value="reputation-asc">Low Reputation</option>
+            </select>
+          </div>
         </div>
       </div>
 
@@ -233,7 +300,7 @@ const AdminUsersPage: React.FC = () => {
                     <td className="px-6 py-4">
                       <button
                         onClick={(e) => {
-                          e.stopPropagation(); // Prevent row click if we added one
+                          e.stopPropagation();
                           handleToggleStatus(user);
                         }}
                         className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-colors border
@@ -279,36 +346,31 @@ const AdminUsersPage: React.FC = () => {
           <p className="text-sm text-gray-500">
             Showing{" "}
             <span className="font-medium">
-              {(pagination.page - 1) * pagination.limit + 1}
+              {(queryParams.page - 1) * queryParams.limit + 1}
             </span>{" "}
             to{" "}
             <span className="font-medium">
-              {Math.min(
-                pagination.page * pagination.limit,
-                pagination.totalDocs
-              )}
+              {Math.min(queryParams.page * queryParams.limit, totalDocs)}
             </span>{" "}
-            of <span className="font-medium">{pagination.totalDocs}</span>{" "}
-            results
+            of <span className="font-medium">{totalDocs}</span> results
           </p>
           <div className="flex gap-2">
             <button
               onClick={() =>
-                setPagination((p) => ({ ...p, page: Math.max(1, p.page - 1) }))
+                updateQuery({ page: Math.max(1, queryParams.page - 1) })
               }
-              disabled={pagination.page <= 1}
+              disabled={queryParams.page <= 1}
               className="p-2 rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-gray-600"
             >
               <ChevronLeft size={18} />
             </button>
             <button
               onClick={() =>
-                setPagination((p) => ({
-                  ...p,
-                  page: Math.min(p.totalPages, p.page + 1),
-                }))
+                updateQuery({
+                  page: Math.min(totalPages, queryParams.page + 1),
+                })
               }
-              disabled={pagination.page >= pagination.totalPages}
+              disabled={queryParams.page >= totalPages}
               className="p-2 rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-gray-600"
             >
               <ChevronRight size={18} />

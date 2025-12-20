@@ -51,6 +51,7 @@ const userSchema = new Schema<IUser>(
     },
     positiveRatings: { type: Number, default: 0 },
     negativeRatings: { type: Number, default: 0 },
+    reputationScore: { type: Number, default: 0 },
 
     // Soft Delete
     isDeleted: { type: Boolean, default: false },
@@ -85,13 +86,15 @@ userSchema.methods.comparePassword = async function (
 };
 
 // Thuộc tính ảo để tính điểm đánh giá
-userSchema.virtual("reputationScore").get(function (this: IUser) {
-  const totalRatings = this.positiveRatings + this.negativeRatings;
-  if (totalRatings === 0) {
-    // Trường hợp chưa được đánh giá
-    return 1.0;
-  }
-  return this.positiveRatings / totalRatings;
-});
+// Thuộc tính ảo để tính điểm đánh giá
+// Note: reputationScore converted to stored field for querying
+// userSchema.virtual("reputationScore").get(function (this: IUser) {
+//   const totalRatings = this.positiveRatings + this.negativeRatings;
+//   if (totalRatings === 0) {
+//     // Trường hợp chưa được đánh giá
+//     return 1.0;
+//   }
+//   return this.positiveRatings / totalRatings;
+// });
 
 export const User = mongoose.model<IUser>("User", userSchema);

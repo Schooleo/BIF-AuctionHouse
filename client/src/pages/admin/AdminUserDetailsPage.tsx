@@ -7,14 +7,18 @@ import {
   ArrowLeft,
   ShieldCheck,
   ShieldAlert,
-  Star,
   Trash2,
   Clock,
   MapPin,
   Calendar,
   Mail,
   MoreHorizontal,
+  ThumbsUp,
+  ThumbsDown,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
+import { StarRating } from "../../components/ui/StarRating";
 
 type TabType = "activity" | "selling";
 
@@ -26,6 +30,10 @@ const AdminUserDetailsPage: React.FC = () => {
   const [data, setData] = useState<UserDetailResponse | null>(null);
   const [activeTab, setActiveTab] = useState<TabType>("activity");
 
+  // Pagination state for reviews
+  const [reviewPage, setReviewPage] = useState(1);
+  const REVIEWS_PER_PAGE = 10;
+
   // Delete State
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -35,7 +43,11 @@ const AdminUserDetailsPage: React.FC = () => {
     if (!id) return;
     const fetchDetail = async () => {
       try {
-        const res = await adminApi.getUserDetail(id);
+        const res = await adminApi.getUserDetail(
+          id,
+          reviewPage,
+          REVIEWS_PER_PAGE
+        );
         setData(res);
       } catch (error) {
         console.error(error);
@@ -45,7 +57,7 @@ const AdminUserDetailsPage: React.FC = () => {
       }
     };
     fetchDetail();
-  }, [id]);
+  }, [id, reviewPage]); // Re-fetch when page changes
 
   // Actions
   const handleToggleStatus = async () => {
@@ -96,7 +108,7 @@ const AdminUserDetailsPage: React.FC = () => {
 
   if (!data) return <div className="text-center p-10">User not found.</div>;
 
-  const { profile, bidHistory, sellingHistory, ratings } = data;
+  const { profile, bidHistory, sellingHistory, reviews, stats } = data;
 
   return (
     <div className="space-y-6 animate-fade-in pb-10">
@@ -162,23 +174,32 @@ const AdminUserDetailsPage: React.FC = () => {
                 </span>
               </div>
 
-              {/* Stats Row */}
-              <div className="grid grid-cols-2 gap-4 w-full mt-2">
-                <div className="text-center p-3 bg-gray-50 rounded-lg">
-                  <div className="text-xl font-bold text-primary-blue">
-                    {bidHistory.length}
-                  </div>
-                  <div className="text-xs text-gray-500 uppercase font-semibold">
-                    Bids
-                  </div>
+              {/* Stats Row with Star Rating */}
+              <div className="flex flex-col items-center gap-4 w-full mt-4">
+                <div className="flex flex-col items-center">
+                  <StarRating rating={profile.starRating} size="lg" />
+                  <span className="text-sm text-gray-500 mt-2">
+                    ({profile.ratingCount} reviews)
+                  </span>
                 </div>
-                <div className="text-center p-3 bg-gray-50 rounded-lg">
-                  <div className="text-xl font-bold text-yellow-500 flex items-center justify-center gap-1">
-                    {(profile.reputationParam.score * 10).toFixed(1)}{" "}
-                    <Star size={14} fill="currentColor" />
+
+                {/* Secondary Stats */}
+                <div className="grid grid-cols-2 gap-3 w-full">
+                  <div className="text-center p-3 bg-gray-50 rounded-lg">
+                    <div className="text-lg font-bold text-primary-blue">
+                      {bidHistory.length}
+                    </div>
+                    <div className="text-xs text-gray-500 uppercase font-semibold">
+                      Bids
+                    </div>
                   </div>
-                  <div className="text-xs text-gray-500 uppercase font-semibold">
-                    Reputation
+                  <div className="text-center p-3 bg-gray-50 rounded-lg">
+                    <div className="text-lg font-bold text-gray-600">
+                      {stats.positiveCount} 👍 / {stats.negativeCount} 👎
+                    </div>
+                    <div className="text-xs text-gray-500 uppercase font-semibold">
+                      Breakdown
+                    </div>
                   </div>
                 </div>
               </div>
@@ -360,69 +381,115 @@ const AdminUserDetailsPage: React.FC = () => {
                     </div>
                   </section>
 
-                  {/* Mini-table: Recent Ratings */}
+                  {/* Mini-section: Recent Ratings with Binary Icons */}
                   <section>
                     <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
                       <span className="w-1 h-6 bg-yellow-500 rounded-full"></span>{" "}
-                      Recent Ratings
+                      Recent Reviews
                     </h3>
-                    {ratings.length === 0 ? (
+                    {reviews.docs.length === 0 ? (
                       <p className="text-gray-400 italic text-sm p-4 border border-dashed rounded-lg text-center">
                         No reviews yet.
                       </p>
                     ) : (
-                      <div className="space-y-3">
-                        {ratings.map((rating) => (
-                          <div
-                            key={rating._id}
-                            className="flex gap-4 p-4 border border-gray-100 rounded-lg hover:shadow-sm transition-shadow"
-                          >
-                            <div className="shrink-0">
-                              <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
-                                {rating.rater.avatar ? (
-                                  <img
-                                    src={rating.rater.avatar}
-                                    alt={rating.rater.name}
-                                    className="w-full h-full object-cover"
+                      <>
+                        <div className="space-y-3">
+                          {reviews.docs.map((review) => (
+                            <div
+                              key={review._id}
+                              className={`flex gap-4 p-4 border rounded-lg hover:shadow-sm transition-shadow ${
+                                review.score < 0
+                                  ? "bg-red-50 border-red-200"
+                                  : "border-gray-100"
+                              }`}
+                            >
+                              {/* Icon */}
+                              <div className="shrink-0">
+                                {review.score > 0 ? (
+                                  <ThumbsUp
+                                    size={20}
+                                    className="text-green-600"
                                   />
                                 ) : (
-                                  <span className="text-xs font-bold text-gray-500">
-                                    {rating.rater.name.charAt(0)}
-                                  </span>
+                                  <ThumbsDown
+                                    size={20}
+                                    className="text-red-600"
+                                  />
                                 )}
                               </div>
-                            </div>
-                            <div className="flex-1">
-                              <div className="flex justify-between items-start mb-1">
-                                <div>
-                                  <span className="font-bold text-gray-900 text-sm">
-                                    {rating.rater.name}
-                                  </span>
-                                  <span className="text-xs text-gray-500 ml-2">
-                                    {new Date(
-                                      rating.createdAt
-                                    ).toLocaleDateString()}
-                                  </span>
+
+                              {/* Avatar & Content */}
+                              <div className="shrink-0">
+                                <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
+                                  {review.rater.avatar ? (
+                                    <img
+                                      src={review.rater.avatar}
+                                      alt={review.rater.name}
+                                      className="w-full h-full object-cover"
+                                    />
+                                  ) : (
+                                    <span className="text-gray-500 font-bold text-xs">
+                                      {review.rater.name
+                                        .charAt(0)
+                                        .toUpperCase()}
+                                    </span>
+                                  )}
                                 </div>
-                                <span
-                                  className={`px-2 py-0.5 rounded text-xs font-bold ${
-                                    rating.score > 0
-                                      ? "bg-green-100 text-green-700"
-                                      : "bg-red-100 text-red-700"
-                                  }`}
-                                >
-                                  {rating.score > 0
-                                    ? "+ Positive"
-                                    : "- Negative"}
-                                </span>
                               </div>
-                              <p className="text-sm text-gray-600 leading-relaxed">
-                                "{rating.comment}"
-                              </p>
+                              <div className="flex-1">
+                                <div className="flex justify-between items-start mb-1">
+                                  <div>
+                                    <span className="font-bold text-gray-900 text-sm">
+                                      {review.rater.name}
+                                    </span>
+                                    <span className="text-xs text-gray-500 ml-2">
+                                      {new Date(
+                                        review.createdAt
+                                      ).toLocaleDateString()}
+                                    </span>
+                                  </div>
+                                </div>
+                                <p className="text-sm text-gray-600 leading-relaxed">
+                                  "{review.comment}"
+                                </p>
+                              </div>
                             </div>
+                          ))}
+                        </div>
+
+                        {/* Pagination Controls */}
+                        {reviews.totalPages > 1 && (
+                          <div className="flex justify-center items-center gap-2 mt-6">
+                            <button
+                              onClick={() =>
+                                setReviewPage((p) => Math.max(1, p - 1))
+                              }
+                              disabled={reviewPage === 1}
+                              className="px-3 py-2 border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                            >
+                              <ChevronLeft size={16} />
+                              Previous
+                            </button>
+
+                            <span className="px-4 py-2 text-sm text-gray-600">
+                              Page {reviews.page} of {reviews.totalPages}
+                            </span>
+
+                            <button
+                              onClick={() =>
+                                setReviewPage((p) =>
+                                  Math.min(reviews.totalPages, p + 1)
+                                )
+                              }
+                              disabled={reviewPage === reviews.totalPages}
+                              className="px-3 py-2 border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                            >
+                              Next
+                              <ChevronRight size={16} />
+                            </button>
                           </div>
-                        ))}
-                      </div>
+                        )}
+                      </>
                     )}
                   </section>
                 </div>
