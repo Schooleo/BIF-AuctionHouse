@@ -43,32 +43,35 @@ const MainLayout: React.FC = () => {
   }, []);
 
   return (
-    <div className="h-screen flex flex-col bg-gray-50 overflow-hidden">
+    <div className="min-h-screen flex flex-col bg-gray-50">
       {/* Navbar stays fixed at the top */}
-      <div className="shrink-0 z-50">
+      <div className="sticky top-0 z-50">
         <Navbar />
       </div>
 
-      {/* Scrollable Content Area */}
-      <div className="flex-1 overflow-y-auto overflow-x-hidden flex flex-col">
-        <div className="flex flex-1 w-full px-4 md:px-8">
-          {!hideSidebar && (
-            <div className="hidden md:block w-64 mt-8 mr-8 shrink-0 sticky top-4 self-start h-fit max-h-[calc(100vh-2rem)] overflow-y-auto">
+      {/* Main Layout Area - Global Scroll */}
+      <div className="flex-1 flex w-full">
+        {/* Sidebar - Fixed Left Column */}
+        {!hideSidebar && (
+          <div className="w-72 shrink-0 hidden md:block bg-white border-r border-gray-200">
+            {/* Sticky Content: Moves inside the visual column */}
+            <div className="sticky top-[72px] h-[calc(100vh-72px)] overflow-y-auto scrollbar-hide">
               <SideBarCategory categories={categories} />
             </div>
-          )}
+          </div>
+        )}
 
-          <main
-            className={`flex-1 min-w-0 ${
-              hideSidebar ? "max-w-7xl mx-auto" : ""
-            }`}
-          >
-            <Outlet context={{ categories }} />
-          </main>
-        </div>
-
-        <Footer />
+        {/* Main Content */}
+        <main
+          className={`flex-1 min-w-0 ${
+            !hideSidebar ? "px-8 pt-2" : "w-full max-w-7xl mx-auto px-4 py-8"
+          }`}
+        >
+          <Outlet context={{ categories }} />
+        </main>
       </div>
+
+      <Footer />
     </div>
   );
 };

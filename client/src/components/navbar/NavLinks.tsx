@@ -6,16 +6,16 @@ export default function NavbarLinks() {
 
   if (user && user.role !== "seller" && user.role !== "admin") {
     return (
-      <nav className="hidden md:flex items-center space-x-6 text-white text-xl">
+      <nav className="hidden md:flex items-center space-x-8 text-white text-xl">
         <Link
           to="/watchlist"
-          className="hover:text-primary-yellow transition-colors duration-200"
+          className="hover:text-primary-yellow hover:scale-110 transition-all duration-200"
         >
           Watch list
         </Link>
         <Link
           to="/bidding"
-          className="hover:text-primary-yellow transition-colors duration-200"
+          className="hover:text-primary-yellow hover:scale-110 transition-all duration-200"
         >
           Bidding
         </Link>

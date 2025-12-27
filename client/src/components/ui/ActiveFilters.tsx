@@ -51,7 +51,7 @@ const ActiveFilters: React.FC<ActiveFiltersProps> = ({ categories }) => {
   if (selectedCatIds.length === 0 && !minPrice && !maxPrice) return null;
 
   return (
-    <div className="flex flex-wrap gap-2 mb-4">
+    <div className="flex flex-wrap gap-2">
       {selectedCatIds.map((id) => {
         const cat = allCats.find((c) => c._id === id);
         if (!cat) return null;
@@ -80,21 +80,6 @@ const ActiveFilters: React.FC<ActiveFiltersProps> = ({ categories }) => {
           </button>
         </span>
       )}
-      
-      <button 
-        onClick={() => {
-             const newParams = new URLSearchParams();
-             // Keep sort? Maybe. Or full reset. 
-             // Logic in sidebar was full reset. Let's do partial or full.
-             // Usually "Clear All" means clear filters, keep search/sort.
-             if(searchParams.get("q")) newParams.set("q", searchParams.get("q")!);
-             if(searchParams.get("sort")) newParams.set("sort", searchParams.get("sort")!);
-             setSearchParams(newParams);
-        }}
-        className="text-xs text-gray-500 underline ml-2 hover:text-gray-700"
-      >
-          Clear All
-      </button>
     </div>
   );
 };

@@ -150,15 +150,21 @@ export const ProductService = {
           as: "allBids",
         },
       },
-      { $addFields: { bidCount: { $size: "$allBids" } } },
-      { $sort: { bidCount: -1 } },
+      {
+        $addFields: {
+          bidCount: { $size: "$allBids" },
+          isExpired: { $lte: ["$endTime", now] },
+        },
+      },
+      { $sort: { isExpired: 1, bidCount: -1 } },
       { $limit: 5 },
       ...topBidPipeline,
     ]);
 
     // Highest Price: top 5 products by currentPrice
     const highestPrice = await Product.aggregate([
-      { $sort: { currentPrice: -1 } },
+      { $addFields: { isExpired: { $lte: ["$endTime", now] } } },
+      { $sort: { isExpired: 1, currentPrice: -1 } },
       { $limit: 5 },
       ...topBidPipeline,
     ]);
@@ -188,15 +194,20 @@ export const ProductService = {
 
     const filter: any = {};
     if (category) {
-      const categoryIds = category.split(",").map((id) => id.trim()).filter((id) => Types.ObjectId.isValid(id));
-      
+      const categoryIds = category
+        .split(",")
+        .map((id) => id.trim())
+        .filter((id) => Types.ObjectId.isValid(id));
+
       if (categoryIds.length > 0) {
         // Find ALL children/grandchildren for these categories
         const catObjectIds = categoryIds.map((id) => new Types.ObjectId(id));
-        
+
         // Find children of selected categories
-        const childCats = await Category.find({ parent: { $in: catObjectIds } }).select("_id");
-        
+        const childCats = await Category.find({
+          parent: { $in: catObjectIds },
+        }).select("_id");
+
         // Find grandchildren (children of children)
         const grandChildCats = await Category.find({
           parent: { $in: childCats.map((c) => c._id) },
@@ -296,11 +307,15 @@ export const ProductService = {
         timeRemainingMs: {
           $ifNull: [{ $subtract: ["$endTime", now] }, 0],
         },
+        // Active (false) before Expired (true)
+        isExpired: { $lte: ["$endTime", now] },
       },
     });
 
     // 4. Sorting Stage
-    const sortStage: any = {};
+    // Primary Sort: Active items first
+    const sortStage: any = { isExpired: 1 };
+
     if (q.trim().length > 0 && sort === "rating") {
       sortStage.score = -1;
     } else {
@@ -389,7 +404,7 @@ export const ProductService = {
     // 2. Normalize seller & currentBidder
     const seller = normalizeUser(productDoc.seller);
     const category = normalizeCategory(productDoc.category);
-    
+
     const currentBidder = productDoc.currentBidder
       ? normalizeUser(productDoc.currentBidder)
       : null;
@@ -401,10 +416,7 @@ export const ProductService = {
     // 3. Fetch top bid
     const topBidDoc = await Bid.findOne({
       product: pid,
-      $or: [
-        { rejected: { $exists: false } },
-        { rejected: false }
-      ]
+      $or: [{ rejected: { $exists: false } }, { rejected: false }],
     })
       .sort({ price: -1, createdAt: 1 })
       .populate("bidder", userFields)

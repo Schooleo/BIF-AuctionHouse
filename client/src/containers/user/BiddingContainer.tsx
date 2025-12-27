@@ -131,7 +131,7 @@ const BiddingContainer: React.FC = () => {
     const value = e.target.value;
     const [newSortBy, newSortOrder] = value.split("-") as [
       "endTime" | "price" | "bidCount",
-      "asc" | "desc"
+      "asc" | "desc",
     ];
     setSortBy(newSortBy);
     setSortOrder(newSortOrder);
@@ -167,10 +167,29 @@ const BiddingContainer: React.FC = () => {
 
   // Sidebar options
   const filters = [
-    { label: "All Bids", value: "all", count: activeTotal + awaitingTotal + processingTotal },
-    { label: "Active", value: "active", count: activeTotal, color: "bg-blue-500" },
-    { label: "Awaiting", value: "awaiting", count: awaitingTotal, color: "bg-yellow-500" },
-    { label: "Processing", value: "processing", count: processingTotal, color: "bg-green-500" },
+    {
+      label: "All Bids",
+      value: "all",
+      count: activeTotal + awaitingTotal + processingTotal,
+    },
+    {
+      label: "Active",
+      value: "active",
+      count: activeTotal,
+      color: "bg-blue-500",
+    },
+    {
+      label: "Awaiting",
+      value: "awaiting",
+      count: awaitingTotal,
+      color: "bg-yellow-500",
+    },
+    {
+      label: "Processing",
+      value: "processing",
+      count: processingTotal,
+      color: "bg-green-500",
+    },
   ];
 
   return (
@@ -206,12 +225,14 @@ const BiddingContainer: React.FC = () => {
             </div>
 
             <div className="flex items-center gap-3">
-              <span className="text-sm font-medium text-gray-700 whitespace-nowrap">Sort by:</span>
+              <span className="text-sm font-medium text-gray-700 whitespace-nowrap">
+                Sort by:
+              </span>
               <div className="relative min-w-[200px]">
                 <select
                   value={`${sortBy}-${sortOrder}`}
                   onChange={handleSortChange}
-                  className="appearance-none w-full bg-white border border-gray-300 text-gray-700 text-sm rounded-md focus:ring-blue-500 focus:border-blue-500 pl-3 pr-10 py-2 cursor-pointer outline-none shadow-sm transition-all hover:border-blue-400"
+                  className="custom-select appearance-none w-full bg-white border border-gray-300 text-gray-700 text-sm rounded-md pl-3 pr-10 py-2 cursor-pointer outline-none shadow-sm transition-all focus:ring-gray-900 focus:border-gray-900 hover:border-gray-400"
                 >
                   <option value="endTime-asc">Ending Soonest</option>
                   <option value="endTime-desc">Ending Latest</option>
@@ -220,9 +241,6 @@ const BiddingContainer: React.FC = () => {
                   <option value="bidCount-desc">Most Bids</option>
                   <option value="bidCount-asc">Least Bids</option>
                 </select>
-                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
-                  <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
-                </div>
               </div>
             </div>
           </div>
@@ -237,12 +255,17 @@ const BiddingContainer: React.FC = () => {
           ) : (
             <div className="text-center py-16 bg-white rounded-lg border border-dashed border-gray-300">
               <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-blue-50">
-                <AlertCircle className="h-6 w-6 text-blue-400" aria-hidden="true" />
+                <AlertCircle
+                  className="h-6 w-6 text-blue-400"
+                  aria-hidden="true"
+                />
               </div>
-              <h3 className="mt-2 text-sm font-semibold text-gray-900">No auctions found</h3>
+              <h3 className="mt-2 text-sm font-semibold text-gray-900">
+                No auctions found
+              </h3>
               <p className="mt-1 text-sm text-gray-500">
-                {status === "all" 
-                  ? "You haven't placed any bids yet." 
+                {status === "all"
+                  ? "You haven't placed any bids yet."
                   : `You don't have any ${status} auctions.`}
               </p>
               {status === "all" ? (
