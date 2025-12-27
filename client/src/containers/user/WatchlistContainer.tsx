@@ -46,14 +46,16 @@ const WatchlistContainer: React.FC = () => {
   );
   const { addAlert } = useAlertStore((state) => state);
   const [isUrlChanging, setIsUrlChanging] = useState(false);
-  
+
   const [currentPage, setCurrentPage] = useState(pageFromUrl);
   const [sortBy, setSortBy] = useState<
     "createdAt" | "endTime" | "currentPrice"
   >(sortByFromUrl);
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">(sortOrderFromUrl);
-  
-  const [filterStatus, setFilterStatus] = useState<"all" | "active" | "ended">("all");
+
+  const [filterStatus, setFilterStatus] = useState<"all" | "active" | "ended">(
+    "all"
+  );
 
   useEffect(() => {
     const newPage = validatePage(searchParams.get("page"));
@@ -98,7 +100,9 @@ const WatchlistContainer: React.FC = () => {
         setData(response);
       } catch (err) {
         console.error("Error fetching watchlist:", err);
-        setError(err instanceof Error ? err.message : "Error fetching watchlist");
+        setError(
+          err instanceof Error ? err.message : "Error fetching watchlist"
+        );
       } finally {
         setLoading(false);
         setIsUrlChanging(false);
@@ -120,7 +124,7 @@ const WatchlistContainer: React.FC = () => {
     const value = e.target.value;
     const [newSortBy, newSortOrder] = value.split("-") as [
       "createdAt" | "endTime" | "currentPrice",
-      "asc" | "desc"
+      "asc" | "desc",
     ];
     setSortBy(newSortBy);
     setSortOrder(newSortOrder);
@@ -141,14 +145,17 @@ const WatchlistContainer: React.FC = () => {
           watchlist: prevData.watchlist.filter(
             (item) => (item.product ? item.product._id : null) !== productId
           ),
-          pagination: { ...prevData.pagination, total: prevData.pagination.total - 1 },
+          pagination: {
+            ...prevData.pagination,
+            total: prevData.pagination.total - 1,
+          },
         };
       });
 
       addAlert("success", "Item removed from watchlist.");
-      
+
       if (
-        data?.watchlist.filter(i => i.product).length === 1 && 
+        data?.watchlist.filter((i) => i.product).length === 1 &&
         currentPage > 1
       ) {
         setCurrentPage(currentPage - 1);
@@ -164,23 +171,24 @@ const WatchlistContainer: React.FC = () => {
     }
   };
 
-  if (loading || isUrlChanging) return (
+  if (loading || isUrlChanging)
+    return (
       <div className="flex justify-center py-20">
         <Spinner />
       </div>
-  );
-  
+    );
+
   if (error) return <ErrorMessage text={error} />;
-  
+
   const validItems = data?.watchlist || [];
-  
+
   // Filter logic: Include null products in "Ended" or "All"
-  const filteredItems = validItems.filter(item => {
+  const filteredItems = validItems.filter((item) => {
     if (filterStatus === "all") return true;
-    
+
     // If product is null, it counts as Ended/Unavailable
     if (!item.product) {
-       return filterStatus === "ended";
+      return filterStatus === "ended";
     }
 
     const isEnded = new Date(item.product.endTime).getTime() < Date.now();
@@ -190,13 +198,22 @@ const WatchlistContainer: React.FC = () => {
   });
 
   // Count items for sidebar
-  const activeCount = validItems.filter(i => i.product && new Date(i.product.endTime).getTime() >= Date.now()).length;
+  const activeCount = validItems.filter(
+    (i) => i.product && new Date(i.product.endTime).getTime() >= Date.now()
+  ).length;
   // Ended includes valid expired products AND null products
-  const endedCount = validItems.filter(i => !i.product || new Date(i.product.endTime).getTime() < Date.now()).length;
+  const endedCount = validItems.filter(
+    (i) => !i.product || new Date(i.product.endTime).getTime() < Date.now()
+  ).length;
 
   const filters = [
     { label: "All Items", value: "all", count: validItems.length },
-    { label: "Active", value: "active", count: activeCount, color: "bg-green-500" },
+    {
+      label: "Active",
+      value: "active",
+      count: activeCount,
+      color: "bg-green-500",
+    },
     { label: "Ended", value: "ended", count: endedCount, color: "bg-red-500" },
   ];
 
@@ -227,16 +244,19 @@ const WatchlistContainer: React.FC = () => {
           {/* Controls Bar */}
           <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm mb-6 flex flex-wrap gap-4 items-center justify-between">
             <div className="text-sm text-gray-600 font-medium">
-              {filteredItems.length} Result{filteredItems.length !== 1 ? "s" : ""}
+              {filteredItems.length} Result
+              {filteredItems.length !== 1 ? "s" : ""}
             </div>
 
             <div className="flex items-center gap-3">
-              <span className="text-sm font-medium text-gray-700 whitespace-nowrap">Sort by:</span>
+              <span className="text-sm font-medium text-gray-700 whitespace-nowrap">
+                Sort by:
+              </span>
               <div className="relative min-w-[200px]">
                 <select
                   value={`${sortBy}-${sortOrder}`}
                   onChange={handleSortChange}
-                  className="appearance-none w-full bg-white border border-gray-300 text-gray-700 text-sm rounded-md focus:ring-blue-500 focus:border-blue-500 pl-3 pr-10 py-2 cursor-pointer outline-none shadow-sm transition-all hover:border-blue-400"
+                  className="custom-select appearance-none w-full bg-white border border-gray-300 text-gray-700 text-sm rounded-md pl-3 pr-10 py-2 cursor-pointer outline-none shadow-sm transition-all focus:ring-gray-900 focus:border-gray-900 hover:border-gray-400"
                 >
                   <option value="createdAt-desc">Recently Added</option>
                   <option value="endTime-asc">Ending Soonest</option>
@@ -244,9 +264,6 @@ const WatchlistContainer: React.FC = () => {
                   <option value="currentPrice-asc">Price: Low to High</option>
                   <option value="currentPrice-desc">Price: High to Low</option>
                 </select>
-                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
-                  <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
-                </div>
               </div>
             </div>
           </div>

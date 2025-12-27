@@ -7,9 +7,8 @@ import ErrorMessage from "@components/message/ErrorMessage";
 import EmptyMessage from "@components/message/EmptyMessage";
 import Spinner from "@components/ui/Spinner";
 import { productApi } from "@services/product.api";
-import type { Product, ProductSortOption, Category } from "@interfaces/product";
+import type { Product, ProductSortOption } from "@interfaces/product";
 import type { IPagination, IPaginatedResponse } from "@interfaces/ui";
-import ActiveFilters from "@components/ui/ActiveFilters";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -23,13 +22,11 @@ const defaultPagination: IPagination = {
 interface ProductsContainerProps {
   initialCategory?: string;
   initialQuery?: string;
-  categories?: Category[];
 }
 
 const ProductsContainer: React.FC<ProductsContainerProps> = ({
   initialCategory = "",
   initialQuery = "",
-  categories = [],
 }) => {
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -105,7 +102,6 @@ const ProductsContainer: React.FC<ProductsContainerProps> = ({
 
   return (
     <>
-      <ActiveFilters categories={categories} />
       <SortBar sort={sort} setSort={handleSortChange} />
 
       <div className="products-container">

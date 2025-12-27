@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import type { Category } from "@interfaces/product";
 import { useSearchParams, useNavigate, useLocation } from "react-router-dom";
 import PriceRangeFilter from "./PriceRangeFilter";
-import { ChevronDown, ChevronRight, X } from "lucide-react";
+import { ChevronDown, ChevronRight, Filter, X } from "lucide-react";
+import ActiveFilters from "./ActiveFilters";
+import classNames from "classnames";
 
 interface SideBarCategoryProps {
   categories: Category[];
@@ -10,7 +12,7 @@ interface SideBarCategoryProps {
 }
 
 const MIN_PRICE = 0;
-const MAX_PRICE = 100000000; // 100 million VND generic max
+const MAX_PRICE = 500000000; // 500 million VND generic max
 
 const SideBarCategory: React.FC<SideBarCategoryProps> = ({
   categories,
@@ -27,13 +29,36 @@ const SideBarCategory: React.FC<SideBarCategoryProps> = ({
   ]);
   const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
 
-  // Sync with URL
+  /* Helper to find parent of a category */
+  const findParentCategory = useCallback(
+    (catId: string): string | null => {
+      for (const cat of categories) {
+        if (cat.children?.some((c) => c._id === catId)) {
+          return cat._id;
+        }
+      }
+      return null;
+    },
+    [categories]
+  );
+
+  // Sync with URL and auto-expand
   useEffect(() => {
     const catParam = searchParams.get("category");
     if (catParam) {
-      setSelectedCategories(catParam.split(","));
+      const ids = catParam.split(",");
+      setSelectedCategories(ids);
+
+      // Auto-expand parent if a sub-category is selected
+      if (ids.length > 0) {
+        const parentId = findParentCategory(ids[0]);
+        if (parentId) {
+          setExpandedCategories([parentId]);
+        }
+      }
     } else {
       setSelectedCategories([]);
+      setExpandedCategories([]);
     }
 
     const minParam = searchParams.get("min_price");
@@ -43,23 +68,43 @@ const SideBarCategory: React.FC<SideBarCategoryProps> = ({
       minParam ? Number(minParam) : MIN_PRICE,
       maxParam ? Number(maxParam) : MAX_PRICE,
     ]);
-  }, [searchParams]);
+  }, [searchParams, categories, findParentCategory]); // Added findParentCategory dependency
 
   const handleCategoryChange = (catId: string) => {
+    let newSelection: string[] = [];
+
     setSelectedCategories((prev) => {
+      // Single selection logic
       if (prev.includes(catId)) {
-        return prev.filter((id) => id !== catId);
+        newSelection = [];
+        return [];
       } else {
-        return [...prev, catId];
+        newSelection = [catId];
+        return [catId];
       }
     });
+
+    // Handle Expansion based on Selection
+    if (newSelection.length > 0) {
+      // We just selected something new
+      const parentId = findParentCategory(catId);
+      if (parentId) {
+        // It's a child, expand parent
+        setExpandedCategories([parentId]);
+      } else {
+        // It's a root, collapse others (single expansion)
+        setExpandedCategories([]);
+      }
+    }
   };
 
-  const toggleExpand = (catId: string) => {
-    setExpandedCategories((prev) =>
-      prev.includes(catId)
-        ? prev.filter((id) => id !== catId)
-        : [...prev, catId]
+  const toggleExpand = (catId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setExpandedCategories(
+      (prev) =>
+        prev.includes(catId)
+          ? [] // Collapse if already open
+          : [catId] // Open only this one
     );
   };
 
@@ -103,6 +148,7 @@ const SideBarCategory: React.FC<SideBarCategoryProps> = ({
   const handleReset = () => {
     setSelectedCategories([]);
     setPriceRange([MIN_PRICE, MAX_PRICE]);
+    setExpandedCategories([]); // Reset expanded categories on reset
     const newParams = new URLSearchParams(searchParams);
     newParams.delete("category");
     newParams.delete("min_price");
@@ -114,7 +160,9 @@ const SideBarCategory: React.FC<SideBarCategoryProps> = ({
 
   const renderCategories = (cats: Category[], depth = 0) => {
     return (
-      <ul className={`space-y-1 ${depth > 0 ? "ml-4 border-l pl-2" : ""}`}>
+      <ul
+        className={`space-y-1 ${depth > 0 ? "ml-4 border-l-2 border-gray-100 pl-2" : ""}`}
+      >
         {cats.map((cat) => {
           const isExpanded = expandedCategories.includes(cat._id);
           const hasChildren = cat.children && cat.children.length > 0;
@@ -122,30 +170,31 @@ const SideBarCategory: React.FC<SideBarCategoryProps> = ({
 
           return (
             <li key={cat._id}>
-              <div className="flex items-center justify-between py-1 group">
-                <div className="flex items-center gap-2">
+              <div
+                className={classNames(
+                  "flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer transition-colors duration-200 group",
+                  {
+                    "bg-blue-50 text-blue-700": isSelected,
+                    "hover:bg-gray-100 text-gray-700": !isSelected,
+                  }
+                )}
+                onClick={() => handleCategoryChange(cat._id)}
+              >
+                <div className="flex items-center gap-2 flex-1">
                   <input
                     type="checkbox"
                     checked={isSelected}
                     onChange={() => handleCategoryChange(cat._id)}
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 h-4 w-4"
+                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 h-4 w-4 cursor-pointer"
+                    onClick={(e) => e.stopPropagation()}
                   />
-                  <span
-                    className={`text-sm ${
-                      isSelected
-                        ? "font-medium text-blue-700"
-                        : "text-gray-700 group-hover:text-blue-600 cursor-pointer"
-                    }`}
-                    onClick={() => handleCategoryChange(cat._id)}
-                  >
-                    {cat.name}
-                  </span>
+                  <span className="text-sm font-medium">{cat.name}</span>
                 </div>
 
                 {hasChildren && (
                   <button
-                    onClick={() => toggleExpand(cat._id)}
-                    className="p-1 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100"
+                    onClick={(e) => toggleExpand(cat._id, e)}
+                    className="p-1 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-200/50"
                   >
                     {isExpanded ? (
                       <ChevronDown size={14} />
@@ -155,7 +204,9 @@ const SideBarCategory: React.FC<SideBarCategoryProps> = ({
                   </button>
                 )}
               </div>
-              {hasChildren && isExpanded && renderCategories(cat.children!, depth + 1)}
+              {hasChildren &&
+                isExpanded &&
+                renderCategories(cat.children!, depth + 1)}
             </li>
           );
         })}
@@ -169,43 +220,66 @@ const SideBarCategory: React.FC<SideBarCategoryProps> = ({
     priceRange[1] < MAX_PRICE;
 
   return (
-    <aside className="w-full bg-white shadow-md rounded-lg border flex flex-col h-fit">
-      <div className="p-4 border-b flex justify-between items-center">
-        <h2 className="font-semibold text-gray-800">{title}</h2>
+    // Updated wrapper: removed bg-white, border, min-h. Just layout.
+    <div className="w-full flex flex-col">
+      {/* Header */}
+      <div className="p-5 border-b border-gray-100 flex justify-between items-center">
+        <div className="flex items-center gap-2">
+          <Filter className="w-5 h-5 text-primary-blue" />
+          <h2 className="text-lg font-bold text-gray-800 whitespace-nowrap">
+            {title}
+          </h2>
+        </div>
+
         {hasActiveFilters && (
           <button
             onClick={handleReset}
-            className="text-xs text-red-500 hover:text-red-700 font-medium flex items-center gap-1"
+            className="text-xs text-red-500 hover:text-red-700 font-medium flex items-center gap-1 hover:underline"
           >
             Reset <X size={12} />
           </button>
         )}
       </div>
 
-      <div className="p-4 space-y-6">
+      {/* Content */}
+      <div className="px-5 py-6 space-y-6">
+        {hasActiveFilters && (
+          <div className="mb-2">
+            <ActiveFilters categories={categories} />
+          </div>
+        )}
+
         <div>
-          <h3 className="text-sm font-semibold text-gray-700 mb-2">Category</h3>
+          <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-3">
+            Category
+          </h3>
           {renderCategories(categories)}
         </div>
 
         <hr className="border-gray-100" />
 
-        <PriceRangeFilter
-          min={MIN_PRICE}
-          max={MAX_PRICE}
-          value={priceRange}
-          onChange={setPriceRange}
-        />
+        <div>
+          <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-3">
+            Price Range
+          </h3>
+          <PriceRangeFilter
+            min={MIN_PRICE}
+            max={MAX_PRICE}
+            value={priceRange}
+            onChange={setPriceRange}
+          />
+        </div>
 
-        <button
-          onClick={handleApply}
-          className="w-full text-white py-2 rounded-md transition font-medium text-sm shadow-sm hover:opacity-90"
-          style={{ backgroundColor: "var(--color-primary-blue)" }}
-        >
-          Apply Filters
-        </button>
+        <div className="pt-2">
+          <button
+            onClick={handleApply}
+            className="w-full bg-primary-blue text-white py-2.5 rounded-lg transition-all font-medium text-sm shadow-md hover:shadow-lg hover:opacity-95 active:scale-[0.98]"
+          >
+            Apply Filters
+          </button>
+        </div>
       </div>
-    </aside>
+    </div>
   );
 };
 

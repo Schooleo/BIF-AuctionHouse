@@ -4,7 +4,7 @@ import ProductImage from "./ProductImage";
 import { Link } from "react-router-dom";
 import { maskName, formatPrice } from "@utils/product";
 import { getTimeRemaining } from "@utils/time";
-import { X, User, Gavel, Calendar } from "lucide-react";
+import { X, User, Clock, Gavel, Calendar } from "lucide-react";
 
 interface ProductCardProps {
   product: Product;
@@ -71,57 +71,76 @@ const ProductCard: React.FC<ProductCardProps> = ({
           recentlyAdded={checkRecentlyAdded(startTime)}
         />
 
-        <div className="p-3 sm:p-4 flex-1 flex flex-col space-y-2">
-          {/* Title */}
-          <h3 className="text-base sm:text-lg font-bold text-gray-900 line-clamp-2 leading-tight">
+        <div className="p-3 sm:p-3.5 flex-1 flex flex-col gap-0.5">
+          {/* Title - Fixed height for alignment (2 lines) */}
+          <h3
+            className="text-base sm:text-lg font-bold text-gray-900 line-clamp-2 leading-tight h-12t-ellipsis overflow-hidden"
+            title={name}
+          >
             {name}
           </h3>
 
-          {/* Current Price - Prominent */}
-          <div className="text-lg sm:text-xl font-bold text-blue-600">
-            Current Price: {formatPrice(currentPrice)}
-          </div>
-
-          {/* Buy Now Price */}
-          {buyNowPrice && (
-            <div className="text-sm sm:text-base text-gray-600 font-semibold">
-              Buy Now: {formatPrice(buyNowPrice)}
+          {/* Price Section */}
+          <div className="flex flex-col gap-1 h-14 mt-1">
+            {/* Current Price */}
+            <div className="flex flex-wrap items-baseline gap-1 text-primary-blue">
+              <span className="text-lg sm:text-xl font-extrabold">
+                {formatPrice(currentPrice)}
+              </span>
             </div>
-          )}
 
-          {/* Time Remaining - Prominent */}
-          <div className="text-sm sm:text-base text-red-600 font-semibold">
-            Time Remaining: {timeRemaining.text}
-          </div>
-
-          <div className="flex-1"></div>
-
-          {/* Bottom Info Section */}
-          <div className="space-y-1.5 text-xs sm:text-sm text-gray-600">
-            {/* Top Bidder */}
-            <div className="flex items-center gap-1.5">
-              <User className="w-3.5 h-3.5 shrink-0" />
-              {currentTopBidderName ? (
-                <span className="font-medium truncate">
-                  {maskName(currentTopBidderName)}
+            {/* Buy Now Price (Placeholder if missing for alignment) */}
+            <div className="text-sm italic">
+              {buyNowPrice ? (
+                <span className="text-gray-500 font-semibold">
+                  Buy Now:{" "}
+                  <span className="text-gray-700 text-ellipsis overflow-hidden font-bold">
+                    {formatPrice(buyNowPrice)}
+                  </span>
                 </span>
               ) : (
-                <span className="text-gray-400">No bids yet</span>
+                <span className="text-gray-500">
+                  <X className="w-4 h-4 mr-1 mb-1 inline shrink-0" />
+                  No Buy Now Price
+                </span>
               )}
+            </div>
+          </div>
+
+          {/* Time Remaining OR Current Status */}
+          <div className="text-sm sm:text-base text-red-600 font-semibold pb-1">
+            <Clock className="w-3.5 h-3.5 mb-0.5 mr-1.5 inline shrink-0" />
+            {timeRemaining.text === "Ended"
+              ? "Auction Ended !"
+              : `${timeRemaining.text} left`}
+          </div>
+
+          {/* Bottom Info Section */}
+          <div className="space-y-1.5 text-xs sm:text-sm text-gray-600 mt-auto">
+            {/* Top Bidder And Number of Bids */}
+            <div className="flex items-center justify-between pr-7.5">
+              <div className="flex items-center gap-1.5">
+                <User className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+                {currentTopBidderName ? (
+                  <span className="font-medium truncate">
+                    {maskName(currentTopBidderName)}
+                  </span>
+                ) : (
+                  <span className="text-gray-500">None</span>
+                )}
+              </div>
+              <div className="flex items-center gap-1.5">
+                <Gavel className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+                <span className="font-medium">
+                  {totalBids} {totalBids === 1 ? "bid" : "bids"}
+                </span>
+              </div>
             </div>
 
             {/* Posted Time */}
             <div className="flex items-center gap-1.5">
-              <Calendar className="w-3.5 h-3.5 shrink-0" />
-              <span>{formatDate(startTime)}</span>
-            </div>
-
-            {/* Number of Bids */}
-            <div className="flex items-center gap-1.5">
-              <Gavel className="w-3.5 h-3.5 shrink-0" />
-              <span className="font-medium">
-                {totalBids} {totalBids === 1 ? "bid" : "bids"}
-              </span>
+              <Calendar className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+              <span>Started at {formatDate(startTime)}</span>
             </div>
           </div>
         </div>

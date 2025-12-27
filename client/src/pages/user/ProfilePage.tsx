@@ -203,7 +203,7 @@ const ProfilePage: React.FC = () => {
                 onClick={() => handleTabChange(tab.id)}
                 className={`px-4 py-3 text-sm font-medium transition flex items-center gap-3 border-b border-gray-100 last:border-b-0 ${
                   currentTab === tab.id
-                    ? "bg-blue-600 text-white"
+                    ? "bg-primary-blue text-white"
                     : "bg-white text-gray-700 hover:bg-gray-50"
                 }`}
               >

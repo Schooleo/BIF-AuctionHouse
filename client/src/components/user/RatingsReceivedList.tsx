@@ -102,7 +102,7 @@ const RatingsReceivedList: React.FC<RatingsReceivedListProps> = ({
           <select
             value={filter}
             onChange={(e) => handleFilterChange(e.target.value as FilterType)}
-            className="px-3 py-2 border rounded-md"
+            className="custom-select px-3 py-2 border rounded-md"
           >
             <option value="all">All Ratings</option>
             <option value="positive">Positive</option>
