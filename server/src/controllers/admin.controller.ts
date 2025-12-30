@@ -87,10 +87,6 @@ export const deleteCategory = async (req: Request, res: Response) => {
   }
 };
 
-// Kept for compatibility if used elsewhere or remove if not needed.
-// 'manageCategory' was the old placeholder name, we can alias it or just remove it if we update routes.
-export const manageCategory = createCategory;
-
 export const listProducts = async (req: Request, res: Response) => {
   // TODO: implement list products logic
   res.status(501).json({ message: "Not implemented" });
@@ -127,5 +123,106 @@ export const getDashboardStats = async (req: Request, res: Response) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Error fetching dashboard stats" });
+  }
+};
+
+export const listOrders = async (req: Request, res: Response) => {
+  try {
+    const page = parseInt((req.query.page as string) || "1");
+    const limit = parseInt((req.query.limit as string) || "10");
+    const filter = (req.query.filter as string) || "all";
+    const sort = (req.query.sort as string) || "newest";
+    const search = (req.query.q as string) || (req.query.search as string);
+
+    const result = await AdminService.listOrdersPaginated(
+      page,
+      limit,
+      filter,
+      sort,
+      search
+    );
+    res.status(200).json(result);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Error listing orders" });
+  }
+};
+
+export const getOrderDetails = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    if (!id) {
+      res.status(400).json({ message: "ID is required" });
+      return;
+    }
+    const order = await AdminService.getOrderDetails(id);
+    res.status(200).json(order);
+  } catch (error: any) {
+    res.status(404).json({ message: error.message });
+  }
+};
+
+export const cancelOrder = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    if (!id) {
+      res.status(400).json({ message: "ID is required" });
+      return;
+    }
+    const order = await AdminService.cancelOrder(id);
+    res.status(200).json(order);
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+export const adminSendMessage = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params; // Order ID
+    const { content } = req.body;
+    const adminId = (req as any).user._id;
+
+    if (!id || !content) {
+      res.status(400).json({ message: "ID and content are required" });
+      return;
+    }
+
+    const chat = await AdminService.adminSendMessage(id, content, adminId);
+    res.status(200).json(chat);
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+export const deleteOrderMessage = async (req: Request, res: Response) => {
+  try {
+    const { id, messageId } = req.params; // Order ID, Message ID
+    if (!id || !messageId) {
+      res.status(400).json({ message: "ID and message ID are required" });
+      return;
+    }
+    await AdminService.deleteChatMessage(id, messageId);
+    res.status(200).json({ message: "Message deleted" });
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+export const getSystemConfig = async (req: Request, res: Response) => {
+  try {
+    const config = await AdminService.getSystemConfig();
+    res.status(200).json(config);
+  } catch (error: any) {
+    res.status(500).json({ message: "Error fetching system config" });
+  }
+};
+
+export const updateSystemConfig = async (req: Request, res: Response) => {
+  try {
+    const data = req.body; // should validate fields here or in service
+    const config = await AdminService.updateSystemConfig(data);
+    res.status(200).json(config);
+  } catch (error: any) {
+    res.status(400).json({ message: "Error updating system config" });
   }
 };

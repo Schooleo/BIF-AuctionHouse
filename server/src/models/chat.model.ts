@@ -6,6 +6,7 @@ export interface IMessage {
   content: string;
   timestamp: Date;
   isImage?: boolean; // If true, content is URL
+  isAdmin?: boolean;
 }
 
 export interface IChat extends Document {
@@ -24,6 +25,7 @@ const messageSchema = new Schema<IMessage>({
   content: { type: String, required: true },
   timestamp: { type: Date, default: Date.now },
   isImage: { type: Boolean, default: false },
+  isAdmin: { type: Boolean, default: false },
 });
 
 const chatSchema = new Schema<IChat>(

@@ -158,7 +158,6 @@ export default React.forwardRef<AdminCategoriesContainerRef, unknown>(
     };
 
     const handleSubmit = async () => {
-      // Removed e: FormEvent, PopUpWindow might not pass it directly if we use its onSubmit
       try {
         if (editingCategory) {
           const isSub = !!editingCategory.parent;
@@ -210,8 +209,8 @@ export default React.forwardRef<AdminCategoriesContainerRef, unknown>(
       <div className="space-y-6">
         {/* Controls */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
-          <div className="flex flex-wrap items-center gap-4">
-            <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-6">
+            <div className="flex items-center gap-3">
               <span className="text-sm font-medium text-gray-600">Filter:</span>
               <select
                 value={filter}
@@ -223,7 +222,7 @@ export default React.forwardRef<AdminCategoriesContainerRef, unknown>(
               </select>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               <span className="text-sm font-medium text-gray-600">Sort:</span>
               <select
                 value={sort}

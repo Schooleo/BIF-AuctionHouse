@@ -28,9 +28,7 @@ const AdminCategoriesPage: React.FC = () => {
         </button>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 px-2.5 py-4">
-        <AdminCategoriesContainer ref={containerRef} />
-      </div>
+      <AdminCategoriesContainer ref={containerRef} />
     </div>
   );
 };
