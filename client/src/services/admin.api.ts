@@ -84,12 +84,24 @@ export const adminApi = {
 
   getCategories: async (
     page?: number,
-    limit?: number
+    limit?: number,
+    search?: string
   ): Promise<CategoryWithStats[] | PaginatedCategoriesResponse> => {
     let url = `${API_BASE}/api/admin/categories`;
+    const params = [];
+
     if (page) {
-      url += `?page=${page}&limit=${limit || 8}`;
+      params.push(`page=${page}`);
+      params.push(`limit=${limit || 8}`);
     }
+    if (search) {
+      params.push(`q=${encodeURIComponent(search)}`);
+    }
+
+    if (params.length > 0) {
+      url += `?${params.join("&")}`;
+    }
+
     const response = await fetch(url, {
       method: "GET",
       headers: getAuthHeaders(),

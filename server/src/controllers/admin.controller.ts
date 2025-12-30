@@ -11,12 +11,14 @@ export const listCategories = async (req: Request, res: Response) => {
       ? parseInt(req.query.page as string)
       : undefined;
     const limit = req.query.limit ? parseInt(req.query.limit as string) : 8;
+    const search = (req.query.q as string) || (req.query.search as string);
 
     if (page) {
       const result = await CategoryService.listCategoriesPaginated(
         page,
         limit,
-        true
+        true,
+        search
       );
       res.status(200).json(result);
     } else {

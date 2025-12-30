@@ -20,7 +20,7 @@ export default function Navbar() {
         </div>
 
         {/* Desktop SearchBar */}
-        <div className="hidden md:flex flex-1 max-w-md mx-auto">
+        <div className="hidden md:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-[45vw] lg:max-w-md">
           <SearchBar placeholder="Search..." />
         </div>
 

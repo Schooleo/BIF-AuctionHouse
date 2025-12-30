@@ -97,19 +97,41 @@ export const CategoryService = {
   listCategoriesPaginated: async (
     page: number,
     limit: number,
-    includeStats = false
+    includeStats = false,
+    search?: string
   ) => {
     const skip = (page - 1) * limit;
+    const query: any = { parent: null };
+
+    if (search) {
+      const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const searchRegex = new RegExp(escapedSearch, "i");
+      const matchingCats = await Category.find({ name: searchRegex })
+        .select("_id parent")
+        .lean();
+      const matchingRootIds = new Set<string>();
+
+      matchingCats.forEach((cat) => {
+        if (cat.parent) {
+          matchingRootIds.add(cat.parent.toString());
+        } else {
+          matchingRootIds.add(cat._id.toString());
+        }
+      });
+
+      if (matchingRootIds.size === 0) {
+        return { categories: [], total: 0, totalPages: 0, page };
+      }
+
+      query._id = { $in: Array.from(matchingRootIds) };
+    }
 
     // Count total roots
-    const totalRoots = await Category.countDocuments({ parent: null });
+    const totalRoots = await Category.countDocuments(query);
     const totalPages = Math.ceil(totalRoots / limit);
 
     // Fetch roots for this page
-    const roots = await Category.find({ parent: null })
-      .skip(skip)
-      .limit(limit)
-      .lean();
+    const roots = await Category.find(query).skip(skip).limit(limit).lean();
 
     const rootIds = roots.map((r) => r._id);
 

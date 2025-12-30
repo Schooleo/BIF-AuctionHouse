@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Loader2, ChevronLeft, ChevronRight } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
 import { adminApi, type CategoryWithStats } from "../../services/admin.api";
 import CategoryCard from "../../components/admin/CategoryCard";
 import { useAlertStore } from "../../stores/useAlertStore";
@@ -13,6 +14,8 @@ export interface AdminCategoriesContainerRef {
 export default React.forwardRef<AdminCategoriesContainerRef, unknown>(
   function AdminCategoriesContainer(props, ref) {
     void props;
+    const [searchParams] = useSearchParams();
+    const searchQuery = searchParams.get("q") || "";
     const { addAlert } = useAlertStore();
     const [categories, setCategories] = useState<CategoryWithStats[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -94,7 +97,7 @@ export default React.forwardRef<AdminCategoriesContainerRef, unknown>(
     const fetchCategories = React.useCallback(async () => {
       setIsLoading(true);
       try {
-        const resp = await adminApi.getCategories(page, limit);
+        const resp = await adminApi.getCategories(page, limit, searchQuery);
 
         // Handle both array (legacy/all) and paginated response
         if ("categories" in resp) {
@@ -112,7 +115,11 @@ export default React.forwardRef<AdminCategoriesContainerRef, unknown>(
       } finally {
         setIsLoading(false);
       }
-    }, [addAlert, page, limit]);
+    }, [addAlert, page, limit, searchQuery]);
+
+    useEffect(() => {
+      setPage(1);
+    }, [searchQuery]);
 
     useEffect(() => {
       fetchCategories();
