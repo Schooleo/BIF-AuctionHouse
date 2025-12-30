@@ -2,6 +2,9 @@ import { Router } from "express";
 import {
   listCategories,
   manageCategory,
+  createCategory,
+  updateCategory,
+  deleteCategory,
   listProducts,
   removeProduct,
   listUsers,
@@ -18,7 +21,9 @@ router.use(protect(["admin"]));
 
 router.get("/dashboard-stats", getDashboardStats);
 router.get("/categories", listCategories);
-router.post("/categories", manageCategory);
+router.post("/categories", createCategory);
+router.patch("/categories/:id", updateCategory);
+router.delete("/categories/:id", deleteCategory);
 router.get("/products", listProducts);
 router.delete("/products/:id", removeProduct);
 

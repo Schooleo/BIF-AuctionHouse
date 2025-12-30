@@ -9,41 +9,55 @@ import {
 import { useAuthStore } from "./stores/useAuthStore";
 import MainLayout from "./layouts/MainLayout";
 import UserLayout from "./layouts/UserLayout";
-import HomePage from "./pages/user/HomePage";
-import ProductsPage from "./pages/user/ProductsPage";
-import ProductDetailsPage from "./pages/user/ProductDetailsPage";
-import ProfilePage from "./pages/user/ProfilePage";
-import NotFoundPage from "./pages/shared/NotFoundPage";
-
 import AuthLayout from "./layouts/AuthLayout";
-import LoginPage from "./pages/auth/LoginPage";
-import RegisterPage from "./pages/auth/RegisterPage";
-import ResetPasswordPage from "./pages/auth/ResetPasswordPage";
-import LogoutPage from "./pages/auth/LogoutPage";
-import SellerProductsPage from "./pages/seller/SellerProductsPage";
-import AddProductPage from "./pages/seller/AddProductPage";
 import SellerLayout from "./layouts/SellerLayout";
-import SellerProfilePage from "./pages/seller/SellerProfilePage";
 import AdminLayout from "./layouts/AdminLayout";
-import AdminDashboardPage from "./pages/admin/AdminDashboardPage";
-import AdminProductsPage from "./pages/admin/AdminProductsPage";
-import AdminProductDetailsPage from "./pages/admin/AdminProductDetailsPage";
-import AdminCategoriesPage from "./pages/admin/AdminCategoriesPage";
-import AdminCategoryDetailsPage from "./pages/admin/AdminCategoryDetailsPage";
-import AdminUsersPage from "./pages/admin/AdminUsersPage";
-import AdminUserDetailsPage from "./pages/admin/AdminUserDetailsPage";
-import AdminUpgradeRequestsPage from "./pages/admin/UpgradeRequestsPage";
-import AdminProfilePage from "./pages/admin/AdminProfilePage";
+
 import { useEffect } from "react";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
-import UnauthorizedPage from "./pages/shared/UnauthorizedPage";
-import ForbiddenPage from "./pages/shared/ForbiddenPage";
-import AlertContainer from "@containers/ui/AlertContainer";
-import WatchListPage from "@pages/user/WatchlistPage";
-import BiddingPage from "@pages/user/biddingPage";
-import SellerProductDetailsPage from "@pages/seller/SellerProductDetailsPage";
-import OrderCompletionPage from "@pages/order/OrderCompletionPage";
+import AlertContainer from "./containers/ui/AlertContainer";
 import { SocketProvider } from "./contexts/SocketContext";
+
+import {
+  HomePage,
+  ProductsPage,
+  ProductDetailsPage,
+  ProfilePage,
+  WatchlistPage as WatchListPage,
+  BiddingPage,
+} from "./pages/user";
+
+import {
+  LoginPage,
+  RegisterPage,
+  ResetPasswordPage,
+  LogoutPage,
+} from "./pages/auth";
+
+import { NotFoundPage, UnauthorizedPage, ForbiddenPage } from "./pages/shared";
+
+import {
+  SellerProductsPage,
+  AddProductPage,
+  SellerProfilePage,
+  SellerProductDetailsPage,
+} from "./pages/seller";
+
+import {
+  AdminDashboardPage,
+  AdminProductsPage,
+  AdminProductDetailsPage,
+  AdminCategoriesPage,
+  AdminCategoryDetailsPage,
+  AdminUsersPage,
+  AdminUserDetailsPage,
+  AdminOrdersPage,
+  AdminOrderDetailsPage,
+  AdminUpgradeRequestsPage,
+  AdminProfilePage,
+} from "./pages/admin";
+
+import { OrderCompletionPage } from "./pages/order";
 
 const RoleBasedRedirect = ({ children }: { children: React.ReactNode }) => {
   const user = useAuthStore((state) => state.user);
@@ -144,6 +158,11 @@ const App = () => {
                     <Route
                       path="products/:id"
                       element={<AdminProductDetailsPage />}
+                    />
+                    <Route path="orders" element={<AdminOrdersPage />} />
+                    <Route
+                      path="orders/:id"
+                      element={<AdminOrderDetailsPage />}
                     />
                     <Route
                       path="categories"

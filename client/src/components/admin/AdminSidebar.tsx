@@ -8,6 +8,7 @@ import {
   FileText,
   User,
   ShieldCheck,
+  ShoppingCart,
 } from "lucide-react";
 import classNames from "classnames";
 
@@ -37,6 +38,11 @@ const AdminSideBar: React.FC = () => {
       icon: <Users className="w-5 h-5" />,
     },
     {
+      label: "Orders",
+      path: "/admin/orders",
+      icon: <ShoppingCart className="w-5 h-5" />,
+    },
+    {
       label: "Requests",
       path: "/admin/upgrade-requests",
       icon: <FileText className="w-5 h-5" />,
@@ -62,6 +68,10 @@ const AdminSideBar: React.FC = () => {
             item.path === "/admin/categories" &&
             location.pathname.startsWith("/admin/categories/") &&
             location.pathname !== "/admin/categories";
+          const isOrdersDetails =
+            item.path === "/admin/orders" &&
+            location.pathname.startsWith("/admin/orders/") &&
+            location.pathname !== "/admin/orders";
           const isUsersDetails =
             item.path === "/admin/users" &&
             location.pathname.startsWith("/admin/users/") &&
@@ -82,11 +92,13 @@ const AdminSideBar: React.FC = () => {
                       isActive &&
                       !isProductsDetails &&
                       !isCategoriesDetails &&
+                      !isOrdersDetails &&
                       !isUsersDetails,
                     "text-gray-700 hover:bg-gray-100 hover:text-gray-900": !(
                       isActive &&
                       !isProductsDetails &&
                       !isCategoriesDetails &&
+                      !isOrdersDetails &&
                       !isUsersDetails
                     ),
                   }
@@ -108,6 +120,13 @@ const AdminSideBar: React.FC = () => {
                 <div className="ml-5 mt-2 space-y-1 border-l-2 border-gray-200 pl-3">
                   <span className="block py-2 text-sm transition-colors duration-200 text-primary-blue font-semibold">
                     Category Details
+                  </span>
+                </div>
+              )}
+              {isOrdersDetails && (
+                <div className="ml-5 mt-2 space-y-1 border-l-2 border-gray-200 pl-3">
+                  <span className="block py-2 text-sm transition-colors duration-200 text-primary-blue font-semibold">
+                    Order Details
                   </span>
                 </div>
               )}
