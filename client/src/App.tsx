@@ -57,6 +57,8 @@ import {
   AdminProfilePage,
 } from "./pages/admin";
 
+import AdminSystemConfigPage from "./pages/admin/AdminSystemConfigPage";
+
 import { OrderCompletionPage } from "./pages/order";
 
 const RoleBasedRedirect = ({ children }: { children: React.ReactNode }) => {
@@ -181,6 +183,7 @@ const App = () => {
                       path="upgrade-requests"
                       element={<AdminUpgradeRequestsPage />}
                     />
+                    <Route path="config" element={<AdminSystemConfigPage />} />
                     <Route path="profile" element={<AdminProfilePage />} />
                   </Route>
                 </Route>

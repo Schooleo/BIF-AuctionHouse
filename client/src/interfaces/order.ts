@@ -31,6 +31,7 @@ export interface Message {
   content: string;
   timestamp: string;
   isImage: boolean;
+  isAdmin?: boolean;
 }
 
 export interface Chat {

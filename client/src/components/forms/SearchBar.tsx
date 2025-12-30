@@ -63,6 +63,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
         path.startsWith("/admin/products") ||
         path.startsWith("/admin/categories") ||
         path.startsWith("/admin/users") ||
+        path.startsWith("/admin/orders") ||
         path.startsWith("/admin/upgrade-requests")
       ) {
         // Stay in current section (redirect to list view of that section)

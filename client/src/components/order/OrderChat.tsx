@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
-import { Send } from "lucide-react";
+import { Send, ShieldAlert } from "lucide-react";
 import { useAlertStore } from "@stores/useAlertStore";
 import { useAuthStore } from "@stores/useAuthStore";
 import { orderApi } from "@services/order.api";
@@ -65,7 +65,7 @@ const OrderChat: React.FC<OrderChatProps> = ({ orderId }) => {
         <h3 className="font-bold text-gray-800">Messages</h3>
       </div>
 
-      <div className="flex-1 p-4 overflow-y-auto bg-white space-y-3">
+      <div className="flex-1 p-4 overflow-y-auto bg-white space-y-4">
         {chat.messages.length === 0 ? (
           <div className="text-center text-sm text-gray-500 mt-10">
             Start a conversation...
@@ -79,28 +79,70 @@ const OrderChat: React.FC<OrderChatProps> = ({ orderId }) => {
                   ? msg.sender
                   : null;
 
+            const senderName =
+              typeof msg.sender === "object" && msg.sender?.name
+                ? msg.sender.name
+                : "Unknown User";
+
             const isMe = user && senderId && senderId === user.id;
+
+            const isAdmin =
+              (typeof msg.sender === "object" &&
+                msg.sender?.role === "admin") ||
+              msg.isAdmin;
+
+            if (isAdmin) {
+              return (
+                <div key={msg._id} className="flex justify-center my-3">
+                  <div className="bg-orange-50 border border-orange-200 text-orange-800 rounded-lg px-4 py-3 max-w-[90%] text-sm shadow-sm">
+                    <div className="flex items-center gap-2 mb-1 border-b border-orange-100 pb-1">
+                      <ShieldAlert size={14} className="text-orange-600" />
+                      <span className="font-bold text-orange-700 text-xs uppercase tracking-wide">
+                        Admin
+                      </span>
+                      <span className="text-[10px] text-orange-400 ml-auto">
+                        {new Date(msg.timestamp).toLocaleString([], {
+                          month: "short",
+                          day: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </span>
+                    </div>
+                    <p className="whitespace-pre-wrap">{msg.content}</p>
+                  </div>
+                </div>
+              );
+            }
+
             return (
               <div
                 key={msg._id}
-                className={`flex ${isMe ? "justify-end" : "justify-start"}`}
+                className={`flex flex-col ${isMe ? "items-end" : "items-start"}`}
               >
                 <div
-                  className={`max-w-[80%] rounded-lg px-3 py-2 text-sm wrap-break-word whitespace-pre-wrap ${
-                    isMe
-                      ? "bg-blue-600 text-white"
-                      : "bg-gray-100 text-gray-800"
-                  }`}
+                  className={`flex items-baseline gap-2 mb-1 ${isMe ? "flex-row-reverse" : "flex-row"}`}
                 >
-                  <p>{msg.content}</p>
-                  <span
-                    className={`text-[10px] block mt-1 ${isMe ? "text-blue-200" : "text-gray-400"}`}
-                  >
-                    {new Date(msg.timestamp).toLocaleTimeString([], {
+                  <span className="text-xs font-semibold text-gray-700">
+                    {isMe ? "You" : senderName}
+                  </span>
+                  <span className="text-[10px] text-gray-400">
+                    {new Date(msg.timestamp).toLocaleString([], {
+                      month: "short",
+                      day: "numeric",
                       hour: "2-digit",
                       minute: "2-digit",
                     })}
                   </span>
+                </div>
+                <div
+                  className={`max-w-[80%] rounded-lg px-3 py-2 text-sm wrap-break-word whitespace-pre-wrap shadow-sm ${
+                    isMe
+                      ? "bg-blue-600 text-white rounded-tr-none"
+                      : "bg-gray-100 text-gray-800 rounded-tl-none"
+                  }`}
+                >
+                  <p>{msg.content}</p>
                 </div>
               </div>
             );
@@ -124,6 +166,7 @@ const OrderChat: React.FC<OrderChatProps> = ({ orderId }) => {
             onClick={handleSend}
             disabled={sending || !inputText.trim()}
             className="bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            aria-label="Send Message"
           >
             <Send size={18} />
           </button>
