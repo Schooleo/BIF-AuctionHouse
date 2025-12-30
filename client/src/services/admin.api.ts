@@ -50,6 +50,24 @@ export interface DashboardStats {
   };
 }
 
+export interface CategoryWithStats {
+  _id: string;
+  name: string;
+  productCount: number;
+  representativeImage: string | null;
+  children: CategoryWithStats[];
+  parent?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PaginatedCategoriesResponse {
+  categories: CategoryWithStats[];
+  total: number;
+  totalPages: number;
+  page: number;
+}
+
 export const adminApi = {
   getDashboardStats: async (
     timeRange: string = "24h"
@@ -61,6 +79,53 @@ export const adminApi = {
         headers: getAuthHeaders(),
       }
     );
+    return handleResponse(response);
+  },
+
+  getCategories: async (
+    page?: number,
+    limit?: number
+  ): Promise<CategoryWithStats[] | PaginatedCategoriesResponse> => {
+    let url = `${API_BASE}/api/admin/categories`;
+    if (page) {
+      url += `?page=${page}&limit=${limit || 8}`;
+    }
+    const response = await fetch(url, {
+      method: "GET",
+      headers: getAuthHeaders(),
+    });
+    return handleResponse(response);
+  },
+
+  createCategory: async (data: {
+    name: string;
+    subCategories?: string[];
+  }): Promise<CategoryWithStats> => {
+    const response = await fetch(`${API_BASE}/api/admin/categories`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data),
+    });
+    return handleResponse(response);
+  },
+
+  updateCategory: async (
+    id: string,
+    data: { name: string; subCategories?: string[] }
+  ): Promise<CategoryWithStats> => {
+    const response = await fetch(`${API_BASE}/api/admin/categories/${id}`, {
+      method: "PATCH",
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data),
+    });
+    return handleResponse(response);
+  },
+
+  deleteCategory: async (id: string): Promise<void> => {
+    const response = await fetch(`${API_BASE}/api/admin/categories/${id}`, {
+      method: "DELETE",
+      headers: getAuthHeaders(),
+    });
     return handleResponse(response);
   },
 };
