@@ -45,9 +45,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
   const currentTopBidderName =
     currentBidder?.name ||
     highestBidder?.name ||
-    (bidders && bidders.length > 0
-      ? bidders[bidders.length - 1].bidder.name
-      : null);
+    (bidders && bidders.length > 0 ? bidders[bidders.length - 1].bidder.name : null);
 
   const totalBids = bidCount !== undefined ? bidCount : bidders?.length || 0;
 
@@ -66,65 +64,55 @@ const ProductCard: React.FC<ProductCardProps> = ({
         to={`/products/${_id}`}
         className="group flex flex-col h-full bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-lg transition-all duration-300 ease-in-out transform hover:-translate-y-1"
       >
-        <ProductImage
-          image={mainImage ?? ""}
-          recentlyAdded={checkRecentlyAdded(startTime)}
-        />
+        <ProductImage image={mainImage ?? ""} recentlyAdded={checkRecentlyAdded(startTime)} />
 
-        <div className="p-3 sm:p-3.5 flex-1 flex flex-col gap-0.5">
+        <div className="p-3 sm:p-3.5 flex-1 flex flex-col gap-0.5 overflow-hidden">
           {/* Title - Fixed height for alignment (2 lines) */}
           <h3
-            className="text-base sm:text-lg font-bold text-gray-900 line-clamp-2 leading-tight h-12t-ellipsis overflow-hidden"
+            className="text-base sm:text-lg font-bold text-gray-900 line-clamp-2 leading-tight h-12 overflow-hidden wrap-break-words"
             title={name}
           >
             {name}
           </h3>
 
           {/* Price Section */}
-          <div className="flex flex-col gap-1 h-14 mt-1">
+          <div className="flex flex-col gap-1 mt-1">
             {/* Current Price */}
             <div className="flex flex-wrap items-baseline gap-1 text-primary-blue">
-              <span className="text-lg sm:text-xl font-extrabold">
-                {formatPrice(currentPrice)}
-              </span>
+              <span className="text-lg sm:text-xl font-extrabold shrink-0">{formatPrice(currentPrice)}</span>
             </div>
 
             {/* Buy Now Price (Placeholder if missing for alignment) */}
-            <div className="text-sm italic">
+            <div className="text-sm italic truncate">
               {buyNowPrice ? (
-                <span className="text-gray-500 font-semibold">
-                  Buy Now:{" "}
-                  <span className="text-gray-700 text-ellipsis overflow-hidden font-bold">
-                    {formatPrice(buyNowPrice)}
-                  </span>
+                <span className="text-gray-500 font-semibold truncate">
+                  Buy Now: <span className="text-gray-700 font-bold truncate">{formatPrice(buyNowPrice)}</span>
                 </span>
               ) : (
-                <span className="text-gray-500">
-                  <X className="w-4 h-4 mr-1 mb-1 inline shrink-0" />
-                  No Buy Now Price
+                <span className="text-gray-500 inline-flex items-center gap-1">
+                  <X className="w-4 h-4 mr-1 mb-0 inline shrink-0" />
+                  <span className="truncate">No Buy Now Price</span>
                 </span>
               )}
             </div>
           </div>
 
           {/* Time Remaining OR Current Status */}
-          <div className="text-sm sm:text-base text-red-600 font-semibold pb-1">
-            <Clock className="w-3.5 h-3.5 mb-0.5 mr-1.5 inline shrink-0" />
-            {timeRemaining.text === "Ended"
-              ? "Auction Ended !"
-              : `${timeRemaining.text} left`}
+          <div className="text-sm sm:text-base text-red-600 font-semibold pb-1 flex items-center gap-2 truncate">
+            <Clock className="w-4 h-4 mb-0.5 inline shrink-0" />
+            <span className="truncate">
+              {timeRemaining.text === "Ended" ? "Auction Ended !" : `${timeRemaining.text} left`}
+            </span>
           </div>
 
           {/* Bottom Info Section */}
           <div className="space-y-1.5 text-xs sm:text-sm text-gray-600 mt-auto">
             {/* Top Bidder And Number of Bids */}
-            <div className="flex items-center justify-between pr-7.5">
+            <div className="flex items-center justify-between pr-3">
               <div className="flex items-center gap-1.5">
                 <User className="w-3.5 h-3.5 mt-0.5 shrink-0" />
                 {currentTopBidderName ? (
-                  <span className="font-medium truncate">
-                    {maskName(currentTopBidderName)}
-                  </span>
+                  <span className="font-medium truncate">{maskName(currentTopBidderName)}</span>
                 ) : (
                   <span className="text-gray-500">None</span>
                 )}
@@ -166,20 +154,8 @@ const ProductCard: React.FC<ProductCardProps> = ({
           title="Remove from watchlist"
         >
           {isRemoving ? (
-            <svg
-              className="animate-spin h-4 w-4"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-            >
-              <circle
-                className="opacity-25"
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                strokeWidth="4"
-              ></circle>
+            <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
               <path
                 className="opacity-75"
                 fill="currentColor"
