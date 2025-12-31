@@ -22,22 +22,22 @@ export default function NavbarAuthLinks() {
           : "/profile";
 
     return (
-      <div className="hidden md:flex items-center space-x-6 text-white text-xl">
+      <div className="hidden md:flex items-center space-x-8 text-white text-xl">
         <Link
           to="/notifications"
-          className="hover:text-primary-yellow transition-all duration-200"
+          className="hover:text-primary-yellow hover:scale-110 transition-all duration-200"
         >
           Notifications
         </Link>
         <Link
           to={profileLink}
-          className="hover:text-primary-yellow transition-all duration-200"
+          className="hover:text-primary-yellow hover:scale-110 transition-all duration-200"
         >
           {user.name}
         </Link>
         <button
           onClick={() => setShowLogoutModal(true)}
-          className="hover:text-red-600 transition-all duration-200"
+          className="hover:text-red-600 hover:scale-110 transition-all duration-200"
         >
           Logout
         </button>
@@ -60,14 +60,14 @@ export default function NavbarAuthLinks() {
     <div className="hidden md:flex items-center space-x-6 text-white text-xl">
       <Link
         to="/auth/register"
-        className="hover:text-primary-yellow hover:font-semibold transition-all duration-200"
+        className="hover:text-primary-yellow hover:scale-110 transition-all duration-200"
       >
         Sign Up
       </Link>
       <div className="h-6 w-px bg-white" />
       <Link
         to="/auth/login"
-        className="hover:text-primary-yellow hover:font-semibold transition-all duration-200"
+        className="hover:text-primary-yellow hover:scale-110 transition-all duration-200"
       >
         Login
       </Link>

@@ -92,7 +92,7 @@ const OrderCompletionPage: React.FC = () => {
         >
           Order #{id?.slice(-8)} •{" "}
           <Link
-            to={`${user.role === "seller" ? "/seller" : "/buyer"}/products/${order.product?._id}`}
+            to={`${user.role === "seller" ? "/seller" : ""}/products/${order.product?._id}`}
             className="hover:underline hover:text-blue-600 transition-colors"
           >
             {order.product?.name}

@@ -8,6 +8,8 @@ import {
   FileText,
   User,
   ShieldCheck,
+  ShoppingCart,
+  Settings,
 } from "lucide-react";
 import classNames from "classnames";
 
@@ -37,6 +39,11 @@ const AdminSideBar: React.FC = () => {
       icon: <Users className="w-5 h-5" />,
     },
     {
+      label: "Orders",
+      path: "/admin/orders",
+      icon: <ShoppingCart className="w-5 h-5" />,
+    },
+    {
       label: "Requests",
       path: "/admin/upgrade-requests",
       icon: <FileText className="w-5 h-5" />,
@@ -62,6 +69,10 @@ const AdminSideBar: React.FC = () => {
             item.path === "/admin/categories" &&
             location.pathname.startsWith("/admin/categories/") &&
             location.pathname !== "/admin/categories";
+          const isOrdersDetails =
+            item.path === "/admin/orders" &&
+            location.pathname.startsWith("/admin/orders/") &&
+            location.pathname !== "/admin/orders";
           const isUsersDetails =
             item.path === "/admin/users" &&
             location.pathname.startsWith("/admin/users/") &&
@@ -82,11 +93,13 @@ const AdminSideBar: React.FC = () => {
                       isActive &&
                       !isProductsDetails &&
                       !isCategoriesDetails &&
+                      !isOrdersDetails &&
                       !isUsersDetails,
                     "text-gray-700 hover:bg-gray-100 hover:text-gray-900": !(
                       isActive &&
                       !isProductsDetails &&
                       !isCategoriesDetails &&
+                      !isOrdersDetails &&
                       !isUsersDetails
                     ),
                   }
@@ -111,6 +124,13 @@ const AdminSideBar: React.FC = () => {
                   </span>
                 </div>
               )}
+              {isOrdersDetails && (
+                <div className="ml-5 mt-2 space-y-1 border-l-2 border-gray-200 pl-3">
+                  <span className="block py-2 text-sm transition-colors duration-200 text-primary-blue font-semibold">
+                    Order Details
+                  </span>
+                </div>
+              )}
               {isUsersDetails && (
                 <div className="ml-5 mt-2 space-y-1 border-l-2 border-gray-200 pl-3">
                   <span className="block py-2 text-sm transition-colors duration-200 text-primary-blue font-semibold">
@@ -123,8 +143,25 @@ const AdminSideBar: React.FC = () => {
         })}
       </nav>
 
-      {/* Profile at Bottom */}
-      <div className="mt-8 pt-8 border-t border-gray-200">
+      {/* Settings and Profile at Bottom */}
+      <div className="mt-8 pt-4 border-t border-gray-200 space-y-1">
+        <Link
+          to="/admin/config"
+          className={classNames(
+            "flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors duration-200",
+            {
+              "bg-primary-blue text-white shadow-md":
+                location.pathname === "/admin/config",
+              "text-gray-700 hover:bg-gray-50 hover:text-gray-900":
+                location.pathname !== "/admin/config",
+            }
+          )}
+        >
+          <span className="mr-3">
+            <Settings className="w-5 h-5" />
+          </span>
+          System Config
+        </Link>
         <Link
           to="/admin/profile"
           className={classNames(

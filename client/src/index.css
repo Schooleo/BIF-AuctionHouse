@@ -93,20 +93,24 @@
   .custom-select {
     appearance: none;
     background-image:
-      url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e"),
-      linear-gradient(
-        to left,
-        var(--color-primary-blue) 1.2rem,
-        transparent 1.2rem
-      );
+      url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23042443' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e"),
+      linear-gradient(to left, white 2rem, transparent 2rem);
     background-repeat: no-repeat;
     background-position:
-      right 0.2rem center,
+      right 0.5rem center,
       right top;
     background-size:
-      0.8em 0.8em,
+      1em 1em,
       100% 100%;
-    padding-right: 2rem !important; /* Force override */
+    padding-right: 2.5rem !important; /* Force override */
+  }
+
+  .custom-select:focus {
+    background-image:
+      url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23042443' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e"),
+      linear-gradient(to left, white 2rem, transparent 2rem);
+    outline: none;
+    border-color: var(--color-primary-blue);
   }
 
   /* Target options inside the select */

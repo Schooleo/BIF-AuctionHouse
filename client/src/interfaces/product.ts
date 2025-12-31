@@ -120,6 +120,7 @@ export interface UserSummary {
   _id: string;
   name: string;
   rating: number;
+  role?: string;
 }
 
 export interface HomeDataResponse {

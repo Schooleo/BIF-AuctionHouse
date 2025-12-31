@@ -4,6 +4,8 @@ import { Order } from "../models/order.model";
 import { Bid } from "../models/bid.model";
 import { AutoBid } from "../models/autoBid.model";
 import { Rating } from "../models/rating.model";
+import { Chat } from "../models/chat.model";
+import { SystemConfig } from "../models/systemConfig.model";
 import mongoose from "mongoose";
 
 // Enum for bid status from admin perspective
@@ -201,7 +203,6 @@ export const getDashboardStats = async (timeRange: string = "24h") => {
   const bidsByHour = await Bid.aggregate(bidPipeline);
   const autoBidsByHour = await AutoBid.aggregate(autoBidPipeline);
 
-  // Top 10 Bids (Recent within range or Overall if 'all')
   // Top 10 Bids (Recent within range or Overall if 'all')
   const top10Match =
     timeRange === "all" ? {} : { createdAt: { $gte: startDate } };
@@ -479,4 +480,239 @@ export const updateUser = async (userId: string, data: any) => {
   Object.assign(user, data);
   await user.save();
   return user;
+};
+
+export const listOrdersPaginated = async (
+  page: number,
+  limit: number,
+  filterStatus?: string,
+  sortBy?: string,
+  search?: string
+) => {
+  const skip = (page - 1) * limit;
+  let matchStage: any = {};
+  if (filterStatus && filterStatus !== "all") {
+    if (filterStatus === "ongoing") {
+      matchStage.status = { $nin: ["COMPLETED", "CANCELLED"] };
+    } else {
+      matchStage.status = filterStatus;
+    }
+  }
+
+  const pipeline: any[] = [
+    { $match: matchStage },
+    {
+      $lookup: {
+        from: "products",
+        localField: "product",
+        foreignField: "_id",
+        as: "productInfo",
+      },
+    },
+    { $unwind: "$productInfo" },
+    {
+      $lookup: {
+        from: "users",
+        localField: "seller",
+        foreignField: "_id",
+        as: "sellerInfo",
+      },
+    },
+    { $unwind: "$sellerInfo" },
+    {
+      $lookup: {
+        from: "users",
+        localField: "buyer",
+        foreignField: "_id",
+        as: "buyerInfo",
+      },
+    },
+    { $unwind: "$buyerInfo" },
+  ];
+
+  if (search) {
+    const searchRegex = new RegExp(
+      search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
+      "i"
+    );
+    pipeline.push({
+      $addFields: {
+        orderIdStr: { $toString: "$_id" },
+      },
+    });
+    pipeline.push({
+      $match: {
+        $or: [
+          { orderIdStr: searchRegex },
+          { "productInfo.name": searchRegex },
+          { "sellerInfo.name": searchRegex },
+          { "buyerInfo.name": searchRegex },
+        ],
+      },
+    });
+  }
+
+  let sortStage: any = {};
+  if (sortBy) {
+    switch (sortBy) {
+      case "newest":
+        sortStage = { createdAt: -1 };
+        break;
+      case "oldest":
+        sortStage = { createdAt: 1 };
+        break;
+      case "price_desc":
+        sortStage = { "productInfo.currentPrice": -1 };
+        break;
+      case "price_asc":
+        sortStage = { "productInfo.currentPrice": 1 };
+        break;
+      default:
+        sortStage = { createdAt: -1 };
+    }
+  } else {
+    if (!filterStatus || filterStatus === "all") {
+      pipeline.push({
+        $addFields: {
+          isOngoing: {
+            $cond: [{ $in: ["$status", ["COMPLETED", "CANCELLED"]] }, 0, 1],
+          },
+        },
+      });
+      sortStage = { isOngoing: -1, createdAt: -1 };
+    } else {
+      sortStage = { createdAt: -1 };
+    }
+  }
+
+  pipeline.push({ $sort: sortStage });
+
+  pipeline.push({
+    $facet: {
+      metadata: [{ $count: "total" }],
+      data: [{ $skip: skip }, { $limit: limit }],
+    },
+  });
+
+  const result = await Order.aggregate(pipeline);
+  const metadata = result[0].metadata[0];
+  const total = metadata ? metadata.total : 0;
+  const data = result[0].data;
+
+  return {
+    orders: data,
+    total,
+    totalPages: Math.ceil(total / limit),
+    page,
+  };
+};
+
+export const getOrderDetails = async (id: string) => {
+  const order = await Order.findById(id)
+    .populate("product")
+    .populate("seller", "-password")
+    .populate("buyer", "-password")
+    .populate({
+      path: "chat",
+      populate: {
+        path: "messages.sender",
+        select: "name email role",
+      },
+    });
+
+  if (!order) throw new Error("Order not found");
+  return order;
+};
+
+export const cancelOrder = async (id: string) => {
+  const order = await Order.findById(id);
+  if (!order) throw new Error("Order not found");
+
+  if (order.status === "CANCELLED" || order.status === "COMPLETED") {
+    throw new Error("Cannot cancel completed or already cancelled order");
+  }
+
+  order.status = "CANCELLED" as any;
+  await order.save();
+
+  await Product.findByIdAndUpdate(order.product, {
+    transactionCompleted: false,
+    winnerConfirmed: false,
+  });
+
+  return order;
+};
+
+export const adminSendMessage = async (
+  orderId: string,
+  content: string,
+  adminId: string
+) => {
+  const order = await Order.findById(orderId);
+  if (!order) throw new Error("Order not found");
+
+  if (!order.chat) {
+    throw new Error("Chat not initialized for this order");
+  }
+
+  const chat = await Chat.findById(order.chat);
+  if (!chat) throw new Error("Chat not found");
+
+  chat.messages.push({
+    sender: new mongoose.Types.ObjectId(adminId),
+    content,
+    timestamp: new Date(),
+    isAdmin: true,
+  });
+
+  await chat.save();
+  return chat;
+};
+
+export const deleteChatMessage = async (orderId: string, messageId: string) => {
+  const order = await Order.findById(orderId);
+  if (!order || !order.chat) throw new Error("Order or Chat not found");
+
+  const chat = await Chat.findById(order.chat);
+  if (!chat) throw new Error("Chat not found");
+
+  await Chat.updateOne(
+    { _id: order.chat },
+    { $pull: { messages: { _id: messageId } } }
+  );
+
+  return true;
+};
+
+export const getSystemConfig = async () => {
+  let config = await SystemConfig.findOne();
+  if (!config) {
+    // Create default
+    config = await SystemConfig.create({});
+  }
+  return config;
+};
+
+export const updateSystemConfig = async (data: {
+  auctionExtensionWindow?: number;
+  auctionExtensionTime?: number;
+  autoBidDelay?: number;
+}) => {
+  let config = await SystemConfig.findOne();
+  if (!config) {
+    config = new SystemConfig();
+  }
+
+  if (data.auctionExtensionWindow !== undefined) {
+    config.auctionExtensionWindow = data.auctionExtensionWindow;
+  }
+  if (data.auctionExtensionTime !== undefined) {
+    config.auctionExtensionTime = data.auctionExtensionTime;
+  }
+  if (data.autoBidDelay !== undefined) {
+    config.autoBidDelay = data.autoBidDelay;
+  }
+
+  await config.save();
+  return config;
 };

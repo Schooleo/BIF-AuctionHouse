@@ -46,7 +46,7 @@ const ProductImageCard: React.FC<ProductImageCardProps> = ({
   return (
     <div className="product-image-card w-full md:w-[500px] sticky top-20">
       {/* Main Image */}
-      <div className="w-full mb-4 flex justify-center relative group overflow-hidden rounded-lg shadow-md cursor-pointer">
+      <div className="w-full mb-4 flex justify-center relative group overflow-hidden rounded-lg shadow-lg border-t border-gray-200 cursor-pointer">
         <img
           src={currentImage}
           alt="Main product"
