@@ -8,6 +8,7 @@ import { Chat } from "../models/chat.model";
 import { SystemConfig } from "../models/systemConfig.model";
 import { Watchlist } from "../models/watchlist.model";
 import { UpgradeRequest } from "../models/upgradeRequest.model";
+import { UnbanRequest } from "../models/unbanRequest.model";
 import mongoose from "mongoose";
 import * as bcrypt from "bcrypt";
 
@@ -354,9 +355,14 @@ export const blockUser = async (userId: string, reason: string) => {
 
   user.status = "BLOCKED";
   user.blockReason = reason;
+  user.blockedAt = new Date();
   await user.save();
 
-  return { status: user.status, blockReason: user.blockReason };
+  return {
+    status: user.status,
+    blockReason: user.blockReason,
+    blockedAt: user.blockedAt,
+  };
 };
 
 export const unblockUser = async (userId: string) => {
@@ -369,11 +375,19 @@ export const unblockUser = async (userId: string) => {
     throw new Error("User is already active");
   }
 
-  user.status = "ACTIVE";
-  user.blockReason = undefined;
-  await user.save();
+  // Use updateOne with $unset for optional fields to avoid TS error
+  await User.updateOne(
+    { _id: userId },
+    {
+      $set: { status: "ACTIVE" },
+      $unset: { blockReason: 1, blockedAt: 1 },
+    }
+  );
 
-  return { status: user.status };
+  // Delete any pending unban requests for this user
+  await UnbanRequest.deleteMany({ user: userId, status: "PENDING" });
+
+  return { status: "ACTIVE" };
 };
 
 export const deleteUser = async (userId: string, adminId?: string) => {
@@ -1453,6 +1467,138 @@ export const rejectUpgradeRequest = async (
   request.reviewedBy = new mongoose.Types.ObjectId(adminId);
   request.rejectionReason = reason;
   request.rejectedAt = new Date();
+  await request.save();
+
+  return request;
+};
+
+// ==========================================
+// BANNED USERS & UNBAN REQUEST MANAGEMENT
+// ==========================================
+
+/**
+ * Get all banned users with pagination
+ */
+export const getBannedUsers = async (params: {
+  page?: number;
+  limit?: number;
+  search?: string;
+}) => {
+  const { page = 1, limit = 10, search } = params;
+  const skip = (page - 1) * limit;
+
+  const query: any = { status: "BLOCKED" };
+
+  if (search) {
+    query.$or = [
+      { name: { $regex: search, $options: "i" } },
+      { email: { $regex: search, $options: "i" } },
+    ];
+  }
+
+  const [users, total] = await Promise.all([
+    User.find(query)
+      .select("name email avatar role status blockReason blockedAt createdAt")
+      .sort({ blockedAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean(),
+    User.countDocuments(query),
+  ]);
+
+  // Get unban request status for each user
+  const userIds = users.map((u) => u._id);
+  const unbanRequests = await UnbanRequest.find({
+    user: { $in: userIds },
+    status: "PENDING",
+  }).select("user");
+
+  const pendingRequestUserIds = new Set(
+    unbanRequests.map((r) => r.user.toString())
+  );
+
+  const usersWithRequestStatus = users.map((user) => ({
+    ...user,
+    hasUnbanRequest: pendingRequestUserIds.has(user._id.toString()),
+  }));
+
+  return {
+    users: usersWithRequestStatus,
+    total,
+    totalPages: Math.ceil(total / limit),
+    page,
+    limit,
+  };
+};
+
+/**
+ * Get unban request for a specific user
+ */
+export const getUnbanRequestByUser = async (userId: string) => {
+  const request = await UnbanRequest.findOne({ user: userId })
+    .populate("processedBy", "name email")
+    .sort({ createdAt: -1 });
+
+  return request;
+};
+
+/**
+ * Approve unban request - unblock the user
+ */
+export const approveUnbanRequest = async (
+  requestId: string,
+  adminId: string
+) => {
+  const request = await UnbanRequest.findById(requestId);
+  if (!request) {
+    throw new Error("Unban request not found");
+  }
+
+  if (request.status !== "PENDING") {
+    throw new Error("Request is not pending");
+  }
+
+  // Update request status
+  request.status = "APPROVED";
+  request.processedBy = new mongoose.Types.ObjectId(adminId);
+  request.processedAt = new Date();
+  await request.save();
+
+  // Unblock the user
+  await User.updateOne(
+    { _id: request.user },
+    {
+      $set: { status: "ACTIVE" },
+      $unset: { blockReason: 1, blockedAt: 1 },
+    }
+  );
+
+  return request;
+};
+
+/**
+ * Deny unban request - keep user blocked
+ */
+export const denyUnbanRequest = async (
+  requestId: string,
+  adminId: string,
+  adminNote?: string
+) => {
+  const request = await UnbanRequest.findById(requestId);
+  if (!request) {
+    throw new Error("Unban request not found");
+  }
+
+  if (request.status !== "PENDING") {
+    throw new Error("Request is not pending");
+  }
+
+  request.status = "DENIED";
+  request.processedBy = new mongoose.Types.ObjectId(adminId);
+  request.processedAt = new Date();
+  if (adminNote) {
+    request.adminNote = adminNote;
+  }
   await request.save();
 
   return request;

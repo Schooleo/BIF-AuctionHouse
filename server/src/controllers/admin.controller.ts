@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import * as AdminService from "../services/admin.service";
-import { UserSearchParams } from "../types/admin";
+import { UserSearchParams, AuthRequest } from "../types/admin";
 import { CategoryService } from "../services/category.service";
 
 // Thêm các kiểu dữ liệu cho Request và Response nếu có sử dụng trong src/types/admin.ts
@@ -548,6 +548,89 @@ export const deleteReview = async (req: Request, res: Response) => {
     }
 
     const result = await AdminService.deleteReview(id);
+    res.status(200).json(result);
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+// ==========================================
+// BANNED USERS & UNBAN REQUEST MANAGEMENT
+// ==========================================
+
+// Get all banned users
+export const getBannedUsers = async (req: Request, res: Response) => {
+  try {
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const search = req.query.search as string;
+
+    const result = await AdminService.getBannedUsers({
+      page,
+      limit,
+      ...(search && { search }),
+    });
+    res.status(200).json(result);
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+// Get unban request for a user
+export const getUnbanRequest = async (req: Request, res: Response) => {
+  try {
+    const { userId } = req.params;
+    if (!userId) {
+      res.status(400).json({ message: "User ID is required" });
+      return;
+    }
+
+    const result = await AdminService.getUnbanRequestByUser(userId);
+    res.status(200).json(result);
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+// Approve unban request
+export const approveUnbanRequest = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const adminId = (req as unknown as AuthRequest).user?.userId;
+
+    if (!id) {
+      res.status(400).json({ message: "Request ID is required" });
+      return;
+    }
+    if (!adminId) {
+      res.status(401).json({ message: "Unauthorized" });
+      return;
+    }
+
+    const result = await AdminService.approveUnbanRequest(id, adminId);
+    res.status(200).json(result);
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+// Deny unban request
+export const denyUnbanRequest = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const adminId = (req as unknown as AuthRequest).user?.userId;
+    const { adminNote } = req.body;
+
+    if (!id) {
+      res.status(400).json({ message: "Request ID is required" });
+      return;
+    }
+    if (!adminId) {
+      res.status(401).json({ message: "Unauthorized" });
+      return;
+    }
+
+    const result = await AdminService.denyUnbanRequest(id, adminId, adminNote);
     res.status(200).json(result);
   } catch (error: any) {
     res.status(400).json({ message: error.message });

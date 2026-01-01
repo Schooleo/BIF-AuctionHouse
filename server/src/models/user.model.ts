@@ -13,6 +13,7 @@ export interface IUser extends Document {
   contactEmail?: string;
   status: "ACTIVE" | "BLOCKED";
   blockReason?: string;
+  blockedAt?: Date;
 
   positiveRatings: number; // Yêu cầu 2.2
   negativeRatings: number; // Yêu cầu 2.2
@@ -48,6 +49,7 @@ const userSchema = new Schema<IUser>(
       default: "ACTIVE",
     },
     blockReason: { type: String },
+    blockedAt: { type: Date },
     positiveRatings: { type: Number, default: 0 },
     negativeRatings: { type: Number, default: 0 },
     reputationScore: { type: Number, default: 0 },

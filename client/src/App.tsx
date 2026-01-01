@@ -58,6 +58,7 @@ import {
 } from "./pages/admin";
 
 import AdminSystemConfigPage from "./pages/admin/AdminSystemConfigPage";
+import AdminBannedUsersPage from "./pages/admin/AdminBannedUsersPage";
 
 import { OrderCompletionPage } from "./pages/order";
 
@@ -178,6 +179,10 @@ const App = () => {
                     <Route
                       path="users/:id"
                       element={<AdminUserDetailsPage />}
+                    />
+                    <Route
+                      path="banned-users"
+                      element={<AdminBannedUsersPage />}
                     />
                     <Route
                       path="upgrade-requests"

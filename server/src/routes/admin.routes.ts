@@ -24,12 +24,17 @@ import {
   deleteOrderMessage,
   getSystemConfig,
   updateSystemConfig,
-  // New: Extended user management
+  // Extended user management
   getLinkedAccountProfile,
   getUserProducts,
   getUserOrdersSummary,
   updateReview,
   deleteReview,
+  // Banned users management
+  getBannedUsers,
+  getUnbanRequest,
+  approveUnbanRequest,
+  denyUnbanRequest,
 } from "../controllers/admin.controller";
 import { protect } from "../middleware/auth.middleware";
 
@@ -79,5 +84,11 @@ router.delete("/reviews/:id", deleteReview);
 // System Config Routes
 router.get("/config", getSystemConfig);
 router.put("/config", updateSystemConfig);
+
+// Banned Users & Unban Request Routes
+router.get("/banned-users", getBannedUsers);
+router.get("/banned-users/:userId/unban-request", getUnbanRequest);
+router.post("/unban-requests/:id/approve", approveUnbanRequest);
+router.post("/unban-requests/:id/deny", denyUnbanRequest);
 
 export default router;

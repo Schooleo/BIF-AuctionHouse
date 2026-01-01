@@ -650,3 +650,104 @@ export const adminApiExtended = {
     return handleResponse(response);
   },
 };
+
+// ==========================================
+// BANNED USERS & UNBAN REQUEST API
+// ==========================================
+
+export interface BannedUser {
+  _id: string;
+  name: string;
+  email: string;
+  avatar?: string;
+  role: string;
+  status: string;
+  blockReason?: string;
+  blockedAt?: string;
+  createdAt: string;
+  hasUnbanRequest: boolean;
+}
+
+export interface BannedUsersResponse {
+  users: BannedUser[];
+  total: number;
+  totalPages: number;
+  page: number;
+  limit: number;
+}
+
+export interface UnbanRequestData {
+  _id: string;
+  user: string;
+  reason: string;
+  status: "PENDING" | "APPROVED" | "DENIED";
+  adminNote?: string;
+  processedBy?: { _id: string; name: string; email: string };
+  processedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export const bannedUsersApi = {
+  // Get all banned users with pagination
+  getBannedUsers: async (
+    page: number = 1,
+    limit: number = 10,
+    search?: string
+  ): Promise<BannedUsersResponse> => {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+    });
+    if (search) params.append("search", search);
+
+    const response = await fetch(
+      `${API_BASE}/api/admin/banned-users?${params}`,
+      {
+        method: "GET",
+        headers: getAuthHeaders(),
+      }
+    );
+    return handleResponse<BannedUsersResponse>(response);
+  },
+
+  // Get unban request for a specific user
+  getUnbanRequest: async (userId: string): Promise<UnbanRequestData | null> => {
+    const response = await fetch(
+      `${API_BASE}/api/admin/banned-users/${userId}/unban-request`,
+      {
+        method: "GET",
+        headers: getAuthHeaders(),
+      }
+    );
+    return handleResponse<UnbanRequestData | null>(response);
+  },
+
+  // Approve unban request
+  approveUnbanRequest: async (requestId: string): Promise<UnbanRequestData> => {
+    const response = await fetch(
+      `${API_BASE}/api/admin/unban-requests/${requestId}/approve`,
+      {
+        method: "POST",
+        headers: getAuthHeaders(),
+      }
+    );
+    return handleResponse<UnbanRequestData>(response);
+  },
+
+  // Deny unban request
+  denyUnbanRequest: async (
+    requestId: string,
+    adminNote?: string
+  ): Promise<UnbanRequestData> => {
+    const response = await fetch(
+      `${API_BASE}/api/admin/unban-requests/${requestId}/deny`,
+      {
+        method: "POST",
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ adminNote }),
+      }
+    );
+    return handleResponse<UnbanRequestData>(response);
+  },
+};

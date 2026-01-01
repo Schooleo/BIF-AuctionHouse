@@ -7,3 +7,13 @@ export interface UserSearchParams {
   sortBy?: string;
   sortOrder?: "asc" | "desc";
 }
+
+import { Request } from "express";
+
+export interface AuthRequest extends Request {
+  user?: {
+    userId: string;
+    email: string;
+    role: string;
+  };
+}
