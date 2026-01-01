@@ -76,10 +76,7 @@ export const getSuggestedPrice = async (req: Request, res: Response) => {
     if (error.message === BidMessages.PRODUCT_NOT_FOUND) {
       return res.status(404).json({ message: error.message });
     }
-    if (
-      error.message === BidMessages.UNRATED_NOT_ALLOWED ||
-      error.message === BidMessages.REPUTATION_TOO_LOW
-    ) {
+    if (error.message === BidMessages.UNRATED_NOT_ALLOWED || error.message === BidMessages.REPUTATION_TOO_LOW) {
       return res.status(403).json({ message: error.message });
     }
     res.status(500).json({ message: error.message });
@@ -91,12 +88,7 @@ export const placeBid = async (req: Request, res: Response) => {
     const { productId, maxPrice, stepPrice } = req.body;
     const userId = req.user!.id;
 
-    const result = await bidderService.createOrUpdateAutoBid(
-      userId,
-      productId,
-      maxPrice,
-      stepPrice
-    );
+    const result = await bidderService.createOrUpdateAutoBid(userId, productId, maxPrice, stepPrice);
 
     res.status(201).json({
       message: BidMessages.BID_PLACED,
@@ -147,23 +139,11 @@ export const viewMyBids = async (req: Request, res: Response) => {
 
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
-    const sortBy =
-      (req.query.sortBy as "endTime" | "price" | "bidCount") || "endTime";
+    const sortBy = (req.query.sortBy as "endTime" | "price" | "bidCount") || "endTime";
     const sortOrder = (req.query.sortOrder as "asc" | "desc") || "desc";
-    const status = req.query.status as
-      | "active"
-      | "awaiting"
-      | "processing"
-      | undefined;
+    const status = req.query.status as "active" | "awaiting" | "processing" | undefined;
 
-    const result = await bidderService.getMyBids(
-      bidderId,
-      page,
-      limit,
-      sortBy,
-      sortOrder,
-      status
-    );
+    const result = await bidderService.getMyBids(bidderId, page, limit, sortBy, sortOrder, status);
     res.json(result);
   } catch (error: any) {
     res.status(500).json({ message: error.message });
@@ -181,27 +161,19 @@ export const askSellerQuestion = async (req: Request, res: Response) => {
     }
 
     if (!question || question.trim().length === 0) {
-      return res
-        .status(400)
-        .json({ message: ProductMessages.QUESTION_REQUIRED });
+      return res.status(400).json({ message: ProductMessages.QUESTION_REQUIRED });
     }
 
     if (!bidderId) {
       return res.status(401).json({ message: "Unauthorized" });
     }
 
-    const result = await bidderService.askQuestion(
-      productId,
-      bidderId,
-      question.trim()
-    );
+    const result = await bidderService.askQuestion(productId, bidderId, question.trim());
 
     res.status(201).json(result);
   } catch (error: any) {
     if (error.message === "Product not found") {
-      return res
-        .status(404)
-        .json({ message: ProductMessages.PRODUCT_NOT_FOUND });
+      return res.status(404).json({ message: ProductMessages.PRODUCT_NOT_FOUND });
     }
     if (error.message === "Bidder not found") {
       return res.status(404).json({ message: "Bidder not found" });
@@ -254,28 +226,17 @@ export const viewWatchlist = async (req: Request, res: Response) => {
 
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
-    const sortBy =
-      (req.query.sortBy as "createdAt" | "endTime" | "currentPrice") ||
-      "createdAt";
+    const sortBy = (req.query.sortBy as "createdAt" | "endTime" | "currentPrice") || "createdAt";
     const sortOrder = (req.query.sortOrder as "asc" | "desc") || "desc";
 
-    const result = await bidderService.getWatchlist(
-      bidderId,
-      page,
-      limit,
-      sortBy,
-      sortOrder
-    );
+    const result = await bidderService.getWatchlist(bidderId, page, limit, sortBy, sortOrder);
     res.json(result);
   } catch (error: any) {
     res.status(500).json({ message: error.message });
   }
 };
 
-export const viewParticipatingAuctions = async (
-  req: Request,
-  res: Response
-) => {
+export const viewParticipatingAuctions = async (req: Request, res: Response) => {
   try {
     const bidderId = req.user?.id;
     if (!bidderId) {
@@ -285,11 +246,7 @@ export const viewParticipatingAuctions = async (
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
 
-    const result = await bidderService.getParticipatingAuctions(
-      bidderId,
-      page,
-      limit
-    );
+    const result = await bidderService.getParticipatingAuctions(bidderId, page, limit);
     res.json(result);
   } catch (error: any) {
     res.status(500).json({ message: error.message });
@@ -327,24 +284,13 @@ export const rateSeller = async (req: Request, res: Response) => {
       return res.status(400).json({ message: "Seller ID is required" });
     }
 
-    const rating = await bidderService.rateSeller(
-      bidderId,
-      sellerId,
-      score,
-      comment
-    );
+    const rating = await bidderService.rateSeller(bidderId, sellerId, score, comment);
     res.status(201).json({ rating });
   } catch (error: any) {
-    if (
-      error.message.includes("không tìm thấy") ||
-      error.message.includes("not found")
-    ) {
+    if (error.message.includes("không tìm thấy") || error.message.includes("not found")) {
       return res.status(404).json({ message: error.message });
     }
-    if (
-      error.message.includes("chỉ có thể") ||
-      error.message.includes("duplicate")
-    ) {
+    if (error.message.includes("chỉ có thể") || error.message.includes("duplicate")) {
       return res.status(400).json({ message: error.message });
     }
     res.status(500).json({ message: error.message });
@@ -359,11 +305,7 @@ export const changePassword = async (req: Request, res: Response) => {
     }
 
     const { currentPassword, newPassword } = req.body;
-    const result = await bidderService.changePassword(
-      bidderId,
-      currentPassword,
-      newPassword
-    );
+    const result = await bidderService.changePassword(bidderId, currentPassword, newPassword);
     res.json(result);
   } catch (error: any) {
     res.status(400).json({ message: error.message });
@@ -390,11 +332,7 @@ export const viewReceivedRatings = async (req: Request, res: Response) => {
     }
 
     const [ratings, total] = await Promise.all([
-      Rating.find(query)
-        .populate("rater", "name email")
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(limit),
+      Rating.find(query).populate("rater", "name email").sort({ createdAt: -1 }).skip(skip).limit(limit),
       Rating.countDocuments(query),
     ]);
 
@@ -426,18 +364,10 @@ export const updateRating = async (req: Request, res: Response) => {
       return res.status(400).json({ message: "Seller ID is required" });
     }
 
-    const rating = await bidderService.updateSellerRating(
-      bidderId,
-      sellerId,
-      score,
-      comment
-    );
+    const rating = await bidderService.updateSellerRating(bidderId, sellerId, score, comment);
     res.json({ rating });
   } catch (error: any) {
-    if (
-      error.message.includes("không tìm thấy") ||
-      error.message.includes("not found")
-    ) {
+    if (error.message.includes("không tìm thấy") || error.message.includes("not found")) {
       return res.status(404).json({ message: error.message });
     }
     res.status(400).json({ message: error.message });
@@ -460,10 +390,7 @@ export const deleteRating = async (req: Request, res: Response) => {
     const result = await bidderService.deleteSellerRating(bidderId, sellerId);
     res.json(result);
   } catch (error: any) {
-    if (
-      error.message.includes("không tìm thấy") ||
-      error.message.includes("not found")
-    ) {
+    if (error.message.includes("không tìm thấy") || error.message.includes("not found")) {
       return res.status(404).json({ message: error.message });
     }
     res.status(500).json({ message: error.message });
@@ -477,7 +404,9 @@ export const requestSellerUpgrade = async (req: Request, res: Response) => {
       return res.status(401).json({ message: "Unauthorized" });
     }
 
-    const request = await bidderService.requestSellerUpgrade(bidderId);
+    const { title, reasons } = req.body;
+
+    const request = await bidderService.requestSellerUpgrade(bidderId, title, reasons);
     res.status(201).json({ request });
   } catch (error: any) {
     if (error.message.includes("đã là seller")) {

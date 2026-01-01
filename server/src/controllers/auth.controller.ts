@@ -39,10 +39,7 @@ export const register = async (req: Request, res: Response) => {
 
 export const login = async (req: Request, res: Response) => {
   try {
-    const { user, token } = await authService.login(
-      req.body.email,
-      req.body.password
-    );
+    const { user, token } = await authService.login(req.body.email, req.body.password);
     res.json({ user, token });
   } catch (e: any) {
     res.status(401).json({ message: e.message });
@@ -60,11 +57,7 @@ export const requestPasswordReset = async (req: Request, res: Response) => {
 
 export const resetPassword = async (req: Request, res: Response) => {
   try {
-    const { user, token } = await authService.resetPassword(
-      req.body.email,
-      req.body.otp,
-      req.body.password
-    );
+    const { user, token } = await authService.resetPassword(req.body.email, req.body.otp, req.body.password);
 
     res.json({
       message: AuthMessages.PASSWORD_RESET_SUCCESS,
@@ -86,5 +79,16 @@ export const googleCallback = async (req: Request, res: Response) => {
     res.redirect(`${env.FRONTEND_URL}?token=${token}`);
   } catch (e: any) {
     res.redirect(`${env.FRONTEND_URL}/login?error=${encodeURIComponent(e.message)}`);
+  }
+};
+
+export const switchAccount = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user.id;
+    const { user, token } = await authService.switchAccount(userId);
+
+    res.json({ user, token });
+  } catch (e: any) {
+    res.status(400).json({ message: e.message });
   }
 };

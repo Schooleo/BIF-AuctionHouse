@@ -24,15 +24,13 @@ import {
 } from "../controllers/bidder.controller";
 import { protect } from "../middleware/auth.middleware";
 import { validate } from "../middleware/validate";
-import {
-  placeBidSchema,
-  bidHistoryQuerySchema,
-} from "../schemas/bidder.schema";
+import { placeBidSchema, bidHistoryQuerySchema } from "../schemas/bidder.schema";
 import {
   updateProfileSchema,
   changePasswordSchema,
   rateSellerSchema,
   updateSellerRatingSchema,
+  upgradeRequestSchema,
 } from "../schemas/bidder.schema";
 
 const router = Router();
@@ -46,39 +44,23 @@ router.get("/watchlist/check/:productId", checkInWatchlist);
 router.get("/bid/suggest/:productId", getSuggestedPrice);
 router.post("/bid", validate(placeBidSchema, "body"), placeBid);
 router.post("/bid/acknowledge-auto-bid", acknowledgeAutoBid);
-router.get(
-  "/bid-history/:productId",
-  validate(bidHistoryQuerySchema, "query"),
-  viewBidHistory
-);
+router.get("/bid-history/:productId", validate(bidHistoryQuerySchema, "query"), viewBidHistory);
 router.post("/ask-seller/:productId", askSellerQuestion);
 router.get("/my-bids", viewMyBids);
 router.get("/profile", viewProfile);
 router.put("/profile", validate(updateProfileSchema, "body"), editProfile);
-router.put(
-  "/profile/password",
-  validate(changePasswordSchema, "body"),
-  changePassword
-);
+router.put("/profile/password", validate(changePasswordSchema, "body"), changePassword);
 router.get("/profile/ratings", viewReceivedRatings);
 
 router.get("/watchlist", viewWatchlist);
 router.get("/participating-auctions", viewParticipatingAuctions);
 router.get("/won-auctions", viewWonAuctions);
 
-router.post(
-  "/rate-seller/:sellerId",
-  validate(rateSellerSchema, "body"),
-  rateSeller
-);
-router.put(
-  "/rate-seller/:sellerId",
-  validate(updateSellerRatingSchema, "body"),
-  updateRating
-);
+router.post("/rate-seller/:sellerId", validate(rateSellerSchema, "body"), rateSeller);
+router.put("/rate-seller/:sellerId", validate(updateSellerRatingSchema, "body"), updateRating);
 router.delete("/rate-seller/:sellerId", deleteRating);
 
-router.post("/request-seller-upgrade", requestSellerUpgrade);
+router.post("/request-seller-upgrade", validate(upgradeRequestSchema, "body"), requestSellerUpgrade);
 router.get("/upgrade-request-status", getUpgradeRequestStatus);
 
 export default router;

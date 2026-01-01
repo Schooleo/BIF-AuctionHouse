@@ -12,6 +12,8 @@ export interface User {
   positiveRatings?: number;
   negativeRatings?: number;
   googleId?: string;
+  isUpgradedAccount?: boolean;
+  linkedAccountId?: string;
 }
 
 export interface AuthStore {
@@ -26,6 +28,7 @@ export interface AuthStore {
   register: (data: RegisterDto) => Promise<void>;
   logout: () => void;
   refreshUser: () => Promise<void>;
+  switchAccount: () => Promise<void>;
 }
 
 export interface RequestOtpDto {

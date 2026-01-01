@@ -9,6 +9,7 @@ import { SystemConfig } from "../models/systemConfig.model";
 import { Watchlist } from "../models/watchlist.model";
 import { UpgradeRequest } from "../models/upgradeRequest.model";
 import mongoose from "mongoose";
+import * as bcrypt from "bcrypt";
 
 // Enum for bid status from admin perspective
 enum BidStatus {
@@ -51,10 +52,7 @@ export const getDashboardStats = async (timeRange: string = "24h") => {
   ]);
   const userStats = {
     total: users.reduce((acc, curr) => acc + curr.count, 0),
-    byRole: users.reduce(
-      (acc, curr) => ({ ...acc, [curr._id]: curr.count }),
-      {}
-    ),
+    byRole: users.reduce((acc, curr) => ({ ...acc, [curr._id]: curr.count }), {}),
   };
 
   // 2. Product Stats
@@ -206,8 +204,7 @@ export const getDashboardStats = async (timeRange: string = "24h") => {
   const autoBidsByHour = await AutoBid.aggregate(autoBidPipeline);
 
   // Top 10 Bids (Recent within range or Overall if 'all')
-  const top10Match =
-    timeRange === "all" ? {} : { createdAt: { $gte: startDate } };
+  const top10Match = timeRange === "all" ? {} : { createdAt: { $gte: startDate } };
 
   const top10Bids = await Bid.find(top10Match)
     .sort({ price: -1 })
@@ -248,10 +245,7 @@ export const getAllUsers = async (params: UserSearchParams) => {
 
   // Search by name or email
   if (search) {
-    query.$or = [
-      { name: { $regex: search, $options: "i" } },
-      { email: { $regex: search, $options: "i" } },
-    ];
+    query.$or = [{ name: { $regex: search, $options: "i" } }, { email: { $regex: search, $options: "i" } }];
   }
 
   // Filter by role
@@ -441,10 +435,7 @@ export const deleteUser = async (userId: string, adminId?: string) => {
   return { message: "User deleted successfully", userId };
 };
 
-export const getUserDetail = async (
-  userId: string,
-  options: { page?: number; limit?: number } = {}
-) => {
+export const getUserDetail = async (userId: string, options: { page?: number; limit?: number } = {}) => {
   const { page = 1, limit = 10 } = options;
 
   const user = await User.findById(userId).select("-password -googleId");
@@ -460,53 +451,49 @@ export const getUserDetail = async (
   const skip = (page - 1) * limit;
 
   // Parallel Fetching
-  const [bids, reviewsData, totalReviews, products, statsAggregation] =
-    await Promise.all([
-      // 1. Bid History (Last 10)
-      Bid.find({ bidder: userId })
-        .sort({ createdAt: -1 })
-        .limit(10)
-        .populate(
-          "product",
-          "name endTime currentPrice winnerConfirmed currentBidder"
-        )
-        .lean(),
+  const [bids, reviewsData, totalReviews, products, statsAggregation] = await Promise.all([
+    // 1. Bid History (Last 10)
+    Bid.find({ bidder: userId })
+      .sort({ createdAt: -1 })
+      .limit(10)
+      .populate("product", "name endTime currentPrice winnerConfirmed currentBidder")
+      .lean(),
 
-      // 2. Paginated Reviews (ALL types: + and -)
-      Rating.find({ ratee: userId })
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(limit)
-        .populate("rater", "name avatar")
-        .lean(),
+    // 2. Paginated Reviews (ALL types: + and -)
+    Rating.find({ ratee: userId })
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .populate("rater", "name avatar")
+      .lean(),
 
-      // 4. Total review count
-      Rating.countDocuments({ ratee: userId }),
+    // 4. Total review count
+    Rating.countDocuments({ ratee: userId }),
 
-      // 5. Selling Info (If Seller) - Active products
-      user.role === "seller"
-        ? Product.find({ seller: userId, endTime: { $gt: new Date() } })
-            .select("name currentPrice mainImage endTime bidCount")
-            .limit(10)
-            .lean()
-        : Promise.resolve([]),
+    // 5. Selling Info (If Seller) - Active products
+    user.role === "seller"
+      ? Product.find({ seller: userId, endTime: { $gt: new Date() } })
+          .select("name currentPrice mainImage endTime bidCount")
+          .limit(10)
+          .lean()
+      : Promise.resolve([]),
 
-      // 6. Stats from actual ratings (not user fields which may be stale)
-      Rating.aggregate([
-        { $match: { ratee: new mongoose.Types.ObjectId(userId) } },
-        {
-          $group: {
-            _id: null,
-            positiveCount: {
-              $sum: { $cond: [{ $eq: ["$score", 1] }, 1, 0] },
-            },
-            negativeCount: {
-              $sum: { $cond: [{ $eq: ["$score", -1] }, 1, 0] },
-            },
+    // 6. Stats from actual ratings (not user fields which may be stale)
+    Rating.aggregate([
+      { $match: { ratee: new mongoose.Types.ObjectId(userId) } },
+      {
+        $group: {
+          _id: null,
+          positiveCount: {
+            $sum: { $cond: [{ $eq: ["$score", 1] }, 1, 0] },
+          },
+          negativeCount: {
+            $sum: { $cond: [{ $eq: ["$score", -1] }, 1, 0] },
           },
         },
-      ]),
-    ]);
+      },
+    ]),
+  ]);
 
   // Process Bids to determine status from admin perspective
   // Status represents the state of INDIVIDUAL BID, not the auction
@@ -523,9 +510,7 @@ export const getUserDetail = async (
 
       if (isEnded) {
         // Auction has ended - determine if this bid won or lost
-        const isWinner =
-          product.currentBidder?.toString() === userId &&
-          bid.price === product.currentPrice;
+        const isWinner = product.currentBidder?.toString() === userId && bid.price === product.currentPrice;
         status = isWinner ? BidStatus.WON : BidStatus.LOST;
       } else {
         // Auction is still ongoing - check if bid is leading or outbid
@@ -641,10 +626,7 @@ export const listOrdersPaginated = async (
   ];
 
   if (search) {
-    const searchRegex = new RegExp(
-      search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
-      "i"
-    );
+    const searchRegex = new RegExp(search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
     pipeline.push({
       $addFields: {
         orderIdStr: { $toString: "$_id" },
@@ -753,11 +735,7 @@ export const cancelOrder = async (id: string) => {
   return order;
 };
 
-export const adminSendMessage = async (
-  orderId: string,
-  content: string,
-  adminId: string
-) => {
+export const adminSendMessage = async (orderId: string, content: string, adminId: string) => {
   const order = await Order.findById(orderId);
   if (!order) throw new Error("Order not found");
 
@@ -786,10 +764,7 @@ export const deleteChatMessage = async (orderId: string, messageId: string) => {
   const chat = await Chat.findById(order.chat);
   if (!chat) throw new Error("Chat not found");
 
-  await Chat.updateOne(
-    { _id: order.chat },
-    { $pull: { messages: { _id: messageId } } }
-  );
+  await Chat.updateOne({ _id: order.chat }, { $pull: { messages: { _id: messageId } } });
 
   return true;
 };
@@ -825,4 +800,334 @@ export const updateSystemConfig = async (data: {
 
   await config.save();
   return config;
+};
+
+// --- Upgrade Request Management ---
+
+/**
+ * Get all upgrade requests with pagination
+ */
+export const getAllUpgradeRequests = async (params: {
+  page?: number;
+  limit?: number;
+  status?: "pending" | "approved" | "rejected";
+  search?: string;
+  sortBy?: "newest" | "oldest";
+}) => {
+  const { page = 1, limit = 10, status, search, sortBy = "newest" } = params;
+  const skip = (page - 1) * limit;
+
+  // If search is provided, use priority-based search logic
+  if (search && search.trim()) {
+    const searchTerm = search.trim();
+    const searchRegex = new RegExp(searchTerm, "i");
+
+    // Find all matching requests with different priorities
+    const filter: any = status ? { status } : {};
+
+    // Get all requests that match the search
+    const allRequests = await UpgradeRequest.find(filter)
+      .populate("user", "name email avatar role contactEmail")
+      .populate("reviewedBy", "name email");
+
+    // Prioritize results: Title (priority 1), Username (priority 2), Reasons (priority 3)
+    const prioritizedResults = allRequests
+      .map((request) => {
+        const requestObj = request.toObject();
+        let priority = 4; // Default lowest priority
+
+        // Priority 1: Title match
+        if (requestObj.title && searchRegex.test(requestObj.title)) {
+          priority = 1;
+        }
+        // Priority 2: Username match
+        else if (requestObj.user && searchRegex.test((requestObj.user as any).name)) {
+          priority = 2;
+        }
+        // Priority 3: Reasons match
+        else if (requestObj.reasons && searchRegex.test(requestObj.reasons)) {
+          priority = 3;
+        }
+
+        return { request, priority };
+      })
+      .filter((item) => item.priority < 4) // Only include matches
+      .sort((a, b) => {
+        // Sort by priority first
+        if (a.priority !== b.priority) {
+          return a.priority - b.priority;
+        }
+        // Then by creation time
+        const timeA = new Date(a.request.createdAt).getTime();
+        const timeB = new Date(b.request.createdAt).getTime();
+        return sortBy === "newest" ? timeB - timeA : timeA - timeB;
+      });
+
+    const total = prioritizedResults.length;
+    const paginatedResults = prioritizedResults.slice(skip, skip + limit);
+
+    // Enrich with rating and rejected count
+    const enrichedRequests = await Promise.all(
+      paginatedResults.map(async ({ request }) => {
+        const requestObj = request.toObject();
+
+        if (requestObj.user && requestObj.user._id) {
+          const [positiveRatings, negativeRatings] = await Promise.all([
+            Rating.countDocuments({ receiver: requestObj.user._id, score: 1 }),
+            Rating.countDocuments({ receiver: requestObj.user._id, score: -1 }),
+          ]);
+
+          const rejectedCount = await UpgradeRequest.countDocuments({
+            user: requestObj.user._id,
+            status: "rejected",
+            _id: { $ne: request._id },
+          });
+
+          (requestObj.user as any).rating = {
+            positive: positiveRatings,
+            negative: negativeRatings,
+          };
+
+          (requestObj.user as any).rejectedRequestsCount = rejectedCount;
+        }
+
+        return requestObj;
+      })
+    );
+
+    return {
+      requests: enrichedRequests,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  // No search - regular filtering with optional status and sort
+  const filter: any = {};
+
+  // Status filter
+  if (status) {
+    filter.status = status;
+  }
+
+  // Default mode (no status filter) - pending first, then others
+  let requests;
+  if (!status) {
+    // Get pending requests first, then other statuses
+    const sortOrder = sortBy === "newest" ? -1 : 1;
+
+    const [pendingRequests, otherRequests] = await Promise.all([
+      UpgradeRequest.find({ status: "pending" })
+        .populate("user", "name email avatar role contactEmail")
+        .populate("reviewedBy", "name email")
+        .sort({ createdAt: sortOrder }),
+      UpgradeRequest.find({ status: { $ne: "pending" } })
+        .populate("user", "name email avatar role contactEmail")
+        .populate("reviewedBy", "name email")
+        .sort({ createdAt: sortOrder }),
+    ]);
+
+    // Combine: pending first, then others
+    const allRequests = [...pendingRequests, ...otherRequests];
+    const total = allRequests.length;
+    requests = allRequests.slice(skip, skip + limit);
+
+    // Enrich each request
+    const enrichedRequests = await Promise.all(
+      requests.map(async (request) => {
+        const requestObj = request.toObject();
+
+        if (requestObj.user && requestObj.user._id) {
+          const [positiveRatings, negativeRatings] = await Promise.all([
+            Rating.countDocuments({ receiver: requestObj.user._id, score: 1 }),
+            Rating.countDocuments({ receiver: requestObj.user._id, score: -1 }),
+          ]);
+
+          const rejectedCount = await UpgradeRequest.countDocuments({
+            user: requestObj.user._id,
+            status: "rejected",
+            _id: { $ne: request._id },
+          });
+
+          (requestObj.user as any).rating = {
+            positive: positiveRatings,
+            negative: negativeRatings,
+          };
+
+          (requestObj.user as any).rejectedRequestsCount = rejectedCount;
+        }
+
+        return requestObj;
+      })
+    );
+
+    return {
+      requests: enrichedRequests,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  // Regular status filter with sort
+  const sortOrder = sortBy === "newest" ? -1 : 1;
+
+  const [requestsData, total] = await Promise.all([
+    UpgradeRequest.find(filter)
+      .populate("user", "name email avatar role contactEmail")
+      .populate("reviewedBy", "name email")
+      .sort({ createdAt: sortOrder })
+      .skip(skip)
+      .limit(limit),
+    UpgradeRequest.countDocuments(filter),
+  ]);
+
+  // Enrich each request with rating and rejected requests count
+  const enrichedRequests = await Promise.all(
+    requestsData.map(async (request) => {
+      const requestObj = request.toObject();
+
+      if (requestObj.user && requestObj.user._id) {
+        // Get user rating
+        const [positiveRatings, negativeRatings] = await Promise.all([
+          Rating.countDocuments({ receiver: requestObj.user._id, score: 1 }),
+          Rating.countDocuments({ receiver: requestObj.user._id, score: -1 }),
+        ]);
+
+        // Get rejected requests count
+        const rejectedCount = await UpgradeRequest.countDocuments({
+          user: requestObj.user._id,
+          status: "rejected",
+          _id: { $ne: request._id }, // Exclude current request
+        });
+
+        // Cast to any to add custom properties
+        (requestObj.user as any).rating = {
+          positive: positiveRatings,
+          negative: negativeRatings,
+        };
+
+        (requestObj.user as any).rejectedRequestsCount = rejectedCount;
+      }
+
+      return requestObj;
+    })
+  );
+
+  return {
+    requests: enrichedRequests,
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+    },
+  };
+};
+
+/**
+ * Approve upgrade request - create new seller account
+ */
+export const approveUpgradeRequest = async (requestId: string, adminId: string) => {
+  const request = await UpgradeRequest.findById(requestId).populate("user");
+  if (!request) {
+    throw new Error("Upgrade request not found");
+  }
+
+  if (request.status !== "pending") {
+    throw new Error("Request is not pending");
+  }
+
+  const bidderUser = await User.findById(request.user).select("+password");
+  if (!bidderUser) {
+    throw new Error("Bidder user not found");
+  }
+
+  if (bidderUser.role !== "bidder") {
+    throw new Error("User is not a bidder");
+  }
+
+  // Create new seller account
+  const sellerEmail = bidderUser.email.includes("@")
+    ? bidderUser.email.replace("@", "+seller@")
+    : `${bidderUser.email}+seller@gmail.com`;
+
+  const sellerUsername = `Seller-${bidderUser.name}`;
+
+  // Create seller account - directly insert to avoid password re-hashing
+  const sellerUserDoc = {
+    name: sellerUsername,
+    email: sellerEmail,
+    password: bidderUser.password, // Already hashed
+    address: bidderUser.address,
+    role: "seller",
+    avatar: bidderUser.avatar,
+    dateOfBirth: bidderUser.dateOfBirth,
+    contactEmail: bidderUser.contactEmail,
+    status: bidderUser.status,
+    isUpgradedAccount: true,
+    positiveRatings: 0,
+    negativeRatings: 0,
+    reputationScore: 0,
+    isDeleted: false,
+  };
+
+  // Use insertMany to bypass pre-save hooks
+  const insertResult = await User.collection.insertMany([sellerUserDoc]);
+  const sellerId = insertResult.insertedIds[0];
+
+  if (!sellerId) {
+    throw new Error("Failed to create seller account");
+  }
+
+  // Link the two accounts
+  bidderUser.isUpgradedAccount = true;
+  bidderUser.linkedAccountId = sellerId;
+  await bidderUser.save();
+
+  // Update seller with linkedAccountId
+  await User.collection.updateOne({ _id: sellerId }, { $set: { linkedAccountId: bidderUser._id } });
+
+  // Update request status
+  request.status = "approved";
+  request.reviewedBy = new mongoose.Types.ObjectId(adminId);
+  await request.save();
+
+  // Fetch the created seller for response
+  const createdSellerUser = await User.findById(sellerId);
+
+  return {
+    request,
+    bidderAccount: bidderUser,
+    sellerAccount: createdSellerUser,
+  };
+};
+
+/**
+ * Reject upgrade request
+ */
+export const rejectUpgradeRequest = async (requestId: string, adminId: string, reason: string) => {
+  const request = await UpgradeRequest.findById(requestId);
+  if (!request) {
+    throw new Error("Upgrade request not found");
+  }
+
+  if (request.status !== "pending") {
+    throw new Error("Request is not pending");
+  }
+
+  request.status = "rejected";
+  request.reviewedBy = new mongoose.Types.ObjectId(adminId);
+  request.rejectionReason = reason;
+  request.rejectedAt = new Date();
+  await request.save();
+
+  return request;
 };
