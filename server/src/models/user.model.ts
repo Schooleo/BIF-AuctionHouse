@@ -12,6 +12,7 @@ export interface IUser extends Document {
   dateOfBirth?: Date;
   contactEmail?: string;
   status: "ACTIVE" | "BLOCKED";
+  blockReason?: string;
 
   positiveRatings: number; // Yêu cầu 2.2
   negativeRatings: number; // Yêu cầu 2.2
@@ -20,11 +21,6 @@ export interface IUser extends Document {
   // Upgraded Account Management
   isUpgradedAccount: boolean; // True nếu account được upgrade từ bidder -> seller
   linkedAccountId?: mongoose.Types.ObjectId; // Link đến account còn lại (bidder <-> seller)
-
-  // Soft Delete
-  isDeleted: boolean;
-  deletedAt?: Date;
-  deleteReason?: string;
 
   // Methods
   comparePassword(candidatePassword: string): Promise<boolean>;
@@ -51,6 +47,7 @@ const userSchema = new Schema<IUser>(
       enum: ["ACTIVE", "BLOCKED"],
       default: "ACTIVE",
     },
+    blockReason: { type: String },
     positiveRatings: { type: Number, default: 0 },
     negativeRatings: { type: Number, default: 0 },
     reputationScore: { type: Number, default: 0 },
@@ -58,11 +55,6 @@ const userSchema = new Schema<IUser>(
     // Upgraded Account Management
     isUpgradedAccount: { type: Boolean, default: false },
     linkedAccountId: { type: Schema.Types.ObjectId, ref: "User" },
-
-    // Soft Delete
-    isDeleted: { type: Boolean, default: false },
-    deletedAt: { type: Date },
-    deleteReason: { type: String },
   },
   {
     timestamps: true,

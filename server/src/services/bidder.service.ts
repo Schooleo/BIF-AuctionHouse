@@ -704,6 +704,7 @@ export const bidderService = {
       address?: string;
       dateOfBirth?: Date;
       contactEmail?: string;
+      avatar?: string;
     }
   ) {
     const bidder = await User.findByIdAndUpdate(bidderId, { $set: updates }, { new: true, runValidators: true });

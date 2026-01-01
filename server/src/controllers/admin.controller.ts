@@ -88,7 +88,7 @@ export const removeProduct = async (req: Request, res: Response) => {
 // Get users with filtering and pagination
 export const getUsers = async (req: Request, res: Response) => {
   try {
-    const { page, limit, search, role, status, sortBy, sortOrder } = req.query;
+    const { page, limit, search, role, status, sortBy, sortOrder, viewTrash } = req.query;
 
     // Build params object
     const params: UserSearchParams = {
@@ -99,6 +99,7 @@ export const getUsers = async (req: Request, res: Response) => {
       ...(status && { status: String(status) }),
       ...(sortBy && { sortBy: String(sortBy) }),
       ...(sortOrder && { sortOrder: String(sortOrder) as "asc" | "desc" }),
+      viewTrash: viewTrash === "true",
     };
 
     const result = await AdminService.getAllUsers(params);
@@ -147,8 +148,8 @@ export const updateUser = async (req: Request, res: Response) => {
   }
 };
 
-// Soft delete user
-export const deleteUser = async (req: Request, res: Response) => {
+// Block user
+export const blockUser = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { reason } = req.body;
@@ -158,10 +159,83 @@ export const deleteUser = async (req: Request, res: Response) => {
       return;
     }
 
-    const result = await AdminService.softDeleteUser(id, reason);
+    if (!reason || !reason.trim()) {
+      res.status(400).json({ message: "Block reason is required" });
+      return;
+    }
+
+    const result = await AdminService.blockUser(id, reason);
     res.status(200).json(result);
   } catch (error: any) {
-    res.status(500).json({ message: error.message });
+    const knownErrors = [
+      "User not found",
+      "Cannot block admin accounts",
+      "User is already blocked",
+    ];
+    
+    if (knownErrors.includes(error.message)) {
+      res.status(400).json({ message: error.message });
+      return;
+    }
+    res.status(500).json({ message: error.message || "Internal server error" });
+  }
+};
+
+// Unblock user
+export const unblockUser = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    if (!id) {
+      res.status(400).json({ message: "User ID is required" });
+      return;
+    }
+
+    const result = await AdminService.unblockUser(id);
+    res.status(200).json(result);
+  } catch (error: any) {
+    const knownErrors = [
+      "User not found",
+      "User is already active",
+    ];
+    
+    if (knownErrors.includes(error.message)) {
+      res.status(400).json({ message: error.message });
+      return;
+    }
+    res.status(500).json({ message: error.message || "Internal server error" });
+  }
+};
+
+// Delete user
+export const deleteUser = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const adminId = (req as any).user?._id?.toString();
+
+    if (!id) {
+      res.status(400).json({ message: "User ID is required" });
+      return;
+    }
+
+    const result = await AdminService.deleteUser(id, adminId);
+    res.status(200).json(result);
+  } catch (error: any) {
+    // Handle specific errors with appropriate status codes
+    const knownErrors = [
+      "User not found",
+      "Cannot delete your own account",
+      "Cannot delete admin accounts",
+      "Cannot delete user with active orders",
+      "Cannot delete seller with active auctions",
+      "Cannot delete seller with pending auction results. Please ensure all ended auctions have been processed.",
+    ];
+    
+    if (knownErrors.includes(error.message)) {
+      res.status(400).json({ message: error.message });
+      return;
+    }
+    res.status(500).json({ message: error.message || "Internal server error" });
   }
 };
 

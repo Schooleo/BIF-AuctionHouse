@@ -167,13 +167,10 @@ export interface User {
   email: string;
   role: string;
   status: "ACTIVE" | "BLOCKED";
-  isDeleted: boolean;
   avatar?: string;
   createdAt: string;
   contactEmail?: string;
   address?: string;
-  deletedAt?: string;
-  deleteReason?: string;
 }
 
 export interface GetUsersResponse {
@@ -201,6 +198,7 @@ export const adminApi = {
     status?: string;
     sortBy?: string;
     sortOrder?: string;
+    viewTrash?: boolean;
   }): Promise<GetUsersResponse> => {
     const { q, ...rest } = params;
 
@@ -236,11 +234,27 @@ export const adminApi = {
     return handleResponse(response);
   },
 
-  deleteUser: async (id: string, reason: string) => {
+  blockUser: async (id: string, reason: string) => {
+    const response = await fetch(`${API_BASE}/api/admin/users/${id}/block`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ reason }),
+    });
+    return handleResponse(response);
+  },
+
+  unblockUser: async (id: string) => {
+    const response = await fetch(`${API_BASE}/api/admin/users/${id}/unblock`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+    });
+    return handleResponse(response);
+  },
+
+  deleteUser: async (id: string) => {
     const response = await fetch(`${API_BASE}/api/admin/users/${id}/delete`, {
       method: "DELETE",
       headers: getAuthHeaders(),
-      body: JSON.stringify({ reason }),
     });
     return handleResponse(response);
   },

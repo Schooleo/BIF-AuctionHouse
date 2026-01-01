@@ -578,6 +578,7 @@ export class SellerService {
       address?: string;
       contactEmail?: string;
       dateOfBirth?: string;
+      avatar?: string;
     }
   ) {
     const [User] = await Promise.all([import("../models/user.model")]);

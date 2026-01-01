@@ -6,6 +6,7 @@ import { AutoBid } from "../models/autoBid.model";
 import { Rating } from "../models/rating.model";
 import { Chat } from "../models/chat.model";
 import { SystemConfig } from "../models/systemConfig.model";
+import { Watchlist } from "../models/watchlist.model";
 import { UpgradeRequest } from "../models/upgradeRequest.model";
 import mongoose from "mongoose";
 import * as bcrypt from "bcrypt";
@@ -230,8 +231,17 @@ export const getDashboardStats = async (timeRange: string = "24h") => {
 import { UserSearchParams } from "../types/admin";
 
 export const getAllUsers = async (params: UserSearchParams) => {
-  const { page = 1, limit = 10, search, role, status, sortBy = "createdAt", sortOrder = "desc" } = params;
-  const query: any = { isDeleted: false };
+  const {
+    page = 1,
+    limit = 10,
+    search,
+    role,
+    status,
+    sortBy = "createdAt",
+    sortOrder = "desc"
+  } = params;
+
+  const query: any = {};
 
   // Search by name or email
   if (search) {
@@ -265,7 +275,12 @@ export const getAllUsers = async (params: UserSearchParams) => {
   sortOptions[dbSortField] = sortOrder === "asc" ? 1 : -1;
 
   const [users, totalDocs] = await Promise.all([
-    User.find(query).select("-password").skip(skip).limit(limit).sort(sortOptions),
+    User.find(query)
+      .select("-password")
+      .skip(skip)
+      .limit(limit)
+      .sort(sortOptions)
+      .lean(),
     User.countDocuments(query),
   ]);
 
@@ -279,39 +294,145 @@ export const getAllUsers = async (params: UserSearchParams) => {
   };
 };
 
-export const toggleUserStatus = async (userId: string) => {
+export const blockUser = async (userId: string, reason: string) => {
   const user = await User.findById(userId);
   if (!user) {
     throw new Error("User not found");
   }
 
-  user.status = user.status === "ACTIVE" ? "BLOCKED" : "ACTIVE";
+  if (user.role === "admin") {
+    throw new Error("Cannot block admin accounts");
+  }
+
+  if (user.status === "BLOCKED") {
+    throw new Error("User is already blocked");
+  }
+
+  user.status = "BLOCKED";
+  user.blockReason = reason;
   await user.save();
 
-  return user.status;
+  return { status: user.status, blockReason: user.blockReason };
 };
 
-export const softDeleteUser = async (userId: string, reason: string) => {
-  if (!reason) {
-    throw new Error("Delete reason is mandatory");
-  }
-
+export const unblockUser = async (userId: string) => {
   const user = await User.findById(userId);
   if (!user) {
     throw new Error("User not found");
   }
 
-  if (user.isDeleted) {
-    throw new Error("User is already deleted");
+  if (user.status === "ACTIVE") {
+    throw new Error("User is already active");
   }
 
-  user.isDeleted = true;
-  user.deletedAt = new Date();
-  user.deleteReason = reason;
-
+  user.status = "ACTIVE";
+  user.blockReason = undefined;
   await user.save();
 
-  return { message: "User soft deleted successfully", userId };
+  return { status: user.status };
+};
+
+export const deleteUser = async (userId: string, adminId?: string) => {
+  const user = await User.findById(userId);
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  // Prevent admin from deleting themselves
+  if (adminId && userId === adminId) {
+    throw new Error("Cannot delete your own account");
+  }
+
+  // Prevent deleting other admins
+  if (user.role === "admin") {
+    throw new Error("Cannot delete admin accounts");
+  }
+
+  // Check if user has active orders (as buyer or seller)
+  const activeOrders = await Order.countDocuments({
+    $or: [{ buyer: userId }, { seller: userId }],
+    status: { $nin: ["COMPLETED", "CANCELLED"] },
+  });
+
+  if (activeOrders > 0) {
+    throw new Error("Cannot delete user with active orders");
+  }
+
+  const now = new Date();
+
+  // Additional checks for sellers
+  if (user.role === "seller") {
+    // Check for active auctions (products currently being auctioned)
+    const activeAuctions = await Product.countDocuments({
+      seller: userId,
+      startTime: { $lte: now },
+      endTime: { $gt: now },
+    });
+
+    if (activeAuctions > 0) {
+      throw new Error("Cannot delete seller with active auctions");
+    }
+
+    // Check for ended auctions with winner but no order created yet
+    const endedWithWinner = await Product.countDocuments({
+      seller: userId,
+      endTime: { $lte: now },
+      winner: { $ne: null },
+      // No order exists for this product
+    });
+
+    // Get product IDs to check if orders exist
+    const endedProducts = await Product.find({
+      seller: userId,
+      endTime: { $lte: now },
+      winner: { $ne: null },
+    }).select("_id");
+
+    const productIds = endedProducts.map((p) => p._id);
+
+    if (productIds.length > 0) {
+      const ordersForProducts = await Order.countDocuments({
+        product: { $in: productIds },
+      });
+
+      // If there are ended auctions with winners but fewer orders than products
+      if (ordersForProducts < productIds.length) {
+        throw new Error(
+          "Cannot delete seller with pending auction results. Please ensure all ended auctions have been processed."
+        );
+      }
+    }
+
+    // Get all product IDs of this seller for cleanup
+    const sellerProducts = await Product.find({ seller: userId }).select("_id");
+    const sellerProductIds = sellerProducts.map((p) => p._id);
+
+    // Delete related data for seller's products
+    if (sellerProductIds.length > 0) {
+      await Promise.all([
+        // Delete bids on seller's products
+        Bid.deleteMany({ product: { $in: sellerProductIds } }),
+        // Delete auto bids on seller's products
+        AutoBid.deleteMany({ product: { $in: sellerProductIds } }),
+        // Delete watchlists for seller's products
+        Watchlist.deleteMany({ product: { $in: sellerProductIds } }),
+        // Delete seller's products
+        Product.deleteMany({ seller: userId }),
+      ]);
+    }
+  }
+
+  // Delete user's own related data
+  await Promise.all([
+    Watchlist.deleteMany({ user: userId }),
+    AutoBid.deleteMany({ user: userId }),
+    UpgradeRequest.deleteMany({ user: userId }),
+  ]);
+
+  // Delete user
+  await User.findByIdAndDelete(userId);
+
+  return { message: "User deleted successfully", userId };
 };
 
 export const getUserDetail = async (userId: string, options: { page?: number; limit?: number } = {}) => {

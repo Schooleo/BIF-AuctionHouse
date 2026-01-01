@@ -2,16 +2,16 @@ import React, { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import type { User } from "../../services/admin.api";
 import { adminApi } from "../../services/admin.api";
-import DeleteReasonModal from "../../components/admin/DeleteReasonModal";
+import ConfirmationModal from "../../components/ui/ConfirmationModal";
+import { useAlertStore } from "../../stores/useAlertStore";
 import {
-  Search,
   Trash2,
   ShieldCheck,
   ShieldAlert,
   ChevronLeft,
   ChevronRight,
-  Filter,
   Users,
+  Eye,
 } from "lucide-react";
 
 interface QueryParams {
@@ -137,47 +137,26 @@ const AdminUsersPage: React.FC = () => {
     setQueryParams({ ...queryParams });
   };
 
-  // Handlers
-  const handleToggleStatus = async (user: User) => {
-    const newStatus = user.status === "ACTIVE" ? "BLOCKED" : "ACTIVE";
-    const previousStatus = user.status;
-
-    // Optimistic Update
-    setUsers((prev) =>
-      prev.map((u) => (u._id === user._id ? { ...u, status: newStatus } : u))
-    );
-
-    try {
-      await adminApi.updateUser(user._id, { status: newStatus });
-    } catch (error) {
-      console.error("Failed to toggle status:", error);
-      // Revert if error
-      setUsers((prev) =>
-        prev.map((u) =>
-          u._id === user._id ? { ...u, status: previousStatus } : u
-        )
-      );
-      alert("Failed to update status");
-    }
-  };
-
   const handleDeleteClick = (user: User) => {
     setSelectedUserToDelete(user);
     setIsDeleteModalOpen(true);
   };
 
-  const confirmDelete = async (reason: string) => {
+  const { addAlert } = useAlertStore();
+
+  const confirmDelete = async () => {
     if (!selectedUserToDelete) return;
 
     setIsDeleting(true);
     try {
-      await adminApi.deleteUser(selectedUserToDelete._id, reason);
+      await adminApi.deleteUser(selectedUserToDelete._id);
       setIsDeleteModalOpen(false);
       setSelectedUserToDelete(null);
-      refetchUsers(); // ✅ Use refetch function
-    } catch (error) {
+      addAlert("success", "User deleted successfully");
+      refetchUsers();
+    } catch (error: any) {
       console.error("Failed to delete user:", error);
-      alert("Failed to delete user");
+      addAlert("error", error.message || "Failed to delete user");
     } finally {
       setIsDeleting(false);
     }
@@ -187,10 +166,8 @@ const AdminUsersPage: React.FC = () => {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-primary-blue">
-          Users Management
-        </h1>
-        <p className="text-gray-500 mt-1">
+        <h1 className="text-2xl font-bold text-gray-800">Users Management</h1>
+        <p className="text-sm text-gray-500 mt-1">
           Manage all registered users in the system
         </p>
       </div>
@@ -209,32 +186,17 @@ const AdminUsersPage: React.FC = () => {
       )}
 
       {/* Filter & Sort Toolbar */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-4">
-        <div className="flex flex-wrap gap-4 justify-between items-center">
-          {/* Left: Search */}
-          <div className="relative flex-1 min-w-[250px]">
-            <Search
-              className="absolute left-3 top-2.5 text-gray-400"
-              size={18}
-            />
-            <input
-              type="text"
-              placeholder="Search by name, email..."
-              className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-blue focus:border-transparent transition-all"
-              value={queryParams.search}
-              onChange={(e) => updateQuery({ search: e.target.value })}
-            />
-          </div>
-
-          {/* Right: Filters Group */}
-          <div className="flex flex-wrap gap-3 items-center">
-            <Filter size={18} className="text-gray-400" />
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+        <div className="flex flex-wrap items-center gap-6">
+          {/* Filters Group */}
+          <div className="flex items-center gap-3">
+            <span className="text-sm font-medium text-gray-600">Filter:</span>
 
             {/* Role Filter */}
             <select
               value={queryParams.role}
               onChange={(e) => updateQuery({ role: e.target.value })}
-              className="px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-blue text-sm bg-white cursor-pointer"
+              className="custom-select pl-4 py-2 bg-white border border-gray-200 rounded-lg text-sm cursor-pointer hover:border-primary-blue transition-colors focus:ring-0"
             >
               <option value="">All Roles</option>
               <option value="bidder">BIDDER</option>
@@ -246,14 +208,17 @@ const AdminUsersPage: React.FC = () => {
             <select
               value={queryParams.status}
               onChange={(e) => updateQuery({ status: e.target.value })}
-              className="px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-blue text-sm bg-white cursor-pointer"
+              className="custom-select pl-4 py-2 bg-white border border-gray-200 rounded-lg text-sm cursor-pointer hover:border-primary-blue transition-colors focus:ring-0"
             >
               <option value="">All Status</option>
               <option value="ACTIVE">ACTIVE</option>
               <option value="BLOCKED">BLOCKED</option>
             </select>
+          </div>
 
-            {/* Sort Dropdown */}
+          {/* Sort Dropdown */}
+          <div className="flex items-center gap-3">
+            <span className="text-sm font-medium text-gray-600">Sort:</span>
             <select
               value={`${queryParams.sortBy}-${queryParams.sortOrder}`}
               onChange={(e) => {
@@ -263,7 +228,7 @@ const AdminUsersPage: React.FC = () => {
                   sortOrder: sortOrder as "asc" | "desc",
                 });
               }}
-              className="px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-blue text-sm bg-white cursor-pointer"
+              className="custom-select pl-4 py-2 bg-white border border-gray-200 rounded-lg text-sm cursor-pointer hover:border-primary-blue transition-colors focus:ring-0"
             >
               <option value="createdAt-desc">Newest Joined</option>
               <option value="createdAt-asc">Oldest Joined</option>
@@ -271,6 +236,35 @@ const AdminUsersPage: React.FC = () => {
               <option value="reputation-asc">Low Reputation</option>
             </select>
           </div>
+        </div>
+
+        {/* Pagination Controls */}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() =>
+              updateQuery({ page: Math.max(1, queryParams.page - 1) })
+            }
+            disabled={queryParams.page <= 1}
+            className="p-2 rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            aria-label="Previous Page"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+          <span className="text-sm font-medium text-gray-600 min-w-20 text-center">
+            Page {queryParams.page} of {totalPages}
+          </span>
+          <button
+            onClick={() =>
+              updateQuery({
+                page: Math.min(totalPages, queryParams.page + 1),
+              })
+            }
+            disabled={queryParams.page >= totalPages}
+            className="p-2 rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            aria-label="Next Page"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
         </div>
       </div>
 
@@ -372,16 +366,12 @@ const AdminUsersPage: React.FC = () => {
                       </span>
                     </td>
                     <td className="px-6 py-4">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleToggleStatus(user);
-                        }}
-                        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-colors border
+                      <span
+                        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border
                           ${
                             user.status === "ACTIVE"
-                              ? "bg-green-50 text-green-700 border-green-200 hover:bg-green-100"
-                              : "bg-red-50 text-red-700 border-red-200 hover:bg-red-100"
+                              ? "bg-green-50 text-green-700 border-green-200"
+                              : "bg-red-50 text-red-700 border-red-200"
                           }`}
                       >
                         {user.status === "ACTIVE" ? (
@@ -390,33 +380,26 @@ const AdminUsersPage: React.FC = () => {
                           <ShieldAlert size={14} />
                         )}
                         {user.status}
-                      </button>
+                      </span>
                     </td>
                     {/* Actions column with constrained spread */}
                     <td className="px-3 py-4 align-middle">
-                      <div className="max-w-[200px] mx-auto">
-                        <div className="flex items-center justify-between">
-                          <Link to={`/admin/users/${user._id}`}>
-                            <button
-                              className="group flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-600 bg-white border border-slate-300 rounded-md hover:border-blue-500 hover:text-blue-600 transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1"
-                              aria-label={`View details for ${user.name}`}
-                            >
-                              <span>View Details</span>
-                              <ChevronRight
-                                size={14}
-                                className="opacity-50 group-hover:opacity-100 transition-opacity duration-200"
-                              />
-                            </button>
-                          </Link>
+                      <div className="flex items-center justify-center gap-2">
+                        <Link
+                          to={`/admin/users/${user._id}`}
+                          className="p-2.5 bg-gray-50 text-gray-500 border border-gray-200 hover:text-primary-blue hover:bg-emerald-50 hover:border-emerald-50 rounded-full transition-colors"
+                          title="View Details"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </Link>
 
-                          <button
-                            onClick={() => handleDeleteClick(user)}
-                            className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-1"
-                            aria-label={`Delete user ${user.name}`}
-                          >
-                            <Trash2 size={16} />
-                          </button>
-                        </div>
+                        <button
+                          onClick={() => handleDeleteClick(user)}
+                          className="p-2.5 bg-gray-50 text-gray-500 border border-gray-200 hover:text-red-600 hover:bg-red-50 hover:border-red-50 rounded-full transition-colors hover:cursor-pointer"
+                          title="Delete User"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -426,7 +409,7 @@ const AdminUsersPage: React.FC = () => {
           </table>
         </div>
 
-        {/* Pagination */}
+        {/* Pagination Footer */}
         <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between">
           <p className="text-sm text-gray-500">
             Showing{" "}
@@ -439,38 +422,19 @@ const AdminUsersPage: React.FC = () => {
             </span>{" "}
             of <span className="font-medium">{totalDocs}</span> results
           </p>
-          <div className="flex gap-2">
-            <button
-              onClick={() =>
-                updateQuery({ page: Math.max(1, queryParams.page - 1) })
-              }
-              disabled={queryParams.page <= 1}
-              className="p-2 rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-gray-600"
-            >
-              <ChevronLeft size={18} />
-            </button>
-            <button
-              onClick={() =>
-                updateQuery({
-                  page: Math.min(totalPages, queryParams.page + 1),
-                })
-              }
-              disabled={queryParams.page >= totalPages}
-              className="p-2 rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-gray-600"
-            >
-              <ChevronRight size={18} />
-            </button>
-          </div>
         </div>
       </div>
 
-      {/* Delete Modal */}
-      <DeleteReasonModal
+      {/* Delete Confirmation Modal */}
+      <ConfirmationModal
         isOpen={isDeleteModalOpen}
         onClose={() => setIsDeleteModalOpen(false)}
         onConfirm={confirmDelete}
-        title={`Delete User: ${selectedUserToDelete?.name}`}
-        isLoading={isDeleting}
+        title="Delete User"
+        message={`Are you sure you want to delete "${selectedUserToDelete?.name}"? This action cannot be undone.`}
+        confirmText={isDeleting ? "Deleting..." : "Delete"}
+        cancelText="Cancel"
+        type="danger"
       />
     </div>
   );

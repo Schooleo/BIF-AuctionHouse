@@ -233,8 +233,6 @@ const seed = async () => {
     dateOfBirth: new Date("1985-01-15"),
     contactEmail: "admin.contact@gmail.com",
     status: "ACTIVE",
-    isDeleted: false,
-    deletedAt: undefined,
   });
 
   const seller1 = await User.create({
@@ -249,8 +247,6 @@ const seed = async () => {
     positiveRatings: 0,
     negativeRatings: 0,
     status: "ACTIVE",
-    isDeleted: false,
-    deletedAt: undefined,
   });
 
   const seller2 = await User.create({
@@ -264,8 +260,6 @@ const seed = async () => {
     positiveRatings: 0,
     negativeRatings: 0,
     status: "ACTIVE",
-    isDeleted: false,
-    deletedAt: undefined,
   });
 
   // Tạo Bidders (Existing 5 bidders)
@@ -287,8 +281,6 @@ const seed = async () => {
       negativeRatings: 0,
       reputationScore: 0,
       status: "ACTIVE",
-      isDeleted: false,
-      deletedAt: undefined,
     });
     bidders.push(bidder);
   }
@@ -308,8 +300,6 @@ const seed = async () => {
       role: role,
       address: `Auto Address ${i}`,
       status: isBlocked ? "BLOCKED" : "ACTIVE",
-      isDeleted: false,
-      deletedAt: undefined,
     });
 
     if (role === "bidder") {

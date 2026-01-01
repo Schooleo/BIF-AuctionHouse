@@ -59,6 +59,7 @@ export const updateSellerProfileSchema = z.object({
     .regex(/^[a-zA-Z0-9]+$/, "Username must contain only letters and numbers")
     .optional(),
   address: z.string().min(1).optional(),
+  avatar: z.string().url("Invalid avatar URL").optional().or(z.literal("")),
 });
 
 export const changeSellerPasswordSchema = z.object({

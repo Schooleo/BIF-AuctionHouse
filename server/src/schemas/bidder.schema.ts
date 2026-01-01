@@ -33,6 +33,7 @@ export const updateProfileSchema = z.object({
     .optional()
     .transform((val) => (val ? new Date(val) : undefined)),
   contactEmail: z.email("Invalid email format").optional().or(z.literal("")),
+  avatar: z.string().url("Invalid avatar URL").optional().or(z.literal("")),
 });
 
 export const changePasswordSchema = z.object({
