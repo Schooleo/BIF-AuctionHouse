@@ -38,13 +38,13 @@ const OrderCard: React.FC<OrderCardProps> = ({ order, onCancel }) => {
 
   const sellerName =
     typeof order.seller === "string"
-      ? order.sellerInfo?.name || "Unknown"
-      : order.seller.name || "Unknown";
+      ? order.sellerInfo?.name || "Deleted User"
+      : order.seller?.name || "Deleted User";
 
   const buyerName =
     typeof order.buyer === "string"
-      ? order.buyerInfo?.name || "No Winner"
-      : order.buyer.name || "No Winner";
+      ? order.buyerInfo?.name || "Deleted User"
+      : order.buyer?.name || "Deleted User";
 
   const productObj =
     typeof order.product === "string" ? order.productInfo : order.product;

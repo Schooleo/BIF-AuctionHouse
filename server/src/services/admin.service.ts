@@ -480,6 +480,72 @@ export const deleteUser = async (userId: string, adminId?: string) => {
     }
   }
 
+  // Check for ACTIVE Auto Bids (for any user role)
+  // Prevent deletion if user has an Auto Bid on an ONGOING auction
+  const activeAutoBids = await AutoBid.aggregate([
+    { $match: { user: new mongoose.Types.ObjectId(userId) } },
+    {
+      $lookup: {
+        from: "products",
+        localField: "product",
+        foreignField: "_id",
+        as: "productInfo",
+      },
+    },
+    { $unwind: "$productInfo" },
+    {
+      $match: {
+        "productInfo.endTime": { $gt: now },
+      },
+    },
+    { $count: "count" },
+  ]);
+
+  if (activeAutoBids.length > 0 && activeAutoBids[0].count > 0) {
+    throw new Error(
+      "Cannot delete user with active Auto Bids on ongoing auctions"
+    );
+  }
+
+  // Additional checks for bidders
+  if (user.role === "bidder") {
+    // Check if user is the current highest bidder on any ACTIVE auction
+    const leadingAuctions = await Product.countDocuments({
+      startTime: { $lte: now },
+      endTime: { $gt: now },
+      currentBidder: userId,
+    });
+
+    if (leadingAuctions > 0) {
+      throw new Error(
+        "Cannot delete user who is currently leading in an active auction"
+      );
+    }
+
+    // Check if user is a winner of an ENDED auction but NO ORDER created yet
+    const wonProducts = await Product.find({
+      endTime: { $lte: now },
+      winner: userId, // User is marked as winner
+    }).select("_id");
+
+    const wonProductIds = wonProducts.map((p) => p._id);
+
+    if (wonProductIds.length > 0) {
+      // Check if orders exist for these won products
+      // We check if there's any order linked to these products where user is buyer
+      const ordersForWonProducts = await Order.countDocuments({
+        product: { $in: wonProductIds },
+        buyer: userId,
+      });
+
+      if (ordersForWonProducts < wonProductIds.length) {
+        throw new Error(
+          "Cannot delete user who has won auctions with pending orders"
+        );
+      }
+    }
+  }
+
   // Delete user's own related data (common for both bidder and seller)
   await Promise.all([
     // User's watchlist
@@ -488,6 +554,8 @@ export const deleteUser = async (userId: string, adminId?: string) => {
     AutoBid.deleteMany({ user: userId }),
     // User's upgrade requests
     UpgradeRequest.deleteMany({ user: userId }),
+    // User's unban requests
+    UnbanRequest.deleteMany({ user: userId }),
     // Ratings given BY this user (rater)
     Rating.deleteMany({ rater: userId }),
     // Bids placed by this user (for bidders)
@@ -921,7 +989,7 @@ export const listOrdersPaginated = async (
         as: "productInfo",
       },
     },
-    { $unwind: "$productInfo" },
+    { $unwind: { path: "$productInfo", preserveNullAndEmptyArrays: true } },
     {
       $lookup: {
         from: "users",
@@ -930,7 +998,7 @@ export const listOrdersPaginated = async (
         as: "sellerInfo",
       },
     },
-    { $unwind: "$sellerInfo" },
+    { $unwind: { path: "$sellerInfo", preserveNullAndEmptyArrays: true } },
     {
       $lookup: {
         from: "users",
@@ -939,7 +1007,7 @@ export const listOrdersPaginated = async (
         as: "buyerInfo",
       },
     },
-    { $unwind: "$buyerInfo" },
+    { $unwind: { path: "$buyerInfo", preserveNullAndEmptyArrays: true } },
   ];
 
   if (search) {

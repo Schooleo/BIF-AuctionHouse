@@ -19,7 +19,25 @@ const UserProfileSection: React.FC<UserProfileSectionProps> = ({
   user,
   role,
 }) => {
-  if (!user) return null;
+  // If user is null, show deleted state
+  if (!user) {
+    return (
+      <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 h-full">
+        <h3 className="text-lg font-semibold text-gray-800 mb-4">
+          {role} Profile
+        </h3>
+        <div className="flex items-center gap-4">
+          <div className="w-16 h-16 rounded-full bg-red-50 flex items-center justify-center overflow-hidden shrink-0 border border-red-100">
+            <User size={32} className="text-red-300" />
+          </div>
+          <div className="min-w-0">
+            <p className="font-medium text-red-500 truncate">Deleted User</p>
+            <p className="text-sm text-gray-400 italic">Use has been removed</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   let repValue = 0;
   if (user.reputation !== undefined) repValue = user.reputation;
