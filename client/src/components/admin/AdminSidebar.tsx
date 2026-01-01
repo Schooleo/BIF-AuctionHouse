@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -10,11 +10,16 @@ import {
   ShieldCheck,
   ShoppingCart,
   Settings,
+  ChevronDown,
+  ChevronRight,
 } from "lucide-react";
 import classNames from "classnames";
 
 const AdminSideBar: React.FC = () => {
   const location = useLocation();
+  const [isProductsExpanded, setIsProductsExpanded] = useState(
+    location.pathname.includes("/admin/products")
+  );
 
   const menuItems = [
     {
@@ -27,6 +32,21 @@ const AdminSideBar: React.FC = () => {
       label: "Products",
       path: "/admin/products",
       icon: <Package className="w-5 h-5" />,
+      hasSubmenu: true,
+      submenu: [
+        {
+          label: "Active Products",
+          path: "/admin/products/active",
+        },
+        {
+          label: "Ended Products",
+          path: "/admin/products/ended",
+        },
+        {
+          label: "Add Product",
+          path: "/admin/products/add",
+        },
+      ],
     },
     {
       label: "Categories",
@@ -49,6 +69,10 @@ const AdminSideBar: React.FC = () => {
       icon: <FileText className="w-5 h-5" />,
     },
   ];
+
+  const handleProductsToggle = () => {
+    setIsProductsExpanded(!isProductsExpanded);
+  };
 
   return (
     <div className="w-full bg-white border-r border-gray-200 py-4 pl-6 pr-8 h-full">
@@ -84,38 +108,70 @@ const AdminSideBar: React.FC = () => {
 
           return (
             <React.Fragment key={item.path}>
-              <Link
-                to={item.path}
-                className={classNames(
-                  "flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors duration-200",
-                  {
-                    "bg-primary-blue text-white shadow-md":
-                      isActive &&
-                      !isProductsDetails &&
-                      !isCategoriesDetails &&
-                      !isOrdersDetails &&
-                      !isUsersDetails,
-                    "text-gray-700 hover:bg-gray-100 hover:text-gray-900": !(
-                      isActive &&
-                      !isProductsDetails &&
-                      !isCategoriesDetails &&
-                      !isOrdersDetails &&
-                      !isUsersDetails
-                    ),
-                  }
-                )}
-              >
-                <span className="mr-3">{item.icon}</span>
-                {item.label}
-              </Link>
-
-              {/* Dynamic Sub-items for Details pages */}
-              {isProductsDetails && (
-                <div className="ml-5 mt-2 space-y-1 border-l-2 border-gray-200 pl-3">
-                  <span className="block py-2 text-sm transition-colors duration-200 text-primary-blue font-semibold">
-                    Product Details
-                  </span>
+              {item.hasSubmenu ? (
+                <div>
+                  <button
+                    onClick={handleProductsToggle}
+                    className={classNames(
+                      "flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 w-full text-left",
+                      {
+                        "bg-primary-blue text-white shadow-md": isActive,
+                        "text-gray-700 hover:bg-gray-100": !isActive,
+                      }
+                    )}
+                  >
+                    {item.icon}
+                    <span className="font-medium flex-1">{item.label}</span>
+                    {isProductsExpanded ? (
+                      <ChevronDown className="w-4 h-4" />
+                    ) : (
+                      <ChevronRight className="w-4 h-4" />
+                    )}
+                  </button>
+                  {isProductsExpanded && item.submenu && (
+                    <div className="ml-5 mt-2 space-y-1 border-l-2 border-gray-200 pl-3">
+                      {item.submenu.map((subItem) => {
+                        const isSubActive = location.pathname === subItem.path;
+                        return (
+                          <Link
+                            key={subItem.path}
+                            to={subItem.path}
+                            className={classNames(
+                              "block py-2 text-sm transition-colors duration-200 rounded-md px-3",
+                              {
+                                "text-primary-blue font-semibold bg-blue-50":
+                                  isSubActive,
+                                "text-gray-600 hover:text-primary-blue hover:bg-gray-50":
+                                  !isSubActive,
+                              }
+                            )}
+                          >
+                            {subItem.label}
+                          </Link>
+                        );
+                      })}
+                    </div>
+              )}
                 </div>
+              ) : (
+                <Link
+                  to={item.path}
+                  className={classNames(
+                    "flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200",
+                    {
+                      "bg-primary-blue text-white shadow-md":
+                        item.exact
+                          ? location.pathname === item.path
+                          : isActive,
+                      "text-gray-700 hover:bg-gray-100": !(item.exact
+                        ? location.pathname === item.path
+                        : isActive),
+                    }
+                  )}
+                >
+                  {item.icon}
+                  <span className="font-medium">{item.label}</span>
+                </Link>
               )}
               {isCategoriesDetails && (
                 <div className="ml-5 mt-2 space-y-1 border-l-2 border-gray-200 pl-3">
