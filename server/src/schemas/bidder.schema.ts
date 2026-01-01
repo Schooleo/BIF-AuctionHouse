@@ -27,11 +27,7 @@ export const updateProfileSchema = z.object({
     .max(100, "Name must be less than 100 characters")
     .regex(/^[a-zA-Z0-9]+$/, "Username must contain only letters and numbers")
     .optional(),
-  address: z
-    .string()
-    .max(200, "Address must be less than 200 characters")
-    .optional()
-    .or(z.literal("")),
+  address: z.string().max(200, "Address must be less than 200 characters").optional().or(z.literal("")),
   dateOfBirth: z
     .string()
     .optional()
@@ -47,6 +43,14 @@ export const changePasswordSchema = z.object({
 export const rateSellerSchema = z.object({
   score: z.union([z.literal(1), z.literal(-1)]),
   comment: z.string().min(1),
+});
+
+export const upgradeRequestSchema = z.object({
+  title: z.string().min(10, "Title must be at least 10 characters").max(100, "Title must be less than 100 characters"),
+  reasons: z
+    .string()
+    .min(100, "Reasons must be at least 100 characters")
+    .max(1000, "Reasons must be less than 1000 characters"),
 });
 
 export const updateSellerRatingSchema = z.object({

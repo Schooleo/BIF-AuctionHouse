@@ -8,19 +8,12 @@ import { CategoryService } from "../services/category.service";
 
 export const listCategories = async (req: Request, res: Response) => {
   try {
-    const page = req.query.page
-      ? parseInt(req.query.page as string)
-      : undefined;
+    const page = req.query.page ? parseInt(req.query.page as string) : undefined;
     const limit = req.query.limit ? parseInt(req.query.limit as string) : 8;
     const search = (req.query.q as string) || (req.query.search as string);
 
     if (page) {
-      const result = await CategoryService.listCategoriesPaginated(
-        page,
-        limit,
-        true,
-        search
-      );
+      const result = await CategoryService.listCategoriesPaginated(page, limit, true, search);
       res.status(200).json(result);
     } else {
       const categories = await CategoryService.listCategories(true); // includeStats = true
@@ -39,11 +32,7 @@ export const createCategory = async (req: Request, res: Response) => {
 
     if (subCategories && Array.isArray(subCategories)) {
       // If creating a main category with initial sub-categories
-      await CategoryService.updateCategory(
-        category._id.toString(),
-        name,
-        subCategories
-      );
+      await CategoryService.updateCategory(category._id.toString(), name, subCategories);
     }
 
     res.status(201).json(category);
@@ -62,11 +51,7 @@ export const updateCategory = async (req: Request, res: Response) => {
       return;
     }
 
-    const category = await CategoryService.updateCategory(
-      id,
-      name,
-      subCategories
-    );
+    const category = await CategoryService.updateCategory(id, name, subCategories);
     res.status(200).json(category);
   } catch (error) {
     res.status(500).json({ message: "Error updating category" });
@@ -180,17 +165,63 @@ export const deleteUser = async (req: Request, res: Response) => {
   }
 };
 
-export const manageUserUpgradeRequests = async (
-  req: Request,
-  res: Response
-) => {
-  // TODO: implement manage user upgrade requests logic
-  res.status(501).json({ message: "Not implemented" });
+export const manageUserUpgradeRequests = async (req: Request, res: Response) => {
+  try {
+    const { page, limit, status, search, sortBy } = req.query;
+
+    const params = {
+      page: page ? Number(page) : 1,
+      limit: limit ? Number(limit) : 10,
+      ...(status && { status: String(status) as "pending" | "approved" | "rejected" }),
+      ...(search && { search: String(search) }),
+      ...(sortBy && { sortBy: String(sortBy) as "newest" | "oldest" }),
+    };
+
+    const result = await AdminService.getAllUpgradeRequests(params);
+    res.status(200).json(result);
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
 };
 
 export const approveUserUpgrade = async (req: Request, res: Response) => {
-  // TODO: implement approve user upgrade logic
-  res.status(501).json({ message: "Not implemented" });
+  try {
+    const { id } = req.params; // Request ID
+    const adminId = (req as any).user._id;
+
+    if (!id) {
+      res.status(400).json({ message: "Request ID is required" });
+      return;
+    }
+
+    const result = await AdminService.approveUpgradeRequest(id, adminId);
+    res.status(200).json(result);
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+export const rejectUserUpgrade = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params; // Request ID
+    const { reason } = req.body;
+    const adminId = (req as any).user._id;
+
+    if (!id) {
+      res.status(400).json({ message: "Request ID is required" });
+      return;
+    }
+
+    if (!reason) {
+      res.status(400).json({ message: "Rejection reason is required" });
+      return;
+    }
+
+    const result = await AdminService.rejectUpgradeRequest(id, adminId, reason);
+    res.status(200).json(result);
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
 };
 
 export const getDashboardStats = async (req: Request, res: Response) => {
@@ -212,13 +243,7 @@ export const listOrders = async (req: Request, res: Response) => {
     const sort = (req.query.sort as string) || "newest";
     const search = (req.query.q as string) || (req.query.search as string);
 
-    const result = await AdminService.listOrdersPaginated(
-      page,
-      limit,
-      filter,
-      sort,
-      search
-    );
+    const result = await AdminService.listOrdersPaginated(page, limit, filter, sort, search);
     res.status(200).json(result);
   } catch (error) {
     console.error(error);

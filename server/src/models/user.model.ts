@@ -17,6 +17,10 @@ export interface IUser extends Document {
   negativeRatings: number; // Yêu cầu 2.2
   reputationScore: number;
 
+  // Upgraded Account Management
+  isUpgradedAccount: boolean; // True nếu account được upgrade từ bidder -> seller
+  linkedAccountId?: mongoose.Types.ObjectId; // Link đến account còn lại (bidder <-> seller)
+
   // Soft Delete
   isDeleted: boolean;
   deletedAt?: Date;
@@ -51,6 +55,10 @@ const userSchema = new Schema<IUser>(
     negativeRatings: { type: Number, default: 0 },
     reputationScore: { type: Number, default: 0 },
 
+    // Upgraded Account Management
+    isUpgradedAccount: { type: Boolean, default: false },
+    linkedAccountId: { type: Schema.Types.ObjectId, ref: "User" },
+
     // Soft Delete
     isDeleted: { type: Boolean, default: false },
     deletedAt: { type: Date },
@@ -77,9 +85,7 @@ userSchema.pre<IUser>("save", async function (next) {
 });
 
 // So sánh mật khẩu candidate với mật khẩu đã hash
-userSchema.methods.comparePassword = async function (
-  candidatePassword: string
-): Promise<boolean> {
+userSchema.methods.comparePassword = async function (candidatePassword: string): Promise<boolean> {
   return await bcrypt.compare(candidatePassword, this.password);
 };
 

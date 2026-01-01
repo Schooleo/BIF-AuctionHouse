@@ -12,6 +12,7 @@ import {
   deleteUser,
   manageUserUpgradeRequests,
   approveUserUpgrade,
+  rejectUserUpgrade,
   getDashboardStats,
   listOrders,
   getOrderDetails,
@@ -42,7 +43,8 @@ router.get("/users/:id", getUserDetail);
 router.patch("/users/:id/update", updateUser);
 router.delete("/users/:id/delete", deleteUser);
 router.get("/upgrade-requests", manageUserUpgradeRequests);
-router.post("/upgrade-requests/:userId/approve", approveUserUpgrade);
+router.post("/upgrade-requests/:id/approve", approveUserUpgrade);
+router.post("/upgrade-requests/:id/reject", rejectUserUpgrade);
 
 router.get("/orders", listOrders);
 router.get("/orders/:id", getOrderDetails);

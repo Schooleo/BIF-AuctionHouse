@@ -1,22 +1,9 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import {
-  AlertTriangle,
-  Info,
-  User,
-  Lock,
-  Star,
-  Trophy,
-  ThumbsUp,
-  ThumbsDown,
-} from "lucide-react";
+import { AlertTriangle, Info, User, Lock, Star, Trophy, ThumbsUp, ThumbsDown } from "lucide-react";
 import { useAuthStore } from "@stores/useAuthStore";
 import { bidderApi } from "@services/bidder.api";
-import type {
-  UpdateProfileDto,
-  ChangePasswordDto,
-  UpgradeRequestStatus,
-} from "@interfaces/bidder";
+import type { UpdateProfileDto, ChangePasswordDto, UpgradeRequestStatus } from "@interfaces/bidder";
 import ProfileInfoForm from "@components/forms/ProfileInfoForm";
 import ProfilePasswordForm from "@components/forms/ProfilePasswordForm";
 import RatingsReceivedList from "@components/user/RatingsReceivedList";
@@ -46,8 +33,7 @@ const ProfilePage: React.FC = () => {
 
   // Upgrade State
   const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
-  const [upgradeRequest, setUpgradeRequest] =
-    useState<UpgradeRequestStatus | null>(null);
+  const [upgradeRequest, setUpgradeRequest] = useState<UpgradeRequestStatus | null>(null);
   const [upgradeLoading, setUpgradeLoading] = useState(false);
 
   // Fetch ratings count
@@ -99,9 +85,7 @@ const ProfilePage: React.FC = () => {
       setSuccessMessage("Profile updated successfully!");
       setTimeout(() => setSuccessMessage(null), 5000);
     } catch (err) {
-      throw new Error(
-        err instanceof Error ? err.message : "Unable to update profile"
-      );
+      throw new Error(err instanceof Error ? err.message : "Unable to update profile");
     } finally {
       setLoading(false);
     }
@@ -111,34 +95,26 @@ const ProfilePage: React.FC = () => {
     setLoading(true);
     try {
       await bidderApi.changePassword(data);
-      setSuccessMessage(
-        "Password changed successfully! Redirecting to login page..."
-      );
+      setSuccessMessage("Password changed successfully! Redirecting to login page...");
       setTimeout(() => navigate("/auth/logout?next=/auth/login"), 2000);
     } catch (err) {
-      throw new Error(
-        err instanceof Error ? err.message : "Unable to change password"
-      );
+      throw new Error(err instanceof Error ? err.message : "Unable to change password");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleUpgradeRequest = async (reason: string) => {
+  const handleUpgradeRequest = async (title: string, reasons: string) => {
     setUpgradeLoading(true);
     try {
-      await bidderApi.requestSellerUpgrade(reason);
+      await bidderApi.requestSellerUpgrade(title, reasons);
       const response = await bidderApi.getUpgradeRequestStatus();
       setUpgradeRequest(response.request);
-      setSuccessMessage(
-        "Request sent successfully! Admin will review within 7 days."
-      );
+      setSuccessMessage("Request sent successfully! Admin will review within 7 days.");
       setIsUpgradeModalOpen(false);
       setTimeout(() => setSuccessMessage(null), 5000);
     } catch (err) {
-      throw new Error(
-        err instanceof Error ? err.message : "Unable to send request"
-      );
+      throw new Error(err instanceof Error ? err.message : "Unable to send request");
     } finally {
       setUpgradeLoading(false);
     }
@@ -169,13 +145,9 @@ const ProfilePage: React.FC = () => {
 
   // Computed values - use actual counts from API
   const totalRatings = positiveCount + negativeCount;
-  const reputationPercentage =
-    totalRatings > 0 ? Math.round((positiveCount / totalRatings) * 100) : 0;
+  const reputationPercentage = totalRatings > 0 ? Math.round((positiveCount / totalRatings) * 100) : 0;
 
-  const canUpgrade =
-    !upgradeRequest ||
-    (upgradeRequest.status !== "approved" &&
-      upgradeRequest.status !== "pending");
+  const canUpgrade = !upgradeRequest || (upgradeRequest.status !== "approved" && upgradeRequest.status !== "pending");
 
   const upgradeButtonText = !upgradeRequest
     ? "Want to be a seller?"
@@ -202,9 +174,7 @@ const ProfilePage: React.FC = () => {
                 key={tab.id}
                 onClick={() => handleTabChange(tab.id)}
                 className={`px-4 py-3 text-sm font-medium transition flex items-center gap-3 border-b border-gray-100 last:border-b-0 ${
-                  currentTab === tab.id
-                    ? "bg-primary-blue text-white"
-                    : "bg-white text-gray-700 hover:bg-gray-50"
+                  currentTab === tab.id ? "bg-primary-blue text-white" : "bg-white text-gray-700 hover:bg-gray-50"
                 }`}
               >
                 {tab.icon}
@@ -226,22 +196,16 @@ const ProfilePage: React.FC = () => {
               onImageUpdate={(newUrl) => setUser({ ...user, avatar: newUrl })}
             />
             <div className="flex-1 min-w-0">
-              <h1 className="text-2xl font-bold text-gray-800 truncate">
-                {user.name}
-              </h1>
+              <h1 className="text-2xl font-bold text-gray-800 truncate">{user.name}</h1>
               {user.contactEmail ? (
-                <p className="text-gray-500 truncate">
-                  Contact: {user.contactEmail}
-                </p>
+                <p className="text-gray-500 truncate">Contact: {user.contactEmail}</p>
               ) : (
                 <p className="text-gray-500 truncate">Email: {user.email}</p>
               )}
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                 <div className="flex items-center gap-2 whitespace-nowrap">
                   <span className="text-sm text-gray-600">Reputation:</span>
-                  <span className="font-semibold text-blue-600">
-                    {reputationPercentage}%
-                  </span>
+                  <span className="font-semibold text-blue-600">{reputationPercentage}%</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm whitespace-nowrap">
                   <span className="text-green-600 font-semibold flex items-center gap-1">
@@ -288,77 +252,70 @@ const ProfilePage: React.FC = () => {
                 </div>
               )}
 
-              {/* Change Password Section */}
-              {!user.googleId ? (
-                <div className="mt-8 pt-6 border-t border-gray-200">
-                  <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                    <Lock size={20} />
-                    Change Password
-                  </h3>
-                  <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                    <div className="text-yellow-800 text-sm flex items-start gap-2">
-                      <AlertTriangle size={18} className="shrink-0 mt-0.5" />
-                      <div>
-                        <span className="font-semibold">Note:</span> After
-                        changing your password, you will need to log in again
-                        with your new password.
+              {/* Change Password & Account Upgrade Section */}
+              <div className="mt-8 pt-6 border-t border-gray-200">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Change Password Section */}
+                  {!user.googleId ? (
+                    <div>
+                      <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                        <Lock size={20} />
+                        Change Password
+                      </h3>
+                      <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                        <div className="text-yellow-800 text-sm flex items-start gap-2">
+                          <AlertTriangle size={18} className="shrink-0 mt-0.5" />
+                          <div>
+                            <span className="font-semibold">Note:</span> After changing your password, you will need to
+                            log in again with your new password.
+                          </div>
+                        </div>
+                      </div>
+                      <ProfilePasswordForm onSubmit={handleChangePassword} loading={loading} />
+                    </div>
+                  ) : (
+                    <div>
+                      <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                        <Lock size={20} />
+                        Account Security
+                      </h3>
+                      <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                        <div className="text-blue-800 text-sm flex items-start gap-2">
+                          <Info size={18} className="shrink-0 mt-0.5" />
+                          <div>
+                            <span className="font-semibold">Google Account:</span> You are logged in via Google, so you
+                            do not have permission to change the password for this account.
+                          </div>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <ProfilePasswordForm
-                    onSubmit={handleChangePassword}
-                    loading={loading}
-                  />
-                </div>
-              ) : (
-                <div className="mt-8 pt-6 border-t border-gray-200">
-                  <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                    <Lock size={20} />
-                    Account Security
-                  </h3>
-                  <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                    <div className="text-blue-800 text-sm flex items-start gap-2">
-                      <Info size={18} className="shrink-0 mt-0.5" />
-                      <div>
-                        <span className="font-semibold">Google Account:</span>{" "}
-                        You are logged in via Google, so you do not have
-                        permission to change the password for this account.
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
+                  )}
 
-              {/* Upgrade to Seller Button */}
-              {user.role === "bidder" && (
-                <div className="mt-8 pt-6 border-t border-gray-200">
-                  <h3 className="text-lg font-semibold mb-3">
-                    Account Upgrade
-                  </h3>
-                  <p className="text-sm text-gray-600 mb-4">
-                    Become a seller to post products and create auctions on our
-                    platform.
-                  </p>
-                  {upgradeRequest?.status === "rejected" &&
-                    upgradeRequest.rejectionReason && (
-                      <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
-                        <p className="text-sm text-red-800">
-                          <span className="font-semibold">
-                            Rejection reason:
-                          </span>{" "}
-                          {upgradeRequest.rejectionReason}
-                        </p>
-                      </div>
-                    )}
-                  <button
-                    onClick={() => setIsUpgradeModalOpen(true)}
-                    disabled={!canUpgrade}
-                    className="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition"
-                  >
-                    {upgradeButtonText}
-                  </button>
+                  {/* Upgrade to Seller Button */}
+                  {user.role === "bidder" && (
+                    <div>
+                      <h3 className="text-lg font-semibold mb-3">Account Upgrade</h3>
+                      <p className="text-sm text-gray-600 mb-4">
+                        Become a seller to post products and create auctions on our platform.
+                      </p>
+                      {upgradeRequest?.status === "rejected" && upgradeRequest.rejectionReason && (
+                        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
+                          <p className="text-sm text-red-800">
+                            <span className="font-semibold">Rejection reason:</span> {upgradeRequest.rejectionReason}
+                          </p>
+                        </div>
+                      )}
+                      <button
+                        onClick={() => setIsUpgradeModalOpen(true)}
+                        disabled={!canUpgrade}
+                        className="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition"
+                      >
+                        {upgradeButtonText}
+                      </button>
+                    </div>
+                  )}
                 </div>
-              )}
+              </div>
             </div>
           )}
 

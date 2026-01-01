@@ -7,35 +7,29 @@ interface PopUpWindowProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit?: () => void | Promise<void>;
+  onCancel?: () => void;
   title: string;
   children: React.ReactNode;
 
-  size?:
-    | "sm"
-    | "md"
-    | "lg"
-    | "xl"
-    | "2xl"
-    | "3xl"
-    | "4xl"
-    | "5xl"
-    | "6xl"
-    | "7xl"
-    | "auto";
+  size?: "sm" | "md" | "lg" | "xl" | "2xl" | "3xl" | "4xl" | "5xl" | "6xl" | "7xl" | "auto";
   submitText?: string;
   cancelText?: string;
   isLoading?: boolean;
   hideSubmitButton?: boolean;
+  hideCancelButton?: boolean;
   hideFooter?: boolean;
   noPadding?: boolean;
   contentClassName?: string;
   closeOnOverlayClick?: boolean;
+  submitButtonColor?: string;
+  cancelButtonColor?: string;
 }
 
 const PopUpWindow: React.FC<PopUpWindowProps> = ({
   isOpen,
   onClose,
   onSubmit,
+  onCancel,
   title,
   children,
   size = "md",
@@ -43,10 +37,13 @@ const PopUpWindow: React.FC<PopUpWindowProps> = ({
   cancelText = "Cancel",
   isLoading = false,
   hideSubmitButton = false,
+  hideCancelButton = false,
   hideFooter = false,
   noPadding = false,
   contentClassName = "",
   closeOnOverlayClick = false,
+  submitButtonColor,
+  cancelButtonColor,
 }) => {
   const modalRef = useRef<HTMLDivElement>(null);
 
@@ -141,39 +138,34 @@ const PopUpWindow: React.FC<PopUpWindowProps> = ({
         </div>
 
         {/* Content & Footer Wrapper */}
-        <form
-          onSubmit={handleSubmit}
-          className="flex flex-col flex-1 min-h-0 overflow-hidden relative"
-        >
-          <div
-            className={`${
-              noPadding ? "p-0" : "p-6"
-            } overflow-y-auto flex-1 min-h-0 ${contentClassName}`}
-          >
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden relative">
+          <div className={`${noPadding ? "p-0" : "p-6"} overflow-y-auto flex-1 min-h-0 ${contentClassName}`}>
             {children}
           </div>
 
           {/* Footer with buttons - Same style as ConfirmationModal */}
           {!hideFooter && (
             <div className="flex justify-center gap-4 p-6 pt-0 shrink-0 mt-4">
-              <button
-                type="button"
-                onClick={onClose}
-                disabled={isLoading}
-                className={`px-6 py-2.5 text-sm font-semibold text-gray-700 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors min-w-[100px] ${
-                  isLoading ? "opacity-50 cursor-not-allowed" : ""
-                }`}
-              >
-                {cancelText}
-              </button>
+              {!hideCancelButton && (
+                <button
+                  type="button"
+                  onClick={onCancel || onClose}
+                  disabled={isLoading}
+                  className={`px-6 py-2.5 text-sm font-semibold rounded-full transition-colors min-w-[100px] ${
+                    cancelButtonColor || "text-gray-700 bg-gray-100 hover:bg-gray-200"
+                  } ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}
+                >
+                  {cancelText}
+                </button>
+              )}
 
               {!hideSubmitButton && (
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className={`px-6 py-2.5 text-sm font-semibold text-white rounded-full transition-colors shadow-md min-w-[100px] bg-primary-blue hover:scale-105 ${
-                    isLoading ? "opacity-75 cursor-not-allowed" : ""
-                  }`}
+                  className={`px-6 py-2.5 text-sm font-semibold text-white rounded-full transition-colors shadow-md min-w-[100px] hover:scale-105 ${
+                    submitButtonColor || "bg-primary-blue"
+                  } ${isLoading ? "opacity-75 cursor-not-allowed" : ""}`}
                 >
                   {isLoading ? (
                     <div className="flex items-center justify-center gap-2">
