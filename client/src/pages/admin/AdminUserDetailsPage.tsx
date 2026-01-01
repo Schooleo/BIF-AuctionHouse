@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { adminApi, type UserDetailResponse } from "../../services/admin.api";
-import DeleteReasonModal from "../../components/admin/DeleteReasonModal";
+import ConfirmationModal from "../../components/ui/ConfirmationModal";
+import BlockReasonModal from "../../components/admin/BlockReasonModal";
 import Spinner from "../../components/ui/Spinner";
+import { useAlertStore } from "../../stores/useAlertStore";
 import {
   ArrowLeft,
   ShieldCheck,
@@ -38,6 +40,13 @@ const AdminUserDetailsPage: React.FC = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  // Block/Unblock State
+  const [isBlockModalOpen, setIsBlockModalOpen] = useState(false);
+  const [isUnblockModalOpen, setIsUnblockModalOpen] = useState(false);
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+
+  const { addAlert } = useAlertStore();
+
   // Fetch Data
   useEffect(() => {
     if (!id) return;
@@ -51,7 +60,7 @@ const AdminUserDetailsPage: React.FC = () => {
         setData(res);
       } catch (error) {
         console.error(error);
-        alert("Failed to load user details");
+        addAlert("error", "Failed to load user details");
       } finally {
         setLoading(false);
       }
@@ -60,38 +69,49 @@ const AdminUserDetailsPage: React.FC = () => {
   }, [id, reviewPage]); // Re-fetch when page changes
 
   // Actions
-  const handleToggleStatus = async () => {
-    if (!data || !id) return;
-    const currentStatus = data.profile.status;
-    const newStatus = currentStatus === "ACTIVE" ? "BLOCKED" : "ACTIVE";
-
-    // Optimistic
-    setData((prev) =>
-      prev ? { ...prev, profile: { ...prev.profile, status: newStatus } } : null
-    );
-
+  const handleBlockUser = async (reason: string) => {
+    if (!id) return;
+    setIsUpdatingStatus(true);
     try {
-      await adminApi.updateUser(id, { status: newStatus });
-    } catch (error) {
-      alert("Failed to update status");
-      // Revert active state
+      await adminApi.blockUser(id, reason);
       setData((prev) =>
-        prev
-          ? { ...prev, profile: { ...prev.profile, status: currentStatus } }
-          : null
+        prev ? { ...prev, profile: { ...prev.profile, status: "BLOCKED", blockReason: reason } } : null
       );
+      addAlert("success", "User blocked successfully");
+      setIsBlockModalOpen(false);
+    } catch (error: any) {
+      addAlert("error", error.message || "Failed to block user");
+    } finally {
+      setIsUpdatingStatus(false);
     }
   };
 
-  const handleDelete = async (reason: string) => {
+  const handleUnblockUser = async () => {
+    if (!id) return;
+    setIsUpdatingStatus(true);
+    try {
+      await adminApi.unblockUser(id);
+      setData((prev) =>
+        prev ? { ...prev, profile: { ...prev.profile, status: "ACTIVE", blockReason: undefined } } : null
+      );
+      addAlert("success", "User unblocked successfully");
+      setIsUnblockModalOpen(false);
+    } catch (error: any) {
+      addAlert("error", error.message || "Failed to unblock user");
+    } finally {
+      setIsUpdatingStatus(false);
+    }
+  };
+
+  const handleDelete = async () => {
     if (!id) return;
     setIsDeleting(true);
     try {
-      await adminApi.deleteUser(id, reason);
-      alert("User deleted successfully");
+      await adminApi.deleteUser(id);
+      addAlert("success", "User deleted successfully");
       navigate("/admin/users");
-    } catch (error) {
-      alert("Failed to delete user");
+    } catch (error: any) {
+      addAlert("error", error.message || "Failed to delete user");
     } finally {
       setIsDeleting(false);
       setIsDeleteModalOpen(false);
@@ -153,16 +173,12 @@ const AdminUserDetailsPage: React.FC = () => {
                 </span>
                 <span
                   className={`px-3 py-1 rounded-full text-xs font-semibold uppercase flex items-center gap-1 ${
-                    profile.isDeleted
-                      ? "bg-gray-100 text-gray-500"
-                      : profile.status === "ACTIVE"
-                        ? "bg-green-50 text-green-700"
-                        : "bg-red-50 text-red-700"
+                    profile.status === "ACTIVE"
+                      ? "bg-green-50 text-green-700"
+                      : "bg-red-50 text-red-700"
                   }`}
                 >
-                  {profile.isDeleted ? (
-                    "Deleted"
-                  ) : profile.status === "ACTIVE" ? (
+                  {profile.status === "ACTIVE" ? (
                     <>
                       <ShieldCheck size={12} /> Active
                     </>
@@ -249,30 +265,34 @@ const AdminUserDetailsPage: React.FC = () => {
 
             {/* Actions Footer */}
             <div className="p-6 bg-gray-50 border-t border-gray-100 flex flex-col gap-3">
-              {profile.isDeleted ? (
-                <div className="p-3 bg-red-100 text-red-800 text-sm rounded-lg text-center font-medium">
-                  User deleted on{" "}
-                  {new Date(profile.deletedAt!).toLocaleDateString()}
+              {/* Block Reason Display */}
+              {profile.status === "BLOCKED" && profile.blockReason && (
+                <div className="p-3 bg-red-50 border border-red-100 rounded-lg">
+                  <p className="text-xs font-semibold text-red-700 uppercase mb-1">Block Reason:</p>
+                  <p className="text-sm text-red-600">{profile.blockReason}</p>
                 </div>
-              ) : (
+              )}
+              
+              {profile.role !== "admin" && (
                 <>
                   <button
-                    onClick={handleToggleStatus}
+                    onClick={() => profile.status === "ACTIVE" ? setIsBlockModalOpen(true) : setIsUnblockModalOpen(true)}
+                    disabled={isUpdatingStatus}
                     className={`w-full py-2.5 rounded-lg font-bold text-sm transition-all border shadow-sm ${
                       profile.status === "ACTIVE"
                         ? "bg-white border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-red-600"
                         : "bg-green-600 border-transparent text-white hover:bg-green-700"
-                    }`}
+                    } ${isUpdatingStatus ? "opacity-50 cursor-not-allowed" : ""}`}
                   >
                     {profile.status === "ACTIVE"
                       ? "Block Access"
-                      : "Activate User"}
+                      : "Unblock User"}
                   </button>
                   <button
                     onClick={() => setIsDeleteModalOpen(true)}
                     className="w-full py-2.5 rounded-lg font-bold text-sm text-red-600 bg-red-50 hover:bg-red-100 transition-colors flex items-center justify-center gap-2"
                   >
-                    <Trash2 size={16} /> Soft Delete Account
+                    <Trash2 size={16} /> Delete Account
                   </button>
                 </>
               )}
@@ -542,12 +562,35 @@ const AdminUserDetailsPage: React.FC = () => {
         </div>
       </div>
 
-      <DeleteReasonModal
+      {/* Block User Modal */}
+      <BlockReasonModal
+        isOpen={isBlockModalOpen}
+        onClose={() => setIsBlockModalOpen(false)}
+        onConfirm={handleBlockUser}
+        userName={profile.name}
+        isLoading={isUpdatingStatus}
+      />
+
+      {/* Unblock User Modal */}
+      <ConfirmationModal
+        isOpen={isUnblockModalOpen}
+        onClose={() => setIsUnblockModalOpen(false)}
+        onConfirm={handleUnblockUser}
+        title="Unblock User"
+        message={`Are you sure you want to unblock "${profile.name}"? They will be able to access their account again.`}
+        confirmText={isUpdatingStatus ? "Unblocking..." : "Unblock"}
+        type="primary"
+      />
+
+      {/* Delete User Modal */}
+      <ConfirmationModal
         isOpen={isDeleteModalOpen}
         onClose={() => setIsDeleteModalOpen(false)}
         onConfirm={handleDelete}
-        title={`Delete User: ${profile.name}`}
-        isLoading={isDeleting}
+        title="Delete User"
+        message={`Are you sure you want to delete "${profile.name}"? This action cannot be undone.`}
+        confirmText={isDeleting ? "Deleting..." : "Delete"}
+        type="danger"
       />
     </div>
   );

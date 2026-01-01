@@ -9,6 +9,8 @@ import {
   getUsers,
   getUserDetail,
   updateUser,
+  blockUser,
+  unblockUser,
   deleteUser,
   manageUserUpgradeRequests,
   approveUserUpgrade,
@@ -40,6 +42,8 @@ router.delete("/products/:id", removeProduct);
 router.get("/users", getUsers);
 router.get("/users/:id", getUserDetail);
 router.patch("/users/:id/update", updateUser);
+router.post("/users/:id/block", blockUser);
+router.post("/users/:id/unblock", unblockUser);
 router.delete("/users/:id/delete", deleteUser);
 router.get("/upgrade-requests", manageUserUpgradeRequests);
 router.post("/upgrade-requests/:userId/approve", approveUserUpgrade);
