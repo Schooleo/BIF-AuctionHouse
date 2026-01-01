@@ -1,4 +1,5 @@
 import { handleResponse } from "@utils/handleResponse";
+import type { Product, CreateProductDto } from "@interfaces/product";
 
 const API_BASE = import.meta.env.VITE_APP_API_URL || "";
 
@@ -160,6 +161,70 @@ export interface SystemConfig {
   updatedAt: string;
 }
 
+export interface GetProductsParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+  sortBy?: string;
+  sortOrder?: "asc" | "desc";
+  status?: "active" | "ended";
+  categories?: string;
+  minPrice?: number;
+  maxPrice?: number;
+}
+
+export interface SellerOption {
+  _id: string;
+  name: string;
+  email: string;
+}
+
+export interface AdminCreateProductDto extends Omit<CreateProductDto, "seller"> {
+  sellerId: string;
+}
+
+export interface AdminProductDetails {
+  product: Product;
+  bidHistory: {
+    _id: string;
+    bidder: {
+      _id: string;
+      name: string;
+      rating: number;
+    };
+    price: number;
+    createdAt: string;
+  }[];
+  isEnded: boolean;
+  order?: {
+    _id: string;
+    status: string;
+    buyer: {
+      _id: string;
+      name: string;
+      email: string;
+      rating: number;
+    };
+    shippingAddress?: string;
+    paymentProof?: string;
+    shippingProof?: string;
+  } | null;
+}
+
+export interface UpdateProductDto {
+  name?: string;
+  category?: string;
+  mainImage?: string;
+  subImages?: string[];
+  description?: string;
+  endTime?: string;
+  startingPrice?: number;
+  stepPrice?: number;
+  buyNowPrice?: number;
+  autoExtends?: boolean;
+  allowUnratedBidders?: boolean;
+}
+
 export const adminApi = {
   getDashboardStats: async (
     timeRange: string = "24h"
@@ -316,4 +381,112 @@ export const adminApi = {
     });
     return handleResponse(response);
   },
+
+  getProducts: async (
+    params: GetProductsParams = {}
+  ): Promise<{
+    products: Product[];
+    total: number;
+    page: number;
+    totalPages: number;
+  }> => {
+    const query = new URLSearchParams();
+    if (params.page) query.append("page", params.page.toString());
+    if (params.limit) query.append("limit", params.limit.toString());
+    if (params.search) query.append("search", params.search);
+    if (params.sortBy) query.append("sortBy", params.sortBy);
+    if (params.sortOrder) query.append("sortOrder", params.sortOrder);
+    if (params.status) query.append("status", params.status);
+    if (params.categories) query.append("categories", params.categories);
+    if (params.minPrice !== undefined) query.append("minPrice", params.minPrice.toString());
+    if (params.maxPrice !== undefined) query.append("maxPrice", params.maxPrice.toString());
+
+    const url = `${API_BASE}/api/admin/products?${query.toString()}`;
+    const token = localStorage.getItem("token");
+
+    const res = await fetch(url, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    return handleResponse(res);
+  },
+
+  getSellers: async (): Promise<SellerOption[]> => {
+    const url = `${API_BASE}/api/admin/sellers`;
+    const token = localStorage.getItem("token");
+
+    const res = await fetch(url, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    return handleResponse(res);
+  },
+
+  createProduct: async (data: AdminCreateProductDto): Promise<Product> => {
+    const url = `${API_BASE}/api/admin/products`;
+    const token = localStorage.getItem("token");
+
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(data),
+    });
+
+    return handleResponse(res);
+  },
+
+  getProductDetails: async (id: string): Promise<AdminProductDetails> => {
+    const res = await fetch(`${API_BASE}/api/admin/products/${id}`, {
+      method: "GET",
+      headers: getAuthHeaders(),
+    });
+    return handleResponse(res);
+  },
+
+  updateProduct: async (
+    id: string,
+    data: UpdateProductDto
+  ): Promise<Product> => {
+    const res = await fetch(`${API_BASE}/api/admin/products/${id}`, {
+      method: "PATCH",
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data),
+    });
+    return handleResponse(res);
+  },
+
+  extendProductEndTime: async (
+    id: string,
+    endTime: string
+  ): Promise<Product> => {
+    const res = await fetch(
+      `${API_BASE}/api/admin/products/${id}/extend`,
+      {
+        method: "POST",
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ endTime }),
+      }
+    );
+    return handleResponse(res);
+  },
+
+  deleteProduct: async (id: string): Promise<{ message: string }> => {
+    const res = await fetch(`${API_BASE}/api/admin/products/${id}`, {
+      method: "DELETE",
+      headers: getAuthHeaders(),
+    });
+    return handleResponse(res);
+  },
+
 };

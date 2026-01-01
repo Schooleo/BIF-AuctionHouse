@@ -226,3 +226,143 @@ export const updateSystemConfig = async (req: Request, res: Response) => {
     res.status(400).json({ message: "Error updating system config" });
   }
 };
+
+export const getProducts = async (req: Request, res: Response) => {
+  try {
+    const {
+      page = 1,
+      limit = 12,
+      search = "",
+      sortBy = "createdAt",
+      sortOrder = "desc",
+      status = "active",
+      categories = "",
+      minPrice,
+      maxPrice,
+    } = req.query;
+
+    // Parse numeric values
+    const parsedMinPrice = minPrice ? Number(minPrice) : undefined;
+    const parsedMaxPrice = maxPrice ? Number(maxPrice) : undefined;
+
+    // Validate numeric values
+    if (parsedMinPrice !== undefined && isNaN(parsedMinPrice)) {
+      return res.status(400).json({ message: "Invalid minPrice value" });
+    }
+    if (parsedMaxPrice !== undefined && isNaN(parsedMaxPrice)) {
+      return res.status(400).json({ message: "Invalid maxPrice value" });
+    }
+    if (
+      parsedMinPrice !== undefined &&
+      parsedMaxPrice !== undefined &&
+      parsedMinPrice > parsedMaxPrice
+    ) {
+      return res
+        .status(400)
+        .json({ message: "minPrice cannot be greater than maxPrice" });
+    }
+
+    const result = await AdminService.getProducts({
+      page: Number(page),
+      limit: Number(limit),
+      search: String(search),
+      sortBy: String(sortBy),
+      sortOrder: sortOrder as "asc" | "desc",
+      status: status as "active" | "ended",
+      categories: String(categories),
+      minPrice: parsedMinPrice,
+      maxPrice: parsedMaxPrice,
+    });
+
+    res.status(200).json(result);
+  } catch (error: any) {
+    console.error("Error fetching products:", error);
+    res.status(500).json({ message: error.message || "Internal server error" });
+  }
+};
+
+export const getSellers = async (req: Request, res: Response) => {
+  try {
+    const sellers = await AdminService.getSellers();
+    res.status(200).json(sellers);
+  } catch (error: any) {
+    console.error("Error fetching sellers:", error);
+    res.status(500).json({ message: error.message || "Internal server error" });
+  }
+};
+
+export const createProductAsAdmin = async (req: Request, res: Response) => {
+  try {
+    const product = await AdminService.createProduct(req.body);
+    res.status(201).json(product);
+  } catch (error: any) {
+    console.error("Error creating product:", error);
+    res.status(500).json({ message: error.message || "Internal server error" });
+  }
+};
+
+export const getProductDetails = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    if (!id) {
+      res.status(400).json({ message: "Product ID is required" });
+      return;
+    }
+
+    const details = await AdminService.getProductDetails(id);
+    res.status(200).json(details);
+  } catch (error: any) {
+    console.error("Error fetching product details:", error);
+    res.status(404).json({ message: error.message || "Product not found" });
+  }
+};
+
+export const updateProduct = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    if (!id) {
+      res.status(400).json({ message: "Product ID is required" });
+      return;
+    }
+
+    const product = await AdminService.updateProduct(id, req.body);
+    res.status(200).json(product);
+  } catch (error: any) {
+    console.error("Error updating product:", error);
+    res.status(400).json({ message: error.message || "Failed to update product" });
+  }
+};
+
+export const extendProductEndTime = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { endTime } = req.body;
+
+    if (!id || !endTime) {
+      res.status(400).json({ message: "Product ID and end time are required" });
+      return;
+    }
+
+    const product = await AdminService.extendProductEndTime(id, endTime);
+    res.status(200).json(product);
+  } catch (error: any) {
+    console.error("Error extending product end time:", error);
+    res.status(400).json({ message: error.message || "Failed to extend end time" });
+  }
+};
+
+export const deleteProduct = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    if (!id) {
+      res.status(400).json({ message: "Product ID is required" });
+      return;
+    }
+
+    const result = await AdminService.deleteProduct(id);
+    res.status(200).json(result);
+  } catch (error: any) {
+    console.error("Error deleting product:", error);
+    res.status(400).json({ message: error.message || "Failed to delete product" });
+  }
+};
