@@ -231,12 +231,13 @@ export const editProfile = async (req: Request, res: Response) => {
       return res.status(401).json({ message: "Unauthorized" });
     }
 
-    const { name, address, dateOfBirth, contactEmail } = req.body;
+    const { name, address, dateOfBirth, contactEmail, avatar } = req.body;
     const profile = await bidderService.updateProfile(bidderId, {
       name,
       address,
       dateOfBirth,
       contactEmail,
+      avatar,
     });
     res.json({ profile });
   } catch (error: any) {
