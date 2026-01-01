@@ -1,5 +1,9 @@
 import { Request, Response } from "express";
 import { bidderService } from "../services/bidder.service";
+import {
+  submitUnbanRequest as submitUnbanRequestService,
+  getUnbanRequestStatus as getUnbanRequestStatusService,
+} from "../services/bidder.service";
 import { WatchlistMessages } from "../constants/messages";
 import { Bid } from "../models/bid.model";
 import { BidMessages } from "../constants/messages";
@@ -447,6 +451,34 @@ export const acknowledgeAutoBid = async (req: Request, res: Response) => {
 
     const success = await bidderService.acknowledgeAutoBid(userId, productId);
     res.json({ success });
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+/**
+ * Submit unban request
+ */
+export const submitUnbanRequest = async (req: Request, res: Response) => {
+  try {
+    const { title, details } = req.body;
+    const userId = req.user!.id;
+
+    const request = await submitUnbanRequestService(userId, title, details);
+    res.status(201).json({ request });
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+/**
+ * Get unban request status
+ */
+export const getUnbanRequestStatus = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    const request = await getUnbanRequestStatusService(userId);
+    res.json({ request });
   } catch (error: any) {
     res.status(500).json({ message: error.message });
   }

@@ -1,4 +1,4 @@
-import { Navigate, Outlet } from "react-router-dom";
+import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useAuthStore } from "@stores/useAuthStore";
 
 interface ProtectedRouteProps {
@@ -7,6 +7,7 @@ interface ProtectedRouteProps {
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ allowedRoles }) => {
   const { user, loading } = useAuthStore();
+  const location = useLocation();
   const isAuthenticated = !!user;
 
   if (loading) {
@@ -19,6 +20,14 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ allowedRoles }) => {
 
   if (!isAuthenticated) {
     return <Navigate to="/unauthorized" replace />;
+  }
+
+  // Check if user is banned and restrict access
+  if (user.status === "BLOCKED") {
+    const allowedPaths = ["/banned", "/unban-request", "/auth/logout"];
+    if (!allowedPaths.includes(location.pathname)) {
+      return <Navigate to="/banned" replace />;
+    }
   }
 
   if (allowedRoles && user && !allowedRoles.includes(user.role)) {

@@ -388,4 +388,24 @@ export const bidderApi = {
     });
     return handleResponse(res);
   },
+
+  // Unban Request
+  submitUnbanRequest: async (title: string, details: string): Promise<{ message: string; request: any }> => {
+    const res = await fetch(`${API_BASE}/api/bidder/unban-request`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ title, details }),
+    });
+    return handleResponse(res);
+  },
+
+  getUnbanRequestStatus: async (): Promise<{
+    request: { status: "PENDING" | "APPROVED" | "DENIED"; title: string; details: string } | null;
+  }> => {
+    const res = await fetch(`${API_BASE}/api/bidder/unban-request/status`, {
+      method: "GET",
+      headers: getAuthHeaders(),
+    });
+    return handleResponse(res);
+  },
 };

@@ -2,7 +2,7 @@ import mongoose, { Document, Schema, Types } from "mongoose";
 
 export interface IUpgradeRequest extends Document {
   user: Types.ObjectId;
-  status: "pending" | "approved" | "rejected";
+  status: "pending" | "approved" | "rejected" | "expired";
 
   title: string; // 10-100 ký tự
   reasons: string; // 100-1000 ký tự
@@ -24,7 +24,7 @@ const upgradeRequestSchema = new Schema<IUpgradeRequest>(
     user: { type: Schema.Types.ObjectId, ref: "User", required: true },
     status: {
       type: String,
-      enum: ["pending", "approved", "rejected"],
+      enum: ["pending", "approved", "rejected", "expired"],
       default: "pending",
     },
 

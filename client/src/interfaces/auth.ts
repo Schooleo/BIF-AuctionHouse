@@ -3,6 +3,7 @@ export interface User {
   name: string;
   email: string;
   role: "bidder" | "seller" | "admin";
+  status: "ACTIVE" | "BLOCKED";
   avatar?: string;
   address?: string;
   dateOfBirth?: string;
@@ -14,6 +15,8 @@ export interface User {
   googleId?: string;
   isUpgradedAccount?: boolean;
   linkedAccountId?: string;
+  blockReason?: string;
+  blockedAt?: string;
 }
 
 export interface AuthStore {

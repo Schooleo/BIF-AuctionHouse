@@ -53,10 +53,7 @@ export const getDashboardStats = async (timeRange: string = "24h") => {
   ]);
   const userStats = {
     total: users.reduce((acc, curr) => acc + curr.count, 0),
-    byRole: users.reduce(
-      (acc, curr) => ({ ...acc, [curr._id]: curr.count }),
-      {}
-    ),
+    byRole: users.reduce((acc, curr) => ({ ...acc, [curr._id]: curr.count }), {}),
   };
 
   // 2. Product Stats
@@ -208,8 +205,7 @@ export const getDashboardStats = async (timeRange: string = "24h") => {
   const autoBidsByHour = await AutoBid.aggregate(autoBidPipeline);
 
   // Top 10 Bids (Recent within range or Overall if 'all')
-  const top10Match =
-    timeRange === "all" ? {} : { createdAt: { $gte: startDate } };
+  const top10Match = timeRange === "all" ? {} : { createdAt: { $gte: startDate } };
 
   const top10Bids = await Bid.find(top10Match)
     .sort({ price: -1 })
@@ -236,24 +232,13 @@ export const getDashboardStats = async (timeRange: string = "24h") => {
 import { UserSearchParams } from "../types/admin";
 
 export const getAllUsers = async (params: UserSearchParams) => {
-  const {
-    page = 1,
-    limit = 10,
-    search,
-    role,
-    status,
-    sortBy = "createdAt",
-    sortOrder = "desc",
-  } = params;
+  const { page = 1, limit = 10, search, role, status, sortBy = "createdAt", sortOrder = "desc" } = params;
 
   const query: any = {};
 
   // Search by name or email
   if (search) {
-    query.$or = [
-      { name: { $regex: search, $options: "i" } },
-      { email: { $regex: search, $options: "i" } },
-    ];
+    query.$or = [{ name: { $regex: search, $options: "i" } }, { email: { $regex: search, $options: "i" } }];
   }
 
   // Filter by role
@@ -283,12 +268,7 @@ export const getAllUsers = async (params: UserSearchParams) => {
   sortOptions[dbSortField] = sortOrder === "asc" ? 1 : -1;
 
   const [users, totalDocs] = await Promise.all([
-    User.find(query)
-      .select("-password")
-      .skip(skip)
-      .limit(limit)
-      .sort(sortOptions)
-      .lean(),
+    User.find(query).select("-password").skip(skip).limit(limit).sort(sortOptions).lean(),
     User.countDocuments(query),
   ]);
 
@@ -503,10 +483,7 @@ export const deleteUser = async (userId: string, adminId?: string) => {
   return { message: "User deleted successfully", userId };
 };
 
-export const getUserDetail = async (
-  userId: string,
-  options: { page?: number; limit?: number } = {}
-) => {
+export const getUserDetail = async (userId: string, options: { page?: number; limit?: number } = {}) => {
   const { page = 1, limit = 10 } = options;
 
   const user = await User.findById(userId).select("-password -googleId");
@@ -522,53 +499,49 @@ export const getUserDetail = async (
   const skip = (page - 1) * limit;
 
   // Parallel Fetching
-  const [bids, reviewsData, totalReviews, products, statsAggregation] =
-    await Promise.all([
-      // 1. Bid History (Last 10)
-      Bid.find({ bidder: userId })
-        .sort({ createdAt: -1 })
-        .limit(10)
-        .populate(
-          "product",
-          "name endTime currentPrice winnerConfirmed currentBidder"
-        )
-        .lean(),
+  const [bids, reviewsData, totalReviews, products, statsAggregation] = await Promise.all([
+    // 1. Bid History (Last 10)
+    Bid.find({ bidder: userId })
+      .sort({ createdAt: -1 })
+      .limit(10)
+      .populate("product", "name endTime currentPrice winnerConfirmed currentBidder")
+      .lean(),
 
-      // 2. Paginated Reviews (ALL types: + and -)
-      Rating.find({ ratee: userId })
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(limit)
-        .populate("rater", "name avatar")
-        .lean(),
+    // 2. Paginated Reviews (ALL types: + and -)
+    Rating.find({ ratee: userId })
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .populate("rater", "name avatar")
+      .lean(),
 
-      // 4. Total review count
-      Rating.countDocuments({ ratee: userId }),
+    // 4. Total review count
+    Rating.countDocuments({ ratee: userId }),
 
-      // 5. Selling Info (If Seller) - Active products
-      user.role === "seller"
-        ? Product.find({ seller: userId, endTime: { $gt: new Date() } })
-            .select("name currentPrice mainImage endTime bidCount")
-            .limit(10)
-            .lean()
-        : Promise.resolve([]),
+    // 5. Selling Info (If Seller) - Active products
+    user.role === "seller"
+      ? Product.find({ seller: userId, endTime: { $gt: new Date() } })
+          .select("name currentPrice mainImage endTime bidCount")
+          .limit(10)
+          .lean()
+      : Promise.resolve([]),
 
-      // 6. Stats from actual ratings (not user fields which may be stale)
-      Rating.aggregate([
-        { $match: { ratee: new mongoose.Types.ObjectId(userId) } },
-        {
-          $group: {
-            _id: null,
-            positiveCount: {
-              $sum: { $cond: [{ $eq: ["$score", 1] }, 1, 0] },
-            },
-            negativeCount: {
-              $sum: { $cond: [{ $eq: ["$score", -1] }, 1, 0] },
-            },
+    // 6. Stats from actual ratings (not user fields which may be stale)
+    Rating.aggregate([
+      { $match: { ratee: new mongoose.Types.ObjectId(userId) } },
+      {
+        $group: {
+          _id: null,
+          positiveCount: {
+            $sum: { $cond: [{ $eq: ["$score", 1] }, 1, 0] },
+          },
+          negativeCount: {
+            $sum: { $cond: [{ $eq: ["$score", -1] }, 1, 0] },
           },
         },
-      ]),
-    ]);
+      },
+    ]),
+  ]);
 
   // Process Bids to determine status from admin perspective
   // Status represents the state of INDIVIDUAL BID, not the auction
@@ -585,9 +558,7 @@ export const getUserDetail = async (
 
       if (isEnded) {
         // Auction has ended - determine if this bid won or lost
-        const isWinner =
-          product.currentBidder?.toString() === userId &&
-          bid.price === product.currentPrice;
+        const isWinner = product.currentBidder?.toString() === userId && bid.price === product.currentPrice;
         status = isWinner ? BidStatus.WON : BidStatus.LOST;
       } else {
         // Auction is still ongoing - check if bid is leading or outbid
@@ -661,10 +632,7 @@ export const updateUser = async (userId: string, data: any) => {
 /**
  * Get linked account profile for upgraded accounts (seller <-> bidder)
  */
-export const getLinkedAccountProfile = async (
-  userId: string,
-  options: { page?: number; limit?: number } = {}
-) => {
+export const getLinkedAccountProfile = async (userId: string, options: { page?: number; limit?: number } = {}) => {
   const { page = 1, limit = 10 } = options;
 
   const user = await User.findById(userId).select("-password -googleId");
@@ -673,19 +641,14 @@ export const getLinkedAccountProfile = async (
   }
 
   if (!user.isUpgradedAccount || !user.linkedAccountId) {
-    throw new Error(
-      "This account is not an upgraded account with linked profile"
-    );
+    throw new Error("This account is not an upgraded account with linked profile");
   }
 
   // Call getUserDetail for the linked account to get complete data
-  const linkedUserDetail = await getUserDetail(
-    user.linkedAccountId.toString(),
-    {
-      page,
-      limit,
-    }
-  );
+  const linkedUserDetail = await getUserDetail(user.linkedAccountId.toString(), {
+    page,
+    limit,
+  });
 
   return linkedUserDetail;
 };
@@ -719,10 +682,7 @@ export const getUserProducts = async (
     // Add status to each product
     const productsWithStatus = products.map((product: any) => {
       let status = "scheduled";
-      if (
-        new Date(product.startTime) <= now &&
-        new Date(product.endTime) > now
-      ) {
+      if (new Date(product.startTime) <= now && new Date(product.endTime) > now) {
         status = "ongoing";
       } else if (new Date(product.endTime) <= now) {
         status = product.winner ? "sold" : "ended";
@@ -785,15 +745,12 @@ export const getUserProducts = async (
     const productsWithStatus = bidProducts.map((product: any) => {
       let status = "ongoing";
       const isEnded = new Date(product.endTime) <= now;
-      const isWinner =
-        product.currentBidder?.toString() === userId ||
-        product.winner?.toString() === userId;
+      const isWinner = product.currentBidder?.toString() === userId || product.winner?.toString() === userId;
 
       if (isEnded) {
         status = isWinner ? "won" : "lost";
       } else {
-        status =
-          product.currentBidder?.toString() === userId ? "leading" : "outbid";
+        status = product.currentBidder?.toString() === userId ? "leading" : "outbid";
       }
       return { ...product, status };
     });
@@ -886,8 +843,7 @@ export const deleteReview = async (reviewId: string) => {
   const ratee = await User.findById(rateeId);
   if (ratee) {
     const totalRatings = ratee.positiveRatings + ratee.negativeRatings;
-    ratee.reputationScore =
-      totalRatings === 0 ? 0 : ratee.positiveRatings / totalRatings;
+    ratee.reputationScore = totalRatings === 0 ? 0 : ratee.positiveRatings / totalRatings;
     await ratee.save();
   }
 
@@ -943,10 +899,7 @@ export const listOrdersPaginated = async (
   ];
 
   if (search) {
-    const searchRegex = new RegExp(
-      search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
-      "i"
-    );
+    const searchRegex = new RegExp(search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
     pipeline.push({
       $addFields: {
         orderIdStr: { $toString: "$_id" },
@@ -1055,11 +1008,7 @@ export const cancelOrder = async (id: string) => {
   return order;
 };
 
-export const adminSendMessage = async (
-  orderId: string,
-  content: string,
-  adminId: string
-) => {
+export const adminSendMessage = async (orderId: string, content: string, adminId: string) => {
   const order = await Order.findById(orderId);
   if (!order) throw new Error("Order not found");
 
@@ -1088,10 +1037,7 @@ export const deleteChatMessage = async (orderId: string, messageId: string) => {
   const chat = await Chat.findById(order.chat);
   if (!chat) throw new Error("Chat not found");
 
-  await Chat.updateOne(
-    { _id: order.chat },
-    { $pull: { messages: { _id: messageId } } }
-  );
+  await Chat.updateOne({ _id: order.chat }, { $pull: { messages: { _id: messageId } } });
 
   return true;
 };
@@ -1149,8 +1095,8 @@ export const getAllUpgradeRequests = async (params: {
     const searchTerm = search.trim();
     const searchRegex = new RegExp(searchTerm, "i");
 
-    // Find all matching requests with different priorities
-    const filter: any = status ? { status } : {};
+    // Find all matching requests with different priorities (exclude expired)
+    const filter: any = status ? { status } : { status: { $ne: "expired" } };
 
     // Get all requests that match the search
     const allRequests = await UpgradeRequest.find(filter)
@@ -1168,10 +1114,7 @@ export const getAllUpgradeRequests = async (params: {
           priority = 1;
         }
         // Priority 2: Username match
-        else if (
-          requestObj.user &&
-          searchRegex.test((requestObj.user as any).name)
-        ) {
+        else if (requestObj.user && searchRegex.test((requestObj.user as any).name)) {
           priority = 2;
         }
         // Priority 3: Reasons match
@@ -1242,12 +1185,15 @@ export const getAllUpgradeRequests = async (params: {
   // Status filter
   if (status) {
     filter.status = status;
+  } else {
+    // Default mode: exclude expired
+    filter.status = { $ne: "expired" };
   }
 
   // Default mode (no status filter) - pending first, then others
   let requests;
   if (!status) {
-    // Get pending requests first, then other statuses
+    // Get pending requests first, then other statuses (exclude expired)
     const sortOrder = sortBy === "newest" ? -1 : 1;
 
     const [pendingRequests, otherRequests] = await Promise.all([
@@ -1255,7 +1201,7 @@ export const getAllUpgradeRequests = async (params: {
         .populate("user", "name email avatar role contactEmail")
         .populate("reviewedBy", "name email")
         .sort({ createdAt: sortOrder }),
-      UpgradeRequest.find({ status: { $ne: "pending" } })
+      UpgradeRequest.find({ status: { $nin: ["pending", "expired"] } })
         .populate("user", "name email avatar role contactEmail")
         .populate("reviewedBy", "name email")
         .sort({ createdAt: sortOrder }),
@@ -1365,10 +1311,7 @@ export const getAllUpgradeRequests = async (params: {
 /**
  * Approve upgrade request - create new seller account
  */
-export const approveUpgradeRequest = async (
-  requestId: string,
-  adminId: string
-) => {
+export const approveUpgradeRequest = async (requestId: string, adminId: string) => {
   const request = await UpgradeRequest.findById(requestId).populate("user");
   if (!request) {
     throw new Error("Upgrade request not found");
@@ -1426,10 +1369,7 @@ export const approveUpgradeRequest = async (
   await bidderUser.save();
 
   // Update seller with linkedAccountId
-  await User.collection.updateOne(
-    { _id: sellerId },
-    { $set: { linkedAccountId: bidderUser._id } }
-  );
+  await User.collection.updateOne({ _id: sellerId }, { $set: { linkedAccountId: bidderUser._id } });
 
   // Update request status
   request.status = "approved";
@@ -1449,11 +1389,7 @@ export const approveUpgradeRequest = async (
 /**
  * Reject upgrade request
  */
-export const rejectUpgradeRequest = async (
-  requestId: string,
-  adminId: string,
-  reason: string
-) => {
+export const rejectUpgradeRequest = async (requestId: string, adminId: string, reason: string) => {
   const request = await UpgradeRequest.findById(requestId);
   if (!request) {
     throw new Error("Upgrade request not found");
@@ -1479,21 +1415,14 @@ export const rejectUpgradeRequest = async (
 /**
  * Get all banned users with pagination
  */
-export const getBannedUsers = async (params: {
-  page?: number;
-  limit?: number;
-  search?: string;
-}) => {
+export const getBannedUsers = async (params: { page?: number; limit?: number; search?: string }) => {
   const { page = 1, limit = 10, search } = params;
   const skip = (page - 1) * limit;
 
   const query: any = { status: "BLOCKED" };
 
   if (search) {
-    query.$or = [
-      { name: { $regex: search, $options: "i" } },
-      { email: { $regex: search, $options: "i" } },
-    ];
+    query.$or = [{ name: { $regex: search, $options: "i" } }, { email: { $regex: search, $options: "i" } }];
   }
 
   const [users, total] = await Promise.all([
@@ -1513,9 +1442,7 @@ export const getBannedUsers = async (params: {
     status: "PENDING",
   }).select("user");
 
-  const pendingRequestUserIds = new Set(
-    unbanRequests.map((r) => r.user.toString())
-  );
+  const pendingRequestUserIds = new Set(unbanRequests.map((r) => r.user.toString()));
 
   const usersWithRequestStatus = users.map((user) => ({
     ...user,
@@ -1545,10 +1472,7 @@ export const getUnbanRequestByUser = async (userId: string) => {
 /**
  * Approve unban request - unblock the user
  */
-export const approveUnbanRequest = async (
-  requestId: string,
-  adminId: string
-) => {
+export const approveUnbanRequest = async (requestId: string, adminId: string) => {
   const request = await UnbanRequest.findById(requestId);
   if (!request) {
     throw new Error("Unban request not found");
@@ -1579,11 +1503,7 @@ export const approveUnbanRequest = async (
 /**
  * Deny unban request - keep user blocked
  */
-export const denyUnbanRequest = async (
-  requestId: string,
-  adminId: string,
-  adminNote?: string
-) => {
+export const denyUnbanRequest = async (requestId: string, adminId: string, adminNote?: string) => {
   const request = await UnbanRequest.findById(requestId);
   if (!request) {
     throw new Error("Unban request not found");

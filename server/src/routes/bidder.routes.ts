@@ -21,10 +21,13 @@ import {
   deleteRating,
   viewMyBids,
   acknowledgeAutoBid,
+  submitUnbanRequest,
+  getUnbanRequestStatus as getBidderUnbanRequestStatus,
 } from "../controllers/bidder.controller";
 import { protect } from "../middleware/auth.middleware";
 import { validate } from "../middleware/validate";
 import { placeBidSchema, bidHistoryQuerySchema } from "../schemas/bidder.schema";
+import { createUnbanRequestSchema } from "../schemas/unban.schema";
 import {
   updateProfileSchema,
   changePasswordSchema,
@@ -62,5 +65,9 @@ router.delete("/rate-seller/:sellerId", deleteRating);
 
 router.post("/request-seller-upgrade", validate(upgradeRequestSchema, "body"), requestSellerUpgrade);
 router.get("/upgrade-request-status", getUpgradeRequestStatus);
+
+// Unban request routes
+router.post("/unban-request", validate(createUnbanRequestSchema, "body"), submitUnbanRequest);
+router.get("/unban-request/status", getBidderUnbanRequestStatus);
 
 export default router;
