@@ -130,6 +130,41 @@ export const getUserDetail = async (req: Request, res: Response) => {
   }
 };
 
+// Create new user (admin only)
+export const createUser = async (req: Request, res: Response) => {
+  try {
+    const { name, email, password, address, role } = req.body;
+
+    // Validate required fields
+    if (!name || !email || !password || !address) {
+      res.status(400).json({ message: "All fields are required" });
+      return;
+    }
+
+    // Validate role
+    if (role && !["bidder", "seller"].includes(role)) {
+      res.status(400).json({ message: "Role must be 'bidder' or 'seller'" });
+      return;
+    }
+
+    const user = await AdminService.createUser({
+      name,
+      email,
+      password,
+      address,
+      role: role || "bidder",
+    });
+
+    res.status(201).json({ message: "User created successfully", user });
+  } catch (error: any) {
+    if (error.message.includes("duplicate key") || error.message.includes("already exists")) {
+      res.status(400).json({ message: "Email already exists" });
+      return;
+    }
+    res.status(500).json({ message: error.message || "Failed to create user" });
+  }
+};
+
 // Update user information
 export const updateUser = async (req: Request, res: Response) => {
   try {

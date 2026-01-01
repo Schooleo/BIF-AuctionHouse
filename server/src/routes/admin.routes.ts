@@ -8,6 +8,7 @@ import {
   removeProduct,
   getUsers,
   getUserDetail,
+  createUser,
   updateUser,
   blockUser,
   unblockUser,
@@ -41,6 +42,7 @@ router.delete("/products/:id", removeProduct);
 
 // User Management Routes
 router.get("/users", getUsers);
+router.post("/users", createUser);
 router.get("/users/:id", getUserDetail);
 router.patch("/users/:id/update", updateUser);
 router.post("/users/:id/block", blockUser);

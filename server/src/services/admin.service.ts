@@ -294,6 +294,43 @@ export const getAllUsers = async (params: UserSearchParams) => {
   };
 };
 
+interface CreateUserDto {
+  name: string;
+  email: string;
+  password: string;
+  address: string;
+  role: "bidder" | "seller";
+}
+
+export const createUser = async (data: CreateUserDto) => {
+  // Check if email already exists
+  const existingUser = await User.findOne({ email: data.email });
+  if (existingUser) {
+    throw new Error("Email already exists");
+  }
+
+  // Create new user
+  const user = new User({
+    name: data.name,
+    email: data.email,
+    password: data.password,
+    address: data.address,
+    role: data.role,
+    status: "ACTIVE",
+    positiveRatings: 0,
+    negativeRatings: 0,
+    reputationScore: 0,
+  });
+
+  await user.save();
+
+  // Return user without password
+  const userObj = user.toObject();
+  delete (userObj as any).password;
+
+  return userObj;
+};
+
 export const blockUser = async (userId: string, reason: string) => {
   const user = await User.findById(userId);
   if (!user) {
@@ -422,12 +459,22 @@ export const deleteUser = async (userId: string, adminId?: string) => {
     }
   }
 
-  // Delete user's own related data
+  // Delete user's own related data (common for both bidder and seller)
   await Promise.all([
+    // User's watchlist
     Watchlist.deleteMany({ user: userId }),
+    // User's auto bids
     AutoBid.deleteMany({ user: userId }),
+    // User's upgrade requests
     UpgradeRequest.deleteMany({ user: userId }),
+    // Ratings given BY this user (rater)
+    Rating.deleteMany({ rater: userId }),
+    // Bids placed by this user (for bidders)
+    Bid.deleteMany({ bidder: userId }),
   ]);
+
+  // Note: We keep ratings RECEIVED by this user (ratee) for historical purposes
+  // But the rater reference will be null - handled in frontend with optional chaining
 
   // Delete user
   await User.findByIdAndDelete(userId);

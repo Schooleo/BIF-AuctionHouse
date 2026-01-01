@@ -3,6 +3,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import type { User } from "../../services/admin.api";
 import { adminApi } from "../../services/admin.api";
 import ConfirmationModal from "../../components/ui/ConfirmationModal";
+import AddUserModal from "../../components/admin/AddUserModal";
 import { useAlertStore } from "../../stores/useAlertStore";
 import {
   Trash2,
@@ -12,6 +13,7 @@ import {
   ChevronRight,
   Users,
   Eye,
+  Plus,
 } from "lucide-react";
 
 interface QueryParams {
@@ -62,6 +64,9 @@ const AdminUsersPage: React.FC = () => {
   );
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // Add User State
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
   // Update query params and sync with URL
   const updateQuery = (updates: Partial<QueryParams>) => {
@@ -165,11 +170,21 @@ const AdminUsersPage: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-800">Users Management</h1>
-        <p className="text-sm text-gray-500 mt-1">
-          Manage all registered users in the system
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-800">Users Management</h1>
+          <p className="text-sm text-gray-500 mt-1">
+            Manage all registered users in the system
+          </p>
+        </div>
+
+        <button
+          onClick={() => setIsAddModalOpen(true)}
+          className="flex items-center gap-2 bg-primary-blue text-white px-4 py-2.5 rounded-lg hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 ease-in-out font-medium"
+        >
+          <Plus className="w-5 h-5" />
+          Add User
+        </button>
       </div>
 
       {/* Error Alert */}
@@ -435,6 +450,16 @@ const AdminUsersPage: React.FC = () => {
         confirmText={isDeleting ? "Deleting..." : "Delete"}
         cancelText="Cancel"
         type="danger"
+      />
+
+      {/* Add User Modal */}
+      <AddUserModal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        onSuccess={() => {
+          addAlert("success", "User created successfully");
+          refetchUsers();
+        }}
       />
     </div>
   );
