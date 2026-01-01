@@ -793,39 +793,63 @@ export const deleteProduct = async (productId: string) => {
     throw new Error("Product not found");
   }
 
-  // Check if product has an order
-  const order = await Order.findOne({ product: productId });
-  if (order) {
-    throw new Error("Cannot delete product with associated order");
-  }
-
-  // Start a session for transaction to ensure data consistency
-  const session = await mongoose.startSession();
-  session.startTransaction();
-
   try {
     // 1. Delete all bids for this product
-    await Bid.deleteMany({ product: productId }).session(session);
+    await Bid.deleteMany({ product: productId });
 
     // 2. Delete all auto-bids for this product
-    await AutoBid.deleteMany({ product: productId }).session(session);
+    await AutoBid.deleteMany({ product: productId });
 
     // 3. Remove from all watchlists
     const Watchlist = (await import("../models/watchlist.model")).Watchlist;
-    await Watchlist.deleteMany({ product: productId }).session(session);
+    await Watchlist.deleteMany({ product: productId });
 
-    // 4. Delete the product itself
-    await Product.findByIdAndDelete(productId).session(session);
+    // 4. Cancel any associated order
+    const Order = (await import("../models/order.model")).Order;
+    const order = await Order.findOne({ product: productId });
+    if (order && order.status !== "CANCELLED" && order.status !== "COMPLETED") {
+      order.status = "CANCELLED" as any;
+      await order.save();
+    }
 
-    // Commit the transaction
-    await session.commitTransaction();
-    session.endSession();
+    // 5. Delete the product itself
+    await Product.findByIdAndDelete(productId);
 
     return { message: "Product and all associated data deleted successfully" };
   } catch (error) {
-    // Rollback on error
-    await session.abortTransaction();
-    session.endSession();
-    throw error;
+    console.error("Error deleting product:", error);
+    throw new Error("Failed to delete product. Please try again.");
   }
+};
+
+export const deleteProductQuestion = async (
+  productId: string,
+  questionId: string
+) => {
+  if (!mongoose.Types.ObjectId.isValid(productId)) {
+    throw new Error("Invalid product ID");
+  }
+
+  if (!mongoose.Types.ObjectId.isValid(questionId)) {
+    throw new Error("Invalid question ID");
+  }
+
+  const product = await Product.findById(productId);
+  if (!product) {
+    throw new Error("Product not found");
+  }
+
+  const questionIndex = product.questions.findIndex(
+    (q) => q._id?.toString() === questionId
+  );
+
+  if (questionIndex === -1) {
+    throw new Error("Question not found");
+  }
+
+  // Remove the question
+  product.questions.splice(questionIndex, 1);
+  await product.save();
+
+  return { message: "Question deleted successfully" };
 };

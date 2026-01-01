@@ -149,9 +149,15 @@ const AdminEndedProductCard: React.FC<AdminEndedProductCardProps> = ({
     });
   };
 
+  const handleCardClick = (e: React.MouseEvent) => {
+    // Scroll to top immediately on click
+    window.scrollTo(0, 0);
+  };
+
   return (
     <Link
       to={`/admin/products/${_id}`}
+      onClick={handleCardClick}
       className="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden group"
     >
       {/* Image Section */}

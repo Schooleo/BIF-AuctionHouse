@@ -366,3 +366,17 @@ export const deleteProduct = async (req: Request, res: Response) => {
     res.status(400).json({ message: error.message || "Failed to delete product" });
   }
 };
+
+export const deleteProductQuestion = async (req: Request, res: Response) => {
+  try {
+    const { productId, questionId } = req.params;
+    if (!productId || !questionId) {
+      res.status(400).json({ message: "Product ID and Question ID are required" });
+      return;
+    }
+    const result = await AdminService.deleteProductQuestion(productId, questionId);
+    res.status(200).json(result);
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
+};

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   ChevronLeft,
@@ -24,6 +24,7 @@ import ProductImageCard from "@components/product/ProductImageCard";
 import AdminProductEditModal from "@components/admin/ProductEditModal";
 import ConfirmationModal from "@components/ui/ConfirmationModal";
 import PopUpWindow from "@components/ui/PopUpWindow";
+import AdminBidHistoryModal from "@components/admin/AdminBidHistoryModal";
 import { formatPrice } from "@utils/product";
 import { formatDateTime, getTimeRemaining } from "@utils/time";
 import DOMPurify from "dompurify";
@@ -45,6 +46,7 @@ const AdminProductDetailsContainer: React.FC<
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isExtendModalOpen, setIsExtendModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isBidHistoryOpen, setIsBidHistoryOpen] = useState(false); // Add this
 
   const [newEndTime, setNewEndTime] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
@@ -63,8 +65,10 @@ const AdminProductDetailsContainer: React.FC<
   }, [id]);
 
   useEffect(() => {
+    // Scroll to top immediately when product changes
+    window.scrollTo(0, 0);
     fetchDetails();
-  }, [fetchDetails]);
+  }, [id, fetchDetails]);
 
   const handleUpdateProduct = async (updateData: any) => {
     try {
@@ -106,7 +110,7 @@ const AdminProductDetailsContainer: React.FC<
     try {
       setActionLoading(true);
       await adminApi.deleteProduct(id);
-      addAlert("success", "Product deleted successfully");
+      addAlert("success", "Product and all associated data deleted successfully");
       navigate("/admin/products/active");
     } catch (err: any) {
       addAlert("error", err.message || "Failed to delete product");
@@ -114,6 +118,82 @@ const AdminProductDetailsContainer: React.FC<
       setActionLoading(false);
       setIsDeleteModalOpen(false);
     }
+  };
+
+  // Computed values (must be before conditional returns)
+  const product = details?.product;
+  const bidHistory = details?.bidHistory || [];
+  const isEnded = details?.isEnded || false;
+  const order = details?.order;
+  const hasActiveBids = (product?.bidCount || 0) > 0;
+  const timeRemaining = product ? getTimeRemaining(product.endTime) : { text: "", isEnded: true, isUrgent: false };
+  
+  const allImages = useMemo(() => {
+    if (!product) return [];
+    return [
+      product.mainImage,
+      ...(product.subImages || []),
+    ].filter(Boolean) as string[];
+  }, [product]);
+
+  const sanitizedDescription = useMemo(() => {
+    if (!product) return "";
+    return DOMPurify.sanitize(product.description);
+  }, [product]);
+
+  const categoryName = useMemo(() => {
+    if (!product) return "Unknown";
+    return typeof product.category === "string"
+      ? product.category
+      : product.category?.name || "Unknown";
+  }, [product]);
+
+  const sellerName = useMemo(() => {
+    if (!product) return "Unknown";
+    return typeof product.seller === "object" ? product.seller.name : "Unknown";
+  }, [product]);
+
+  const currentBidderName = useMemo(() => {
+    if (!product) return "No bids yet";
+    return typeof product.currentBidder === "object"
+      ? product.currentBidder?.name
+      : "No bids yet";
+  }, [product]);
+
+  const currentBidderId = useMemo(() => {
+    if (!product) return undefined;
+    return typeof product.currentBidder === "object"
+      ? product.currentBidder?._id
+      : undefined;
+  }, [product]);
+
+  const canDelete = true; // Always allow delete, but show warnings
+  const canExtend = !isEnded || (!product?.winnerConfirmed && hasActiveBids);
+
+  // Get delete warning message
+  const getDeleteWarningMessage = () => {
+    if (!product) return "Are you sure you want to delete this product?";
+    
+    const warnings: string[] = [];
+    
+    if (!isEnded) {
+      warnings.push("This product is still active and the auction is ongoing.");
+    }
+    
+    if (hasActiveBids) {
+      warnings.push(`This product has ${product.bidCount} bid(s) placed.`);
+    }
+    
+    if (order) {
+      const orderStatus = order.status.replace(/_/g, " ");
+      warnings.push(`This product is currently in the ordering process (Status: ${orderStatus}).`);
+    }
+
+    if (warnings.length === 0) {
+      return "Are you sure you want to delete this product? This action cannot be undone.";
+    }
+
+    return `${warnings.join("\n\n")} This will also remove all associated bids, auto-bids, watchlist entries${order ? ", and cancel the order" : ""}. This action cannot be undone. Are you sure you want to proceed?`;
   };
 
   if (loading) {
@@ -124,37 +204,13 @@ const AdminProductDetailsContainer: React.FC<
     );
   }
 
-  if (error || !details) {
+  if (error || !details || !product) {
     return (
       <div className="py-16">
         <ErrorMessage text={error || "Product not found"} />
       </div>
     );
   }
-
-  const { product, bidHistory, isEnded, order } = details;
-  const hasActiveBids = product.bidCount > 0;
-  const timeRemaining = getTimeRemaining(product.endTime);
-
-  const allImages = [
-    product.mainImage,
-    ...(product.subImages || []),
-  ].filter(Boolean) as string[];
-
-  const sanitizedDescription = DOMPurify.sanitize(product.description);
-
-  const categoryName =
-    typeof product.category === "string"
-      ? product.category
-      : product.category?.name || "Unknown";
-
-  const sellerName =
-    typeof product.seller === "object" ? product.seller.name : "Unknown";
-
-  const currentBidderName =
-    typeof product.currentBidder === "object"
-      ? product.currentBidder?.name
-      : "No bids yet";
 
   const getStatusBadge = () => {
     if (order) {
@@ -238,98 +294,64 @@ const AdminProductDetailsContainer: React.FC<
     );
   };
 
-  const canExtend = !isEnded || (!product.winnerConfirmed && hasActiveBids);
-  const canDelete = !hasActiveBids && !order;
-
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-4">
-        <button
-          onClick={() => navigate(-1)}
-          className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition"
-        >
-          <ChevronLeft className="w-5 h-5" />
-          <span className="font-medium">Back</span>
-        </button>
-
-        <div className="flex items-center gap-3 flex-wrap">
-          {getStatusBadge()}
-          
-          <button
-            onClick={() => setIsEditModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-primary-blue text-white rounded-lg hover:bg-primary-blue-dark transition"
-          >
-            <Edit2 className="w-4 h-4" />
-            Edit Product
-          </button>
-
-          {canExtend && (
-            <button
-              onClick={() => setIsExtendModalOpen(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
-            >
-              <Clock className="w-4 h-4" />
-              Extend Time
-            </button>
-          )}
-
-          {canDelete && (
-            <button
-              onClick={() => setIsDeleteModalOpen(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
-            >
-              <Trash2 className="w-4 h-4" />
-              Delete
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Main Content */}
+    <div className="py-6">
       <div className="max-w-6xl mx-auto px-4 md:px-0">
         <div className="flex flex-col md:flex-row gap-10">
-          {/* Left: Images - Now static with fixed width */}
+          {/* Left: Static Images */}
           <div className="w-full md:w-5/12 shrink-0">
             <ProductImageCard images={allImages} recentlyAdded={false} />
           </div>
 
-          {/* Right: Product Summary */}
-          <div className="flex-1 space-y-6">
-            {/* Product Info Card */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
-              <h1 className="text-3xl font-bold text-gray-900 mb-4">
-                {product.name}
-              </h1>
+          {/* Right: Product Info */}
+          <div className="flex-1 space-y-4">
+            {/* Product Title and Status */}
+            <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
+              <div className="flex items-start justify-between gap-4 mb-4">
+                <h1 className="text-3xl font-bold text-gray-900">
+                  {product.name}
+                </h1>
+                {getStatusBadge()}
+              </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                <div className="flex items-center gap-2 text-gray-600">
-                  <Package className="w-5 h-5" />
+              <div className="text-sm text-gray-600 space-y-2">
+                <div className="flex items-center gap-2">
+                  <Package className="w-4 h-4" />
                   <span className="font-medium">Category:</span>
                   <span>{categoryName}</span>
                 </div>
-
-                <div className="flex items-center gap-2 text-gray-600">
-                  <User className="w-5 h-5" />
+                <div className="flex items-center gap-2">
+                  <User className="w-4 h-4" />
                   <span className="font-medium">Seller:</span>
                   <span>{sellerName}</span>
                 </div>
+              </div>
+            </div>
 
-                <div className="flex items-center gap-2 text-gray-600">
-                  <Calendar className="w-5 h-5" />
-                  <span className="font-medium">Start:</span>
-                  <span className="text-sm">{formatDateTime(product.startTime)}</span>
+            {/* Auction Timeline */}
+            <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
+              <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-4">
+                Auction Timeline
+              </h3>
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 text-sm">
+                  <Calendar className="w-4 h-4 text-gray-400" />
+                  <span className="text-gray-600">Starts:</span>
+                  <span className="font-medium text-gray-900">
+                    {formatDateTime(product.startTime)}
+                  </span>
                 </div>
-
-                <div className="flex items-center gap-2 text-gray-600">
-                  <Clock className="w-5 h-5" />
-                  <span className="font-medium">End:</span>
-                  <span className="text-sm">{formatDateTime(product.endTime)}</span>
+                <div className="flex items-center gap-2 text-sm">
+                  <Clock className="w-4 h-4 text-gray-400" />
+                  <span className="text-gray-600">Ends:</span>
+                  <span className="font-medium text-gray-900">
+                    {formatDateTime(product.endTime)}
+                  </span>
                 </div>
               </div>
 
               {!isEnded && (
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
                   <div className="flex items-center gap-2 text-blue-900">
                     <Clock className="w-5 h-5" />
                     <span className="font-semibold">Time Remaining:</span>
@@ -337,67 +359,74 @@ const AdminProductDetailsContainer: React.FC<
                   </div>
                 </div>
               )}
+            </div>
 
-              {/* Pricing Info */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-gray-50 rounded-lg">
+            {/* Pricing Info */}
+            <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
+              <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-4">
+                Current Price
+              </h3>
+              <div className="flex items-baseline gap-2 mb-4">
+                <span className="text-4xl font-bold text-green-600">
+                  {formatPrice(product.currentPrice)}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4 text-sm">
                 <div>
-                  <p className="text-xs text-gray-500 mb-1">Starting Price</p>
-                  <p className="text-lg font-bold text-gray-900">
+                  <p className="text-gray-500 mb-1">Starting Price</p>
+                  <p className="font-semibold text-gray-900">
                     {formatPrice(product.startingPrice)}
                   </p>
                 </div>
-
                 <div>
-                  <p className="text-xs text-gray-500 mb-1">Current Price</p>
-                  <p className="text-lg font-bold text-green-600">
-                    {formatPrice(product.currentPrice)}
-                  </p>
-                </div>
-
-                <div>
-                  <p className="text-xs text-gray-500 mb-1">Step Price</p>
-                  <p className="text-lg font-bold text-gray-900">
+                  <p className="text-gray-500 mb-1">Step Price</p>
+                  <p className="font-semibold text-gray-900">
                     {formatPrice(product.stepPrice)}
                   </p>
                 </div>
-
                 <div>
-                  <p className="text-xs text-gray-500 mb-1">Buy Now</p>
-                  <p className="text-lg font-bold text-blue-600">
-                    {product.buyNowPrice
-                      ? formatPrice(product.buyNowPrice)
-                      : "N/A"}
+                  <p className="text-gray-500 mb-1">Buy Now</p>
+                  <p className="font-semibold text-blue-600">
+                    {product.buyNowPrice ? formatPrice(product.buyNowPrice) : "N/A"}
                   </p>
                 </div>
               </div>
+            </div>
 
-              {/* Bid Stats */}
-              <div className="grid grid-cols-2 gap-4 mt-4">
-                <div className="flex items-center gap-2 p-3 bg-blue-50 rounded-lg">
-                  <DollarSign className="w-5 h-5 text-blue-600" />
-                  <div>
-                    <p className="text-xs text-gray-600">Total Bids</p>
-                    <p className="text-xl font-bold text-gray-900">
-                      {product.bidCount}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2 p-3 bg-green-50 rounded-lg">
+            {/* Bidding Info */}
+            <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
+              <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-4">
+                Highest Bidder
+              </h3>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
                   <User className="w-5 h-5 text-green-600" />
                   <div>
-                    <p className="text-xs text-gray-600">Current Bidder</p>
-                    <p className="text-sm font-bold text-gray-900 truncate">
+                    <p className="font-semibold text-gray-900">
                       {currentBidderName}
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      {typeof product.currentBidder === "object" && product.currentBidder?.rating
+                        ? `⭐ ${product.currentBidder.rating.toFixed(1)}`
+                        : "No rating"}
                     </p>
                   </div>
                 </div>
+                <button
+                  onClick={() => setIsBidHistoryOpen(true)}
+                  className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
+                >
+                  View Bid History
+                  <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full text-xs font-bold">
+                    {product.bidCount}
+                  </span>
+                </button>
               </div>
 
-              {/* Settings */}
-              <div className="mt-4 flex gap-4 flex-wrap">
+              <div className="mt-4 flex gap-2 flex-wrap">
                 <span
-                  className={`px-3 py-1 rounded-full text-sm ${
+                  className={`px-3 py-1 rounded-full text-xs font-medium ${
                     product.autoExtends
                       ? "bg-green-100 text-green-800"
                       : "bg-gray-100 text-gray-600"
@@ -406,7 +435,7 @@ const AdminProductDetailsContainer: React.FC<
                   {product.autoExtends ? "✓" : "✗"} Auto-extend
                 </span>
                 <span
-                  className={`px-3 py-1 rounded-full text-sm ${
+                  className={`px-3 py-1 rounded-full text-xs font-medium ${
                     product.allowUnratedBidders
                       ? "bg-green-100 text-green-800"
                       : "bg-gray-100 text-gray-600"
@@ -417,25 +446,56 @@ const AdminProductDetailsContainer: React.FC<
               </div>
             </div>
 
-            {/* Order Info (if exists) */}
+            {/* Action Buttons */}
+            <div className="space-y-3">
+              <button
+                onClick={() => setIsEditModalOpen(true)}
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-primary-blue text-white rounded-lg hover:bg-primary-blue-dark transition font-medium"
+              >
+                <Edit2 className="w-5 h-5" />
+                Edit Product
+              </button>
+
+              {canExtend && (
+                <button
+                  onClick={() => setIsExtendModalOpen(true)}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-medium"
+                >
+                  <Clock className="w-5 h-5" />
+                  Extend Time
+                </button>
+              )}
+
+              {canDelete && (
+                <button
+                  onClick={() => setIsDeleteModalOpen(true)}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition font-medium"
+                >
+                  <Trash2 className="w-5 h-5" />
+                  Delete Product
+                </button>
+              )}
+            </div>
+
+            {/* Transaction Details (if order exists) */}
             {order && (
-              <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
-                <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-                  <ShoppingBag className="w-5 h-5" />
+              <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
+                <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-4 flex items-center gap-2">
+                  <ShoppingBag className="w-4 h-4" />
                   Transaction Details
-                </h2>
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                </h3>
+                <div className="space-y-3 text-sm">
+                  <div className="flex justify-between py-2 border-b border-gray-100">
                     <span className="text-gray-600">Order ID:</span>
-                    <span className="font-medium font-mono text-sm">{order._id}</span>
+                    <span className="font-medium font-mono text-xs">{order._id}</span>
                   </div>
-                  <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                  <div className="flex justify-between py-2 border-b border-gray-100">
                     <span className="text-gray-600">Status:</span>
                     <span className="font-medium">
                       {order.status.replace(/_/g, " ")}
                     </span>
                   </div>
-                  <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                  <div className="flex justify-between py-2 border-b border-gray-100">
                     <span className="text-gray-600">Buyer:</span>
                     <span className="font-medium">
                       {order.buyer && typeof order.buyer === "object"
@@ -444,9 +504,9 @@ const AdminProductDetailsContainer: React.FC<
                     </span>
                   </div>
                   {order.shippingAddress && (
-                    <div className="flex justify-between items-start py-2">
-                      <span className="text-gray-600">Shipping Address:</span>
-                      <span className="font-medium text-right max-w-xs">
+                    <div className="flex justify-between py-2">
+                      <span className="text-gray-600">Shipping:</span>
+                      <span className="font-medium text-right max-w-[200px]">
                         {order.shippingAddress}
                       </span>
                     </div>
@@ -491,42 +551,6 @@ const AdminProductDetailsContainer: React.FC<
                 </div>
               </details>
             )}
-        </div>
-
-        {/* Bid History */}
-        <div className="mt-10 bg-white rounded-lg shadow-sm border border-gray-100 p-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">
-            Bid History ({bidHistory.length})
-          </h2>
-          {bidHistory.length === 0 ? (
-            <p className="text-gray-500 text-center py-8">No bids yet</p>
-          ) : (
-            <div className="space-y-2 max-h-96 overflow-y-auto">
-              {bidHistory.map((bid) => (
-                <div
-                  key={bid._id}
-                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition"
-                >
-                  <div>
-                    <p className="font-medium text-gray-900">
-                      {bid.bidder.name}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      Rating: {bid.bidder.rating?.toFixed(1) || "N/A"}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-bold text-green-600">
-                      {formatPrice(bid.price)}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      {formatDateTime(bid.createdAt)}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
         </div>
 
         {/* Q&A Section */}
@@ -581,6 +605,14 @@ const AdminProductDetailsContainer: React.FC<
         hasActiveBids={hasActiveBids}
       />
 
+      <AdminBidHistoryModal
+        isOpen={isBidHistoryOpen}
+        onClose={() => setIsBidHistoryOpen(false)}
+        bidHistory={bidHistory}
+        currentBidderId={currentBidderId}
+        winnerConfirmed={Boolean(product.winnerConfirmed)}
+      />
+
       <PopUpWindow
         isOpen={isExtendModalOpen}
         onClose={() => setIsExtendModalOpen(false)}
@@ -615,7 +647,7 @@ const AdminProductDetailsContainer: React.FC<
         onClose={() => setIsDeleteModalOpen(false)}
         onConfirm={handleDeleteProduct}
         title="Delete Product"
-        message="Are you sure you want to delete this product? This will also remove all associated bids, auto-bids, and watchlist entries. This action cannot be undone."
+        message={getDeleteWarningMessage()}
         confirmText="Delete"
         type="danger"
       />

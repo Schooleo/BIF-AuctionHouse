@@ -132,8 +132,9 @@ const AdminProductEditModal: React.FC<AdminProductEditModalProps> = ({
       onSubmit={handleSubmit}
       isLoading={loading}
       size="xl"
+      noPadding={true}
     >
-      <div className="space-y-6 max-h-[70vh] overflow-y-auto px-1">
+      <div className="space-y-6 max-h-[70vh] overflow-y-auto p-6">
         {hasActiveBids && (
           <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm text-amber-800">
             This auction has active bids. Only description, end time, and settings can be updated.
