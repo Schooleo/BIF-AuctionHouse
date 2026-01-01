@@ -46,7 +46,8 @@ const AdminProductDetailsContainer: React.FC<
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isExtendModalOpen, setIsExtendModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [isBidHistoryOpen, setIsBidHistoryOpen] = useState(false); // Add this
+  const [isBidHistoryOpen, setIsBidHistoryOpen] = useState(false);
+  const [questionToDelete, setQuestionToDelete] = useState<{ id: string; question: string } | null>(null); // Add this
 
   const [newEndTime, setNewEndTime] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
@@ -117,6 +118,22 @@ const AdminProductDetailsContainer: React.FC<
     } finally {
       setActionLoading(false);
       setIsDeleteModalOpen(false);
+    }
+  };
+
+  const handleDeleteQuestion = async () => {
+    if (!questionToDelete) return;
+
+    try {
+      setActionLoading(true);
+      await adminApi.deleteProductQuestion(id, questionToDelete.id);
+      addAlert("success", "Question deleted successfully");
+      setQuestionToDelete(null);
+      await fetchDetails();
+    } catch (err: any) {
+      addAlert("error", err.message || "Failed to delete question");
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -565,8 +582,22 @@ const AdminProductDetailsContainer: React.FC<
               {product.questions.map((qa) => (
                 <div
                   key={qa._id}
-                  className="border-l-4 border-blue-500 pl-4 py-2"
+                  className="border-l-4 border-blue-500 pl-4 py-2 relative group"
                 >
+                  {/* Delete Button */}
+                  <button
+                    onClick={() =>
+                      setQuestionToDelete({
+                        id: qa._id,
+                        question: qa.question,
+                      })
+                    }
+                    className="absolute -right-2 -top-2 p-2 bg-red-50 text-red-600 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-100 shadow-sm border border-red-200"
+                    title="Delete question"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+
                   <div className="mb-2">
                     <p className="font-medium text-gray-900">
                       Q: {qa.question}
@@ -648,6 +679,17 @@ const AdminProductDetailsContainer: React.FC<
         onConfirm={handleDeleteProduct}
         title="Delete Product"
         message={getDeleteWarningMessage()}
+        confirmText="Delete"
+        type="danger"
+      />
+
+      {/* Question Delete Confirmation */}
+      <ConfirmationModal
+        isOpen={!!questionToDelete}
+        onClose={() => setQuestionToDelete(null)}
+        onConfirm={handleDeleteQuestion}
+        title="Delete Question"
+        message={`Are you sure you want to delete this question?\n\n"${questionToDelete?.question}"\n\nThis action cannot be undone.`}
         confirmText="Delete"
         type="danger"
       />

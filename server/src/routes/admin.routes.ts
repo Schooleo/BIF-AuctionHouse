@@ -29,6 +29,7 @@ import {
   updateProduct,
   extendProductEndTime,
   deleteProduct,
+  deleteProductQuestion, // Add this
 } from "../controllers/admin.controller";
 import { protect } from "../middleware/auth.middleware";
 import { validate } from "../middleware/validate";
@@ -48,6 +49,7 @@ router.get("/products/:id", getProductDetails);
 router.patch("/products/:id", validate(updateProductSchema, "body"), updateProduct);
 router.post("/products/:id/extend", validate(extendEndTimeSchema, "body"), extendProductEndTime);
 router.delete("/products/:id", deleteProduct);
+router.delete("/products/:productId/questions/:questionId", deleteProductQuestion); // Add this
 
 router.get("/categories", listCategories);
 router.post("/categories", createCategory);

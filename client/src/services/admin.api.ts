@@ -489,4 +489,15 @@ export const adminApi = {
     return handleResponse(res);
   },
 
+  deleteProductQuestion: async (productId: string, questionId: string): Promise<{ message: string }> => {
+    const response = await fetch(
+      `${API_BASE}/api/admin/products/${productId}/questions/${questionId}`,
+      {
+        method: "DELETE",
+        headers: getAuthHeaders(),
+      }
+    );
+    return handleResponse<{ message: string }>(response);
+  },
+
 };
