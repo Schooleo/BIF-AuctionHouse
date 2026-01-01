@@ -88,7 +88,8 @@ export const removeProduct = async (req: Request, res: Response) => {
 // Get users with filtering and pagination
 export const getUsers = async (req: Request, res: Response) => {
   try {
-    const { page, limit, search, role, status, sortBy, sortOrder, viewTrash } = req.query;
+    const { page, limit, search, role, status, sortBy, sortOrder, viewTrash } =
+      req.query;
 
     // Build params object
     const params: UserSearchParams = {
@@ -157,7 +158,10 @@ export const createUser = async (req: Request, res: Response) => {
 
     res.status(201).json({ message: "User created successfully", user });
   } catch (error: any) {
-    if (error.message.includes("duplicate key") || error.message.includes("already exists")) {
+    if (
+      error.message.includes("duplicate key") ||
+      error.message.includes("already exists")
+    ) {
       res.status(400).json({ message: "Email already exists" });
       return;
     }
@@ -207,7 +211,7 @@ export const blockUser = async (req: Request, res: Response) => {
       "Cannot block admin accounts",
       "User is already blocked",
     ];
-    
+
     if (knownErrors.includes(error.message)) {
       res.status(400).json({ message: error.message });
       return;
@@ -229,11 +233,8 @@ export const unblockUser = async (req: Request, res: Response) => {
     const result = await AdminService.unblockUser(id);
     res.status(200).json(result);
   } catch (error: any) {
-    const knownErrors = [
-      "User not found",
-      "User is already active",
-    ];
-    
+    const knownErrors = ["User not found", "User is already active"];
+
     if (knownErrors.includes(error.message)) {
       res.status(400).json({ message: error.message });
       return;
@@ -265,7 +266,7 @@ export const deleteUser = async (req: Request, res: Response) => {
       "Cannot delete seller with active auctions",
       "Cannot delete seller with pending auction results. Please ensure all ended auctions have been processed.",
     ];
-    
+
     if (knownErrors.includes(error.message)) {
       res.status(400).json({ message: error.message });
       return;
@@ -274,14 +275,19 @@ export const deleteUser = async (req: Request, res: Response) => {
   }
 };
 
-export const manageUserUpgradeRequests = async (req: Request, res: Response) => {
+export const manageUserUpgradeRequests = async (
+  req: Request,
+  res: Response
+) => {
   try {
     const { page, limit, status, search, sortBy } = req.query;
 
     const params = {
       page: page ? Number(page) : 1,
       limit: limit ? Number(limit) : 10,
-      ...(status && { status: String(status) as "pending" | "approved" | "rejected" }),
+      ...(status && {
+        status: String(status) as "pending" | "approved" | "rejected",
+      }),
       ...(search && { search: String(search) }),
       ...(sortBy && { sortBy: String(sortBy) as "newest" | "oldest" }),
     };
@@ -352,7 +358,13 @@ export const listOrders = async (req: Request, res: Response) => {
     const sort = (req.query.sort as string) || "newest";
     const search = (req.query.q as string) || (req.query.search as string);
 
-    const result = await AdminService.listOrdersPaginated(page, limit, filter, sort, search);
+    const result = await AdminService.listOrdersPaginated(
+      page,
+      limit,
+      filter,
+      sort,
+      search
+    );
     res.status(200).json(result);
   } catch (error) {
     console.error(error);
@@ -436,5 +448,108 @@ export const updateSystemConfig = async (req: Request, res: Response) => {
     res.status(200).json(config);
   } catch (error: any) {
     res.status(400).json({ message: "Error updating system config" });
+  }
+};
+
+// ==========================================
+// NEW: Linked Account & Extended User Stats
+// ==========================================
+
+// Get linked account profile for upgraded accounts
+export const getLinkedAccountProfile = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    if (!id) {
+      res.status(400).json({ message: "User ID is required" });
+      return;
+    }
+
+    const result = await AdminService.getLinkedAccountProfile(id);
+    res.status(200).json(result);
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+// Get user products (seller: their products, bidder: participated auctions)
+export const getUserProducts = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { role, page, limit } = req.query;
+
+    if (!id) {
+      res.status(400).json({ message: "User ID is required" });
+      return;
+    }
+
+    if (!role || !["seller", "bidder"].includes(role as string)) {
+      res.status(400).json({ message: "Role must be 'seller' or 'bidder'" });
+      return;
+    }
+
+    const result = await AdminService.getUserProducts(
+      id,
+      role as "seller" | "bidder",
+      page ? Number(page) : 1,
+      limit ? Number(limit) : 10
+    );
+    res.status(200).json(result);
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+// Get user's orders summary by status
+export const getUserOrdersSummary = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    if (!id) {
+      res.status(400).json({ message: "User ID is required" });
+      return;
+    }
+
+    const result = await AdminService.getUserOrdersSummary(id);
+    res.status(200).json(result);
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+// Update review comment
+export const updateReview = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { comment } = req.body;
+
+    if (!id) {
+      res.status(400).json({ message: "Review ID is required" });
+      return;
+    }
+
+    if (!comment || typeof comment !== "string") {
+      res.status(400).json({ message: "Comment is required" });
+      return;
+    }
+
+    const result = await AdminService.updateReview(id, comment);
+    res.status(200).json(result);
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+// Delete review
+export const deleteReview = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    if (!id) {
+      res.status(400).json({ message: "Review ID is required" });
+      return;
+    }
+
+    const result = await AdminService.deleteReview(id);
+    res.status(200).json(result);
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
   }
 };

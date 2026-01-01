@@ -24,6 +24,12 @@ import {
   deleteOrderMessage,
   getSystemConfig,
   updateSystemConfig,
+  // New: Extended user management
+  getLinkedAccountProfile,
+  getUserProducts,
+  getUserOrdersSummary,
+  updateReview,
+  deleteReview,
 } from "../controllers/admin.controller";
 import { protect } from "../middleware/auth.middleware";
 
@@ -48,15 +54,27 @@ router.patch("/users/:id/update", updateUser);
 router.post("/users/:id/block", blockUser);
 router.post("/users/:id/unblock", unblockUser);
 router.delete("/users/:id/delete", deleteUser);
+
+// NEW: Extended user routes
+router.get("/users/:id/linked-profile", getLinkedAccountProfile);
+router.get("/users/:id/products", getUserProducts);
+router.get("/users/:id/orders-summary", getUserOrdersSummary);
+
+// Upgrade Request Routes
 router.get("/upgrade-requests", manageUserUpgradeRequests);
 router.post("/upgrade-requests/:id/approve", approveUserUpgrade);
 router.post("/upgrade-requests/:id/reject", rejectUserUpgrade);
 
+// Order Routes
 router.get("/orders", listOrders);
 router.get("/orders/:id", getOrderDetails);
 router.post("/orders/:id/cancel", cancelOrder);
 router.post("/orders/:id/chat", adminSendMessage);
 router.delete("/orders/:id/chat/:messageId", deleteOrderMessage);
+
+// NEW: Review Management Routes
+router.patch("/reviews/:id", updateReview);
+router.delete("/reviews/:id", deleteReview);
 
 // System Config Routes
 router.get("/config", getSystemConfig);

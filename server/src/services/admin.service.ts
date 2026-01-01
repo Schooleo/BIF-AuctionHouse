@@ -52,7 +52,10 @@ export const getDashboardStats = async (timeRange: string = "24h") => {
   ]);
   const userStats = {
     total: users.reduce((acc, curr) => acc + curr.count, 0),
-    byRole: users.reduce((acc, curr) => ({ ...acc, [curr._id]: curr.count }), {}),
+    byRole: users.reduce(
+      (acc, curr) => ({ ...acc, [curr._id]: curr.count }),
+      {}
+    ),
   };
 
   // 2. Product Stats
@@ -204,7 +207,8 @@ export const getDashboardStats = async (timeRange: string = "24h") => {
   const autoBidsByHour = await AutoBid.aggregate(autoBidPipeline);
 
   // Top 10 Bids (Recent within range or Overall if 'all')
-  const top10Match = timeRange === "all" ? {} : { createdAt: { $gte: startDate } };
+  const top10Match =
+    timeRange === "all" ? {} : { createdAt: { $gte: startDate } };
 
   const top10Bids = await Bid.find(top10Match)
     .sort({ price: -1 })
@@ -238,14 +242,17 @@ export const getAllUsers = async (params: UserSearchParams) => {
     role,
     status,
     sortBy = "createdAt",
-    sortOrder = "desc"
+    sortOrder = "desc",
   } = params;
 
   const query: any = {};
 
   // Search by name or email
   if (search) {
-    query.$or = [{ name: { $regex: search, $options: "i" } }, { email: { $regex: search, $options: "i" } }];
+    query.$or = [
+      { name: { $regex: search, $options: "i" } },
+      { email: { $regex: search, $options: "i" } },
+    ];
   }
 
   // Filter by role
@@ -482,7 +489,10 @@ export const deleteUser = async (userId: string, adminId?: string) => {
   return { message: "User deleted successfully", userId };
 };
 
-export const getUserDetail = async (userId: string, options: { page?: number; limit?: number } = {}) => {
+export const getUserDetail = async (
+  userId: string,
+  options: { page?: number; limit?: number } = {}
+) => {
   const { page = 1, limit = 10 } = options;
 
   const user = await User.findById(userId).select("-password -googleId");
@@ -498,49 +508,53 @@ export const getUserDetail = async (userId: string, options: { page?: number; li
   const skip = (page - 1) * limit;
 
   // Parallel Fetching
-  const [bids, reviewsData, totalReviews, products, statsAggregation] = await Promise.all([
-    // 1. Bid History (Last 10)
-    Bid.find({ bidder: userId })
-      .sort({ createdAt: -1 })
-      .limit(10)
-      .populate("product", "name endTime currentPrice winnerConfirmed currentBidder")
-      .lean(),
+  const [bids, reviewsData, totalReviews, products, statsAggregation] =
+    await Promise.all([
+      // 1. Bid History (Last 10)
+      Bid.find({ bidder: userId })
+        .sort({ createdAt: -1 })
+        .limit(10)
+        .populate(
+          "product",
+          "name endTime currentPrice winnerConfirmed currentBidder"
+        )
+        .lean(),
 
-    // 2. Paginated Reviews (ALL types: + and -)
-    Rating.find({ ratee: userId })
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit)
-      .populate("rater", "name avatar")
-      .lean(),
+      // 2. Paginated Reviews (ALL types: + and -)
+      Rating.find({ ratee: userId })
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .populate("rater", "name avatar")
+        .lean(),
 
-    // 4. Total review count
-    Rating.countDocuments({ ratee: userId }),
+      // 4. Total review count
+      Rating.countDocuments({ ratee: userId }),
 
-    // 5. Selling Info (If Seller) - Active products
-    user.role === "seller"
-      ? Product.find({ seller: userId, endTime: { $gt: new Date() } })
-          .select("name currentPrice mainImage endTime bidCount")
-          .limit(10)
-          .lean()
-      : Promise.resolve([]),
+      // 5. Selling Info (If Seller) - Active products
+      user.role === "seller"
+        ? Product.find({ seller: userId, endTime: { $gt: new Date() } })
+            .select("name currentPrice mainImage endTime bidCount")
+            .limit(10)
+            .lean()
+        : Promise.resolve([]),
 
-    // 6. Stats from actual ratings (not user fields which may be stale)
-    Rating.aggregate([
-      { $match: { ratee: new mongoose.Types.ObjectId(userId) } },
-      {
-        $group: {
-          _id: null,
-          positiveCount: {
-            $sum: { $cond: [{ $eq: ["$score", 1] }, 1, 0] },
-          },
-          negativeCount: {
-            $sum: { $cond: [{ $eq: ["$score", -1] }, 1, 0] },
+      // 6. Stats from actual ratings (not user fields which may be stale)
+      Rating.aggregate([
+        { $match: { ratee: new mongoose.Types.ObjectId(userId) } },
+        {
+          $group: {
+            _id: null,
+            positiveCount: {
+              $sum: { $cond: [{ $eq: ["$score", 1] }, 1, 0] },
+            },
+            negativeCount: {
+              $sum: { $cond: [{ $eq: ["$score", -1] }, 1, 0] },
+            },
           },
         },
-      },
-    ]),
-  ]);
+      ]),
+    ]);
 
   // Process Bids to determine status from admin perspective
   // Status represents the state of INDIVIDUAL BID, not the auction
@@ -557,7 +571,9 @@ export const getUserDetail = async (userId: string, options: { page?: number; li
 
       if (isEnded) {
         // Auction has ended - determine if this bid won or lost
-        const isWinner = product.currentBidder?.toString() === userId && bid.price === product.currentPrice;
+        const isWinner =
+          product.currentBidder?.toString() === userId &&
+          bid.price === product.currentPrice;
         status = isWinner ? BidStatus.WON : BidStatus.LOST;
       } else {
         // Auction is still ongoing - check if bid is leading or outbid
@@ -624,6 +640,246 @@ export const updateUser = async (userId: string, data: any) => {
   return user;
 };
 
+// ==========================================
+// NEW: Linked Account & Extended User Stats
+// ==========================================
+
+/**
+ * Get linked account profile for upgraded accounts (seller <-> bidder)
+ */
+export const getLinkedAccountProfile = async (
+  userId: string,
+  options: { page?: number; limit?: number } = {}
+) => {
+  const { page = 1, limit = 10 } = options;
+
+  const user = await User.findById(userId).select("-password -googleId");
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  if (!user.isUpgradedAccount || !user.linkedAccountId) {
+    throw new Error(
+      "This account is not an upgraded account with linked profile"
+    );
+  }
+
+  // Call getUserDetail for the linked account to get complete data
+  const linkedUserDetail = await getUserDetail(
+    user.linkedAccountId.toString(),
+    {
+      page,
+      limit,
+    }
+  );
+
+  return linkedUserDetail;
+};
+
+/**
+ * Get user products based on role
+ * - Seller: Products they created
+ * - Bidder: Auctions they participated in (placed bids)
+ */
+export const getUserProducts = async (
+  userId: string,
+  role: "seller" | "bidder",
+  page: number = 1,
+  limit: number = 10
+) => {
+  const skip = (page - 1) * limit;
+  const now = new Date();
+
+  if (role === "seller") {
+    // Get seller's products
+    const [products, total] = await Promise.all([
+      Product.find({ seller: userId })
+        .select("name currentPrice mainImage endTime startTime bidCount winner")
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      Product.countDocuments({ seller: userId }),
+    ]);
+
+    // Add status to each product
+    const productsWithStatus = products.map((product: any) => {
+      let status = "scheduled";
+      if (
+        new Date(product.startTime) <= now &&
+        new Date(product.endTime) > now
+      ) {
+        status = "ongoing";
+      } else if (new Date(product.endTime) <= now) {
+        status = product.winner ? "sold" : "ended";
+      }
+      return { ...product, status };
+    });
+
+    return {
+      products: productsWithStatus,
+      total,
+      totalPages: Math.ceil(total / limit),
+      page,
+    };
+  } else {
+    // Get bidder's participated auctions (products they bid on)
+    const bidProducts = await Bid.aggregate([
+      { $match: { bidder: new mongoose.Types.ObjectId(userId) } },
+      {
+        $group: {
+          _id: "$product",
+          lastBidAmount: { $max: "$price" },
+          bidCount: { $sum: 1 },
+        },
+      },
+      { $sort: { lastBidAmount: -1 } },
+      { $skip: skip },
+      { $limit: limit },
+      {
+        $lookup: {
+          from: "products",
+          localField: "_id",
+          foreignField: "_id",
+          as: "productInfo",
+        },
+      },
+      { $unwind: "$productInfo" },
+      {
+        $project: {
+          _id: "$productInfo._id",
+          name: "$productInfo.name",
+          currentPrice: "$productInfo.currentPrice",
+          mainImage: "$productInfo.mainImage",
+          endTime: "$productInfo.endTime",
+          startTime: "$productInfo.startTime",
+          myBidCount: "$bidCount",
+          myHighestBid: "$lastBidAmount",
+          winner: "$productInfo.winner",
+          currentBidder: "$productInfo.currentBidder",
+        },
+      },
+    ]);
+
+    const total = await Bid.aggregate([
+      { $match: { bidder: new mongoose.Types.ObjectId(userId) } },
+      { $group: { _id: "$product" } },
+      { $count: "total" },
+    ]);
+
+    // Add status to each product
+    const productsWithStatus = bidProducts.map((product: any) => {
+      let status = "ongoing";
+      const isEnded = new Date(product.endTime) <= now;
+      const isWinner =
+        product.currentBidder?.toString() === userId ||
+        product.winner?.toString() === userId;
+
+      if (isEnded) {
+        status = isWinner ? "won" : "lost";
+      } else {
+        status =
+          product.currentBidder?.toString() === userId ? "leading" : "outbid";
+      }
+      return { ...product, status };
+    });
+
+    return {
+      products: productsWithStatus,
+      total: total[0]?.total || 0,
+      totalPages: Math.ceil((total[0]?.total || 0) / limit),
+      page,
+    };
+  }
+};
+
+/**
+ * Get user's orders summary grouped by status
+ */
+export const getUserOrdersSummary = async (userId: string) => {
+  const user = await User.findById(userId);
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  // Determine query based on role
+  const queryField = user.role === "seller" ? "seller" : "buyer";
+
+  const ordersSummary = await Order.aggregate([
+    { $match: { [queryField]: new mongoose.Types.ObjectId(userId) } },
+    {
+      $group: {
+        _id: "$status",
+        count: { $sum: 1 },
+      },
+    },
+  ]);
+
+  // Convert to object with all status keys
+  const summary: Record<string, number> = {
+    PENDING_PAYMENT: 0,
+    PAID_CONFIRMED: 0,
+    SHIPPED: 0,
+    RECEIVED: 0,
+    COMPLETED: 0,
+    CANCELLED: 0,
+  };
+
+  ordersSummary.forEach((item: any) => {
+    summary[item._id] = item.count;
+  });
+
+  const total = Object.values(summary).reduce((a, b) => a + b, 0);
+
+  return { summary, total, role: user.role };
+};
+
+/**
+ * Update review comment by admin
+ */
+export const updateReview = async (reviewId: string, comment: string) => {
+  const review = await Rating.findById(reviewId);
+  if (!review) {
+    throw new Error("Review not found");
+  }
+
+  review.comment = comment;
+  await review.save();
+
+  // Return updated review with populated fields
+  const updatedReview = await Rating.findById(reviewId)
+    .populate("rater", "name avatar")
+    .populate("ratee", "name avatar")
+    .populate("product", "name mainImage");
+
+  return updatedReview;
+};
+
+/**
+ * Delete review by admin (will cascade to update user reputation via model hooks)
+ */
+export const deleteReview = async (reviewId: string) => {
+  const review = await Rating.findById(reviewId);
+  if (!review) {
+    throw new Error("Review not found");
+  }
+
+  // Use findOneAndDelete to trigger the post hook for reputation update
+  await Rating.findOneAndDelete({ _id: reviewId });
+
+  // Recalculate ratee's reputation score
+  const rateeId = review.ratee;
+  const ratee = await User.findById(rateeId);
+  if (ratee) {
+    const totalRatings = ratee.positiveRatings + ratee.negativeRatings;
+    ratee.reputationScore =
+      totalRatings === 0 ? 0 : ratee.positiveRatings / totalRatings;
+    await ratee.save();
+  }
+
+  return { message: "Review deleted successfully", reviewId };
+};
+
 export const listOrdersPaginated = async (
   page: number,
   limit: number,
@@ -673,7 +929,10 @@ export const listOrdersPaginated = async (
   ];
 
   if (search) {
-    const searchRegex = new RegExp(search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
+    const searchRegex = new RegExp(
+      search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
+      "i"
+    );
     pipeline.push({
       $addFields: {
         orderIdStr: { $toString: "$_id" },
@@ -782,7 +1041,11 @@ export const cancelOrder = async (id: string) => {
   return order;
 };
 
-export const adminSendMessage = async (orderId: string, content: string, adminId: string) => {
+export const adminSendMessage = async (
+  orderId: string,
+  content: string,
+  adminId: string
+) => {
   const order = await Order.findById(orderId);
   if (!order) throw new Error("Order not found");
 
@@ -811,7 +1074,10 @@ export const deleteChatMessage = async (orderId: string, messageId: string) => {
   const chat = await Chat.findById(order.chat);
   if (!chat) throw new Error("Chat not found");
 
-  await Chat.updateOne({ _id: order.chat }, { $pull: { messages: { _id: messageId } } });
+  await Chat.updateOne(
+    { _id: order.chat },
+    { $pull: { messages: { _id: messageId } } }
+  );
 
   return true;
 };
@@ -888,7 +1154,10 @@ export const getAllUpgradeRequests = async (params: {
           priority = 1;
         }
         // Priority 2: Username match
-        else if (requestObj.user && searchRegex.test((requestObj.user as any).name)) {
+        else if (
+          requestObj.user &&
+          searchRegex.test((requestObj.user as any).name)
+        ) {
           priority = 2;
         }
         // Priority 3: Reasons match
@@ -1082,7 +1351,10 @@ export const getAllUpgradeRequests = async (params: {
 /**
  * Approve upgrade request - create new seller account
  */
-export const approveUpgradeRequest = async (requestId: string, adminId: string) => {
+export const approveUpgradeRequest = async (
+  requestId: string,
+  adminId: string
+) => {
   const request = await UpgradeRequest.findById(requestId).populate("user");
   if (!request) {
     throw new Error("Upgrade request not found");
@@ -1140,7 +1412,10 @@ export const approveUpgradeRequest = async (requestId: string, adminId: string) 
   await bidderUser.save();
 
   // Update seller with linkedAccountId
-  await User.collection.updateOne({ _id: sellerId }, { $set: { linkedAccountId: bidderUser._id } });
+  await User.collection.updateOne(
+    { _id: sellerId },
+    { $set: { linkedAccountId: bidderUser._id } }
+  );
 
   // Update request status
   request.status = "approved";
@@ -1160,7 +1435,11 @@ export const approveUpgradeRequest = async (requestId: string, adminId: string) 
 /**
  * Reject upgrade request
  */
-export const rejectUpgradeRequest = async (requestId: string, adminId: string, reason: string) => {
+export const rejectUpgradeRequest = async (
+  requestId: string,
+  adminId: string,
+  reason: string
+) => {
   const request = await UpgradeRequest.findById(requestId);
   if (!request) {
     throw new Error("Upgrade request not found");
