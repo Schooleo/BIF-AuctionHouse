@@ -161,11 +161,19 @@ const AdminOrderDetailsContainer: React.FC = () => {
           {/* Profiles */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <UserProfileSection
-              user={order.sellerInfo || (order.seller as unknown as SimpleUser)}
+              user={
+                order.sellerInfo ||
+                (order.seller as unknown as SimpleUser) ||
+                null
+              }
               role="Seller"
             />
             <UserProfileSection
-              user={order.buyerInfo || (order.buyer as unknown as SimpleUser)}
+              user={
+                order.buyerInfo ||
+                (order.buyer as unknown as SimpleUser) ||
+                null
+              }
               role="Bidder"
             />
           </div>

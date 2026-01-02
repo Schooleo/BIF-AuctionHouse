@@ -1,5 +1,6 @@
 import { User } from "../models/user.model";
 import { OtpModel } from "../models/otp.model";
+import { BlacklistedEmail } from "../models/blacklistedEmail.model";
 import { generateToken } from "../utils/jwt.util";
 import { sendOTPEmail, sendPasswordResetOTPEmail } from "../utils/email.util";
 import { verifyRecaptcha } from "../utils/recaptcha.util";
@@ -16,10 +17,21 @@ export const authService = {
       name: user.name,
       email: user.email,
       role: user.role,
+      status: user.status,
+      avatar: user.avatar,
+      address: user.address,
+      dateOfBirth: user.dateOfBirth,
+      contactEmail: user.contactEmail,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
       positiveRatings: user.positiveRatings,
       negativeRatings: user.negativeRatings,
       reputationScore: user.reputationScore,
       googleId: user.googleId,
+      isUpgradedAccount: user.isUpgradedAccount,
+      linkedAccountId: user.linkedAccountId,
+      blockReason: user.blockReason,
+      blockedAt: user.blockedAt,
     };
   },
 
@@ -28,6 +40,18 @@ export const authService = {
 
     if (from === "register" && existing) {
       throw new Error(AuthMessages.EMAIL_REGISTERED);
+    }
+
+    // Check if email is blacklisted (for registration)
+    if (from === "register") {
+      const blacklisted = await BlacklistedEmail.findOne({
+        email: email.toLowerCase(),
+      });
+      if (blacklisted) {
+        throw new Error(
+          "This email has been permanently deleted from our system."
+        );
+      }
     }
 
     if (from === "reset-password" && !existing) {
@@ -146,6 +170,14 @@ export const authService = {
       throw new Error("No email found from Google profile");
     }
 
+    // Check if email or googleId is blacklisted
+    const blacklisted = await BlacklistedEmail.findOne({
+      $or: [{ email: email.toLowerCase() }, { googleId: profile.id }],
+    });
+    if (blacklisted) {
+      throw new Error("This account has been permanently deleted.");
+    }
+
     const existingUser = await User.findOne({ email });
 
     if (existingUser) {
@@ -182,5 +214,47 @@ export const authService = {
       role: user.role,
       email: user.email,
     });
+  },
+
+  /**
+   * Switch between linked accounts (bidder <-> seller)
+   */
+  async switchAccount(userId: string) {
+    const user = await User.findById(userId);
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    if (!user.isUpgradedAccount || !user.linkedAccountId) {
+      throw new Error("This account is not linked to another account");
+    }
+
+    const linkedAccount = await User.findById(user.linkedAccountId);
+    if (!linkedAccount) {
+      throw new Error("Linked account not found");
+    }
+
+    // Generate new token for linked account
+    const token = generateToken({
+      id: (linkedAccount as any)._id.toString(),
+      role: linkedAccount.role,
+      email: linkedAccount.email,
+    });
+
+    return {
+      user: {
+        id: linkedAccount._id,
+        name: linkedAccount.name,
+        email: linkedAccount.email,
+        role: linkedAccount.role,
+        positiveRatings: linkedAccount.positiveRatings,
+        negativeRatings: linkedAccount.negativeRatings,
+        reputationScore: linkedAccount.reputationScore,
+        googleId: linkedAccount.googleId,
+        isUpgradedAccount: linkedAccount.isUpgradedAccount,
+        linkedAccountId: linkedAccount.linkedAccountId,
+      },
+      token,
+    };
   },
 };

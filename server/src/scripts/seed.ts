@@ -232,6 +232,7 @@ const seed = async () => {
     address: "Admin HQ",
     dateOfBirth: new Date("1985-01-15"),
     contactEmail: "admin.contact@gmail.com",
+    status: "ACTIVE",
   });
 
   const seller1 = await User.create({
@@ -245,6 +246,7 @@ const seed = async () => {
     contactEmail: "techworld.contact@gmail.com",
     positiveRatings: 0,
     negativeRatings: 0,
+    status: "ACTIVE",
   });
 
   const seller2 = await User.create({
@@ -257,10 +259,11 @@ const seed = async () => {
     dateOfBirth: new Date("1988-08-10"),
     positiveRatings: 0,
     negativeRatings: 0,
+    status: "ACTIVE",
   });
 
-  // Tạo Bidders
-  let bidders = [];
+  // Tạo Bidders (Existing 5 bidders)
+  let bidders: any[] = [];
   for (let i = 1; i <= NUM_BIDDERS; i++) {
     const hex = `64b0f1a9e1b9b1a2b3c4d5f${i}`;
     const bidderId = new mongoose.Types.ObjectId(hex);
@@ -277,8 +280,31 @@ const seed = async () => {
       positiveRatings: 0,
       negativeRatings: 0,
       reputationScore: 0,
+      status: "ACTIVE",
     });
     bidders.push(bidder);
+  }
+
+  // --- GENERATE FILLER USERS FOR PAGINATION ---
+  console.log("👥 Creating Filler Users for Pagination...");
+  const FILLER_COUNT = 30;
+  for (let i = 1; i <= FILLER_COUNT; i++) {
+    const isSeller = i % 5 === 0; // Every 5th user is a seller
+    const role = isSeller ? "seller" : "bidder";
+    const isBlocked = Math.random() < 0.1; // 10% chance of being blocked
+
+    const user = await User.create({
+      name: `Auto Bidder ${i}`,
+      email: `bidder_auto_${i}@gmail.com`,
+      password: commonPassword,
+      role: role,
+      address: `Auto Address ${i}`,
+      status: isBlocked ? "BLOCKED" : "ACTIVE",
+    });
+
+    if (role === "bidder") {
+      bidders.push(user);
+    }
   }
 
   // --- DUMMY USERS FOR HISTORY ---

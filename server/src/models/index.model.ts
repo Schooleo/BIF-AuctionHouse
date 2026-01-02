@@ -9,3 +9,4 @@ export * from "./systemConfig.model";
 export * from "./order.model";
 export * from "./chat.model";
 export * from "./autoBid.model";
+export * from "./blacklistedEmail.model";
