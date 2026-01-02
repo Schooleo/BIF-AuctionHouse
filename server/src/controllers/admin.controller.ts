@@ -176,6 +176,20 @@ export const cancelOrder = async (req: Request, res: Response) => {
   }
 };
 
+export const deleteOrder = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    if (!id) {
+      res.status(400).json({ message: "ID is required" });
+      return;
+    }
+    await AdminService.deleteOrder(id);
+    res.status(200).json({ message: "Order deleted successfully" });
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
 export const adminSendMessage = async (req: Request, res: Response) => {
   try {
     const { id } = req.params; // Order ID
@@ -187,8 +201,28 @@ export const adminSendMessage = async (req: Request, res: Response) => {
       return;
     }
 
-    const chat = await AdminService.adminSendMessage(id, content, adminId);
-    res.status(200).json(chat);
+    const message = await AdminService.adminSendMessage(id, adminId, content);
+    res.status(201).json(message);
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+export const updateProfile = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user._id;
+    const updatedUser = await AdminService.updateProfile(userId, req.body);
+    res.status(200).json({ profile: updatedUser });
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+export const changePassword = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user._id;
+    await AdminService.changePassword(userId, req.body);
+    res.status(200).json({ message: "Password changed successfully" });
   } catch (error: any) {
     res.status(400).json({ message: error.message });
   }

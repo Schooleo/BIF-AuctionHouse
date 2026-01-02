@@ -1,4 +1,14 @@
 import { handleResponse } from "@utils/handleResponse";
+import type {
+  SimpleUser,
+  DashboardStats,
+  CategoryWithStats,
+  PaginatedCategoriesResponse,
+  IOrder,
+  PaginatedOrdersResponse,
+  SystemConfig,
+  ChatMessage,
+} from "@interfaces/admin";
 
 const API_BASE = import.meta.env.VITE_APP_API_URL || "";
 
@@ -9,156 +19,6 @@ const getAuthHeaders = () => {
     Authorization: `Bearer ${token}`,
   };
 };
-
-export interface DashboardStats {
-  userStats: {
-    total: number;
-    byRole: {
-      bidder?: number;
-      seller?: number;
-      admin?: number;
-      [key: string]: number | undefined;
-    };
-  };
-  productStats: {
-    ongoing: {
-      total: number;
-      byCategory: { name: string; count: number }[];
-    };
-    all: {
-      total: number;
-      byCategory: { name: string; count: number }[];
-    };
-  };
-  orderStats: { status: string; count: number }[];
-  bidStats: {
-    hourly: {
-      _id: { year: number; month: number; day: number; hour: number };
-      count: number;
-    }[];
-    hourlyAuto: {
-      _id: { year: number; month: number; day: number; hour: number };
-      count: number;
-    }[];
-    top10: {
-      _id: string;
-      price: number;
-      product?: { name: string };
-      bidder?: { name: string; email: string };
-      createdAt: string;
-    }[];
-  };
-}
-
-export interface CategoryWithStats {
-  _id: string;
-  name: string;
-  productCount: number;
-  representativeImage: string | null;
-  children: CategoryWithStats[];
-  parent?: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface PaginatedCategoriesResponse {
-  categories: CategoryWithStats[];
-  total: number;
-  totalPages: number;
-  page: number;
-}
-
-export interface ChatMessage {
-  _id: string;
-  sender: {
-    _id: string;
-    name: string;
-    role: string;
-    email?: string;
-  };
-  content: string;
-  timestamp: string;
-  isAdmin?: boolean;
-}
-
-export interface IOrder {
-  _id: string;
-  product:
-    | {
-        _id: string;
-        name: string;
-        mainImage: string;
-        currentPrice?: number;
-        [key: string]: unknown;
-      }
-    | string;
-  seller:
-    | {
-        _id: string;
-        name: string;
-        email?: string;
-        reputation?: number;
-        rating?: number;
-        avatar?: string;
-        [key: string]: unknown;
-      }
-    | string;
-  buyer:
-    | {
-        _id: string;
-        name: string;
-        email?: string;
-        reputation?: number;
-        rating?: number;
-        avatar?: string;
-        [key: string]: unknown;
-      }
-    | string;
-
-  productInfo?: { name: string; mainImage: string; currentPrice?: number };
-  sellerInfo?: {
-    name: string;
-    email?: string;
-    reputation?: number;
-    rating?: number;
-    avatar?: string;
-  };
-  buyerInfo?: {
-    name: string;
-    email?: string;
-    reputation?: number;
-    rating?: number;
-    avatar?: string;
-  };
-
-  status: string;
-  step: number;
-  createdAt: string;
-  updatedAt: string;
-  shippingAddress?: string;
-  paymentProof?: string;
-  buyerNote?: string;
-  shippingProof?: string;
-  sellerNote?: string;
-  chat?: { messages: ChatMessage[] };
-  [key: string]: unknown;
-}
-
-export interface PaginatedOrdersResponse {
-  orders: IOrder[];
-  total: number;
-  totalPages: number;
-  page: number;
-}
-
-export interface SystemConfig {
-  _id: string;
-  auctionExtensionWindow: number;
-  auctionExtensionTime: number;
-  autoBidDelay: number;
-  createdAt: string;
-  updatedAt: string;
-}
 
 export const adminApi = {
   getDashboardStats: async (
@@ -270,6 +130,14 @@ export const adminApi = {
     return handleResponse(response);
   },
 
+  deleteOrder: async (id: string): Promise<void> => {
+    const response = await fetch(`${API_BASE}/api/admin/orders/${id}`, {
+      method: "DELETE",
+      headers: getAuthHeaders(),
+    });
+    return handleResponse(response);
+  },
+
   sendAdminMessage: async (
     id: string,
     content: string
@@ -311,6 +179,27 @@ export const adminApi = {
   }): Promise<SystemConfig> => {
     const response = await fetch(`${API_BASE}/api/admin/config`, {
       method: "PUT",
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data),
+    });
+    return handleResponse(response);
+  },
+
+  updateProfile: async (data: Partial<SimpleUser>) => {
+    const response = await fetch(`${API_BASE}/api/admin/profile`, {
+      method: "PATCH",
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data),
+    });
+    return handleResponse(response);
+  },
+
+  changePassword: async (data: {
+    currentPassword: string;
+    newPassword: string;
+  }) => {
+    const response = await fetch(`${API_BASE}/api/admin/change-password`, {
+      method: "POST",
       headers: getAuthHeaders(),
       body: JSON.stringify(data),
     });

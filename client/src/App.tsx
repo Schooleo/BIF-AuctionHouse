@@ -156,6 +156,11 @@ const App = () => {
                 <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
                   <Route path="admin" element={<AdminLayout />}>
                     <Route index element={<AdminDashboardPage />} />
+                    <Route path="users" element={<AdminUsersPage />} />
+                    <Route
+                      path="users/:id"
+                      element={<AdminUserDetailsPage />}
+                    />
                     <Route path="products" element={<AdminProductsPage />} />
                     <Route
                       path="products/:id"
@@ -173,11 +178,6 @@ const App = () => {
                     <Route
                       path="categories/:id"
                       element={<AdminCategoryDetailsPage />}
-                    />
-                    <Route path="users" element={<AdminUsersPage />} />
-                    <Route
-                      path="users/:id"
-                      element={<AdminUserDetailsPage />}
                     />
                     <Route
                       path="upgrade-requests"

@@ -1,11 +1,13 @@
-import { User } from "../models/user.model";
+import { User, IUser } from "../models/user.model";
 import { Product } from "../models/product.model";
 import { Order } from "../models/order.model";
 import { Bid } from "../models/bid.model";
 import { AutoBid } from "../models/autoBid.model";
 import { Chat } from "../models/chat.model";
 import { SystemConfig } from "../models/systemConfig.model";
+import * as bcrypt from "bcrypt";
 import mongoose from "mongoose";
+import { UpdateProfileDto, ChangePasswordDto } from "../types/admin.types";
 
 export const getDashboardStats = async (timeRange: string = "24h") => {
   const now = new Date();
@@ -447,4 +449,85 @@ export const updateSystemConfig = async (data: {
 
   await config.save();
   return config;
+};
+
+export const deleteOrder = async (orderId: string) => {
+  // 1. Find the order
+  const order = await Order.findById(orderId);
+  if (!order) {
+    throw new Error("Order not found");
+  }
+
+  // 2. Allow deletion only if COMPLETED or CANCELLED
+  if (order.status !== "COMPLETED" && order.status !== "CANCELLED") {
+    throw new Error(
+      "Only COMPLETED or CANCELLED orders can be deleted. Please cancel the order first."
+    );
+  }
+
+  // 3. Delete associated chat
+  // Chat references order in `order` field
+  await Chat.deleteOne({ order: orderId });
+
+  // 4. Reset Product flags
+  // So that the product can potentially be re-auctioned or just to keep data clean
+  if (order.product) {
+    await Product.findByIdAndUpdate(order.product, {
+      transactionCompleted: false,
+      winnerConfirmed: false,
+    });
+  }
+
+  // 5. Delete the order
+  await Order.findByIdAndDelete(orderId);
+};
+
+export const updateProfile = async (userId: string, data: UpdateProfileDto) => {
+  const updatedUser = await User.findByIdAndUpdate(
+    userId,
+    {
+      $set: {
+        name: data.name,
+        contactEmail: data.contactEmail,
+        updateAt: new Date(),
+        address: data.address,
+        dateOfBirth: data.dateOfBirth,
+        avatar: data.avatar,
+      },
+    },
+    { new: true, runValidators: true }
+  ).select("-password -providerId -otp -otpExpires");
+
+  if (!updatedUser) {
+    throw new Error("User not found");
+  }
+
+  return updatedUser;
+};
+
+export const changePassword = async (
+  userId: string,
+  data: ChangePasswordDto
+) => {
+  const user = await User.findById(userId).select("+password");
+  if (!user) throw new Error("User not found");
+
+  if ((user as any).provider === "google" || (user as any).providerId) {
+    throw new Error("Cannot change password for Google account");
+  }
+
+  // Verify old password
+  const isMatch = await bcrypt.compare(data.currentPassword, user.password);
+  if (!isMatch) {
+    throw new Error("Incorrect current password");
+  }
+
+  // Hash new password
+  const salt = await bcrypt.genSalt(10);
+  const hashedPassword = await bcrypt.hash(data.newPassword, salt);
+
+  user.password = hashedPassword;
+  await user.save();
+
+  return true;
 };

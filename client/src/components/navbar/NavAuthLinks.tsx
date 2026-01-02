@@ -13,7 +13,10 @@ export default function NavbarAuthLinks() {
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
         setIsDropdownOpen(false);
       }
     };
@@ -35,7 +38,10 @@ export default function NavbarAuthLinks() {
     // Đã có người dùng đăng nhập
     if (user.role === "bidder") {
       return (
-        <div className="hidden md:flex items-center space-x-6 text-white text-xl" ref={dropdownRef}>
+        <div
+          className="hidden md:flex items-center space-x-6 text-white text-xl"
+          ref={dropdownRef}
+        >
           <Link
             to="/profile?tab=info"
             className="hover:text-primary-yellow hover:scale-110 transition-all duration-200"
@@ -105,11 +111,19 @@ export default function NavbarAuthLinks() {
     }
 
     // Seller hoặc Admin
-    const profileLink = user.role === "seller" ? "/seller/profile" : "/profile";
+    const profileLink =
+      user.role === "seller"
+        ? "/seller/profile"
+        : user.role === "admin"
+          ? "/admin/profile"
+          : "/profile";
 
     return (
       <div className="hidden md:flex items-center space-x-8 text-white text-xl">
-        <Link to={profileLink} className="hover:text-primary-yellow hover:scale-110 transition-all duration-200">
+        <Link
+          to={profileLink}
+          className="hover:text-primary-yellow hover:scale-110 transition-all duration-200"
+        >
           {user.name}
         </Link>
         <button
@@ -135,11 +149,17 @@ export default function NavbarAuthLinks() {
   // Không có người dùng đăng nhập
   return (
     <div className="hidden md:flex items-center space-x-6 text-white text-xl">
-      <Link to="/auth/register" className="hover:text-primary-yellow hover:scale-110 transition-all duration-200">
+      <Link
+        to="/auth/register"
+        className="hover:text-primary-yellow hover:scale-110 transition-all duration-200"
+      >
         Sign Up
       </Link>
       <div className="h-6 w-px bg-white" />
-      <Link to="/auth/login" className="hover:text-primary-yellow hover:scale-110 transition-all duration-200">
+      <Link
+        to="/auth/login"
+        className="hover:text-primary-yellow hover:scale-110 transition-all duration-200"
+      >
         Login
       </Link>
     </div>

@@ -1,9 +1,10 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { adminApi, type SystemConfig } from "../../services/admin.api";
-import { useAlertStore } from "../../stores/useAlertStore";
+import { adminApi } from "@services/admin.api";
+import type { SystemConfig } from "@interfaces/admin";
+import { useAlertStore } from "@stores/useAlertStore";
 import { Settings, Clock, Timer, Gavel, RotateCcw } from "lucide-react";
-import Spinner from "../../components/ui/Spinner";
-import ConfirmationModal from "../../components/ui/ConfirmationModal";
+import Spinner from "@components/ui/Spinner";
+import ConfirmationModal from "@components/ui/ConfirmationModal";
 
 const DEFAULT_WINDOW = 5;
 const DEFAULT_TIME = 10;
