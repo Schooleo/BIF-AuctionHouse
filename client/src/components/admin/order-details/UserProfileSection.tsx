@@ -1,17 +1,10 @@
 import React from "react";
 import { User } from "lucide-react";
-
-export interface SimpleUser {
-  name?: string;
-  avatar?: string;
-  email?: string;
-  reputation?: number;
-  reputationScore?: number;
-  rating?: number;
-}
+import { Link } from "react-router-dom";
+import type { OrderUserInfo } from "@interfaces/admin";
 
 interface UserProfileSectionProps {
-  user: SimpleUser | null | undefined;
+  user: OrderUserInfo | null | undefined;
   role: "Seller" | "Bidder";
 }
 
@@ -32,7 +25,9 @@ const UserProfileSection: React.FC<UserProfileSectionProps> = ({
           </div>
           <div className="min-w-0">
             <p className="font-medium text-red-500 truncate">Deleted User</p>
-            <p className="text-sm text-gray-400 italic">Use has been removed</p>
+            <p className="text-sm text-gray-400 italic">
+              User has been removed
+            </p>
           </div>
         </div>
       </div>
@@ -40,9 +35,10 @@ const UserProfileSection: React.FC<UserProfileSectionProps> = ({
   }
 
   let repValue = 0;
-  if (user.reputation !== undefined) repValue = user.reputation;
-  else if (user.reputationScore !== undefined) repValue = user.reputationScore;
-  else if (user.rating !== undefined) repValue = user.rating;
+  if (user.reputation !== undefined) repValue = user.reputation as number;
+  else if (user.reputationScore !== undefined)
+    repValue = user.reputationScore as number;
+  else if (user.rating !== undefined) repValue = user.rating as number;
 
   const displayRep =
     repValue <= 1 && repValue > 0
@@ -67,9 +63,20 @@ const UserProfileSection: React.FC<UserProfileSectionProps> = ({
           )}
         </div>
         <div className="min-w-0">
-          <p className="font-medium text-gray-900 truncate" title={user.name}>
-            {user.name || "Unknown Name"}
-          </p>
+          {user._id ? (
+            <Link
+              to={`/admin/users/${user._id}`}
+              className="font-medium text-blue-600 hover:underline truncate block"
+              title={user.name}
+            >
+              {user.name || "Unknown Name"}
+            </Link>
+          ) : (
+            <p className="font-medium text-gray-900 truncate" title={user.name}>
+              {user.name || "Unknown Name"}
+            </p>
+          )}
+
           <p className="text-sm text-gray-500 truncate" title={user.email}>
             {user.email || "No Email"}
           </p>

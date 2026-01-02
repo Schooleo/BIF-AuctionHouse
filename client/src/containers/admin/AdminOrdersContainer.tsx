@@ -14,7 +14,6 @@ const ADMIN_ORDER_STATUSES = [
   { value: "PENDING_PAYMENT", label: "Pending Payment" },
   { value: "PAID_CONFIRMED", label: "Paid & Confirmed" },
   { value: "SHIPPED", label: "Shipped" },
-  { value: "RECEIVED", label: "Received" },
   { value: "COMPLETED", label: "Completed" },
   { value: "CANCELLED", label: "Cancelled" },
 ];

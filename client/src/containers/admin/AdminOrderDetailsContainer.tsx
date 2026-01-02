@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { adminApi } from "@services/admin.api";
-import type { IOrder, ChatMessage, SimpleUser } from "@interfaces/admin";
+import type { IOrder, ChatMessage, User } from "@interfaces/admin";
 import { useAlertStore } from "@stores/useAlertStore";
 import { ChevronLeft, Trash2 } from "lucide-react";
 import UserProfileSection from "@components/admin/order-details/UserProfileSection";
@@ -162,18 +162,12 @@ const AdminOrderDetailsContainer: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <UserProfileSection
               user={
-                order.sellerInfo ||
-                (order.seller as unknown as SimpleUser) ||
-                null
+                order.sellerInfo || (order.seller as unknown as User) || null
               }
               role="Seller"
             />
             <UserProfileSection
-              user={
-                order.buyerInfo ||
-                (order.buyer as unknown as SimpleUser) ||
-                null
-              }
+              user={order.buyerInfo || (order.buyer as unknown as User) || null}
               role="Bidder"
             />
           </div>
@@ -186,6 +180,16 @@ const AdminOrderDetailsContainer: React.FC = () => {
         <div className="lg:col-span-1">
           <AdminChatBox
             orderId={order._id}
+            sellerId={
+              typeof order.seller === "string"
+                ? order.seller
+                : (order.seller as User)._id
+            }
+            buyerId={
+              typeof order.buyer === "string"
+                ? order.buyer
+                : (order.buyer as User)._id
+            }
             initialChat={order.chat}
             onChatUpdate={handleChatUpdate}
           />
