@@ -11,6 +11,7 @@ const UnbanRequestPage: React.FC = () => {
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   const handleSubmit = async () => {
     setError("");
@@ -28,14 +29,19 @@ const UnbanRequestPage: React.FC = () => {
     setIsSubmitting(true);
     try {
       await bidderApi.submitUnbanRequest(title, details);
-      // Success - redirect to banned page
-      navigate("/banned");
+      // Success - show success modal
+      setShowConfirmModal(false);
+      setShowSuccessModal(true);
     } catch (err: any) {
       setError(err.message || "An error occurred while submitting your request");
     } finally {
       setIsSubmitting(false);
-      setShowConfirmModal(false);
     }
+  };
+
+  const handleSuccessConfirm = () => {
+    // Redirect to login page
+    navigate("/auth/login");
   };
 
   const handleFormSubmit = (e: React.FormEvent) => {
@@ -164,6 +170,18 @@ const UnbanRequestPage: React.FC = () => {
           message="You can only submit ONE unban request. Are you sure everything is truthful and accurate?"
           confirmText="Yes, Submit"
           cancelText="Review Again"
+        />
+
+        {/* Success Modal */}
+        <ConfirmationModal
+          isOpen={showSuccessModal}
+          onClose={handleSuccessConfirm}
+          onConfirm={handleSuccessConfirm}
+          title="Request Submitted"
+          message="Your unban request has been submitted successfully. Please wait for admin review."
+          confirmText="OK"
+          cancelText=""
+          type="success"
         />
       </div>
     </div>

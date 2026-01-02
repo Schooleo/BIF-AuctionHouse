@@ -15,7 +15,7 @@ const LoginContainer = () => {
     email?: string;
     password?: string;
   }>({});
-  
+
   // Ref để chặn việc hiển thị alert 2 lần do React Strict Mode
   const errorHandled = useRef(false);
 
@@ -24,8 +24,8 @@ const LoginContainer = () => {
     if (errorParam && !errorHandled.current) {
       addAlert("error", decodeURIComponent(errorParam));
       // Đánh dấu đã xử lý để lần render thứ 2 (của StrictMode) không chạy lại
-      errorHandled.current = true; 
-      
+      errorHandled.current = true;
+
       // Clean URL
       setSearchParams({});
     }
@@ -38,8 +38,7 @@ const LoginContainer = () => {
     } = {};
     if (!email) newErrors.email = "Email is required";
     if (!password) newErrors.password = "Password is required";
-    if (password.length < 8)
-      newErrors.password = "Password must be at least 8 characters";
+    if (password.length < 8) newErrors.password = "Password must be at least 8 characters";
 
     setError(newErrors);
 
@@ -49,7 +48,12 @@ const LoginContainer = () => {
         const response = await authApi.login(payload);
         if (response.token) {
           localStorage.setItem("token", response.token);
-          window.location.href = "/";
+          // Check if user is banned and redirect to banned page
+          if (response.user && response.user.status === "BLOCKED") {
+            window.location.href = "/banned";
+          } else {
+            window.location.href = "/";
+          }
         } else {
           addAlert("error", response.message!);
         }
@@ -71,8 +75,7 @@ const LoginContainer = () => {
           label: "Email",
           type: "email",
           value: email,
-          onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
-            setEmail(e.target.value),
+          onChange: (e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value),
           isRequired: true,
           error: error.email,
         },
@@ -80,8 +83,7 @@ const LoginContainer = () => {
           label: "Password",
           type: "password",
           value: password,
-          onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
-            setPassword(e.target.value),
+          onChange: (e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value),
           isRequired: true,
           error: error.password,
         },

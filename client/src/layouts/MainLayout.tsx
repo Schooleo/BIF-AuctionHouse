@@ -2,12 +2,7 @@
 import React from "react";
 import { useState, useEffect } from "react";
 import type { Category } from "@interfaces/product";
-import {
-  Outlet,
-  useLocation,
-  useSearchParams,
-  useNavigate,
-} from "react-router-dom";
+import { Outlet, useLocation, useSearchParams, useNavigate } from "react-router-dom";
 import Navbar from "@components/ui/Navbar";
 import Footer from "@components/ui/Footer";
 import SideBarCategory from "@components/ui/LeftSideBar";
@@ -21,20 +16,34 @@ const MainLayout: React.FC = () => {
   const navigate = useNavigate();
   const setToken = useAuthStore((state) => state.setToken);
   const refreshUser = useAuthStore((state) => state.refreshUser);
+  const user = useAuthStore((state) => state.user);
 
   const hideSidebar =
     location.pathname.startsWith("/products/") ||
     location.pathname === "/watchlist" ||
     location.pathname.startsWith("/orders/");
 
+  // Check if user is banned when accessing product details
+  useEffect(() => {
+    if (user?.status === "BLOCKED" && location.pathname.startsWith("/products/")) {
+      navigate("/banned", { replace: true });
+    }
+  }, [user, location.pathname, navigate]);
+
   useEffect(() => {
     const token = searchParams.get("token");
     if (token) {
       localStorage.setItem("token", token);
       setToken(token);
-      refreshUser();
-      // Xóa query param và quay về trang sạch
-      navigate("/", { replace: true });
+      refreshUser().then(() => {
+        // After refreshing user, check if user is banned
+        const user = useAuthStore.getState().user;
+        if (user?.status === "BLOCKED") {
+          navigate("/banned", { replace: true });
+        } else {
+          navigate("/", { replace: true });
+        }
+      });
     }
   }, [searchParams, navigate, setToken, refreshUser]);
 
@@ -62,11 +71,7 @@ const MainLayout: React.FC = () => {
         )}
 
         {/* Main Content */}
-        <main
-          className={`flex-1 min-w-0 ${
-            !hideSidebar ? "px-8 pt-2" : "w-full max-w-7xl mx-auto px-4 py-8"
-          }`}
-        >
+        <main className={`flex-1 min-w-0 ${!hideSidebar ? "px-8 pt-2" : "w-full max-w-7xl mx-auto px-4 py-8"}`}>
           <Outlet context={{ categories }} />
         </main>
       </div>
