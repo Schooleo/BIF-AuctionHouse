@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Menu, User, List, PlusCircle, Gavel, LogOut } from "lucide-react";
+import { Menu, User, List, PlusCircle, Gavel, LogOut, ArrowRightLeft } from "lucide-react";
 import ConfirmationModal from "@components/ui/ConfirmationModal";
+import { useAuthStore } from "@stores/useAuthStore";
 import type { User as UserType } from "@interfaces/auth";
 
 interface SellerDropdownProps {
@@ -10,8 +11,10 @@ interface SellerDropdownProps {
 
 export default function SellerDropdown({ user }: SellerDropdownProps) {
   const navigate = useNavigate();
+  const { switchAccount } = useAuthStore();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isSwitching, setIsSwitching] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -35,6 +38,19 @@ export default function SellerDropdown({ user }: SellerDropdownProps) {
 
   const handleLogout = () => {
     navigate("/auth/logout");
+  };
+
+  const handleSwitchAccount = async () => {
+    try {
+      setIsSwitching(true);
+      await switchAccount();
+      setIsDropdownOpen(false);
+      navigate("/");
+    } catch (error) {
+      console.error("Failed to switch account:", error);
+    } finally {
+      setIsSwitching(false);
+    }
   };
 
   return (
@@ -90,6 +106,19 @@ export default function SellerDropdown({ user }: SellerDropdownProps) {
               <Gavel size={18} />
               <span>Bid Winners</span>
             </Link>
+            {user.isUpgradedAccount && (
+              <>
+                <hr className="my-2 border-gray-200" />
+                <button
+                  onClick={handleSwitchAccount}
+                  disabled={isSwitching}
+                  className="flex items-center gap-3 px-4 py-2.5 text-primary-blue hover:bg-primary-blue hover:text-white transition-colors duration-200 w-full text-left text-base disabled:opacity-50"
+                >
+                  <ArrowRightLeft size={18} />
+                  <span>{isSwitching ? "Switching..." : "Switch to Bidder"}</span>
+                </button>
+              </>
+            )}
             <hr className="my-2 border-gray-200" />
             <button
               onClick={() => {
