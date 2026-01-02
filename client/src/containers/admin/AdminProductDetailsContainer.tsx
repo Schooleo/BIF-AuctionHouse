@@ -414,7 +414,7 @@ const AdminProductDetailsContainer: React.FC<
             {/* Bidding Info */}
             <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
               <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-4">
-                Highest Bidder
+                {product?.winnerConfirmed ? "Confirmed Winner" : "Highest Bidder"}
               </h3>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">

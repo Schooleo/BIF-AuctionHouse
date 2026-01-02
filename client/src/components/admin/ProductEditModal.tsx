@@ -88,6 +88,10 @@ const AdminProductEditModal: React.FC<AdminProductEditModalProps> = ({
 
       if (formData.startingPrice !== product.startingPrice.toString()) {
         updateData.startingPrice = Number(formData.startingPrice);
+        // If product has no bids, also update currentPrice
+        if (product.bidCount === 0) {
+          updateData.currentPrice = Number(formData.startingPrice);
+        }
       }
 
       if (formData.stepPrice !== product.stepPrice.toString()) {

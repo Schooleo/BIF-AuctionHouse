@@ -4,7 +4,7 @@ import { adminApi } from "@services/admin.api";
 import type { Product, Category } from "@interfaces/product";
 import AdminEndedProductCard from "@components/admin/EndedProductCard";
 import AdminActiveProductCard from "@components/admin/ActiveProductCard";
-import { Filter, X } from "lucide-react";
+import { Filter, X, ChevronLeft, ChevronRight } from "lucide-react";
 import Spinner from "@components/ui/Spinner";
 import AdminProductFilterModal from "@components/admin/ProductFilterModal";
 import Pagination from "@components/pagination/Pagination";
@@ -267,30 +267,53 @@ const AdminProductsContainer: React.FC<AdminProductsContainerProps> = ({
         </div>
       )}
 
-      {/* Sort Controls */}
-      <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-        <div className="flex items-center gap-3 w-full sm:w-auto">
-          <label
-            htmlFor="sort"
-            className="text-sm font-medium text-gray-700 whitespace-nowrap"
+      {/* Sort & Pagination Control Bar */}
+      <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="flex flex-wrap items-center gap-6 w-full md:w-auto">
+          {/* Sort */}
+          <div className="flex items-center gap-3">
+            <span className="text-sm font-medium text-gray-700">Sort by:</span>
+            <div className="relative">
+              <select
+                id="sort"
+                value={sortValue}
+                onChange={(e) => {
+                  setSortValue(e.target.value);
+                  setPage(1);
+                }}
+                className="custom-select pl-4 py-2 bg-white border border-gray-200 rounded-lg text-sm cursor-pointer hover:border-primary-blue transition-colors focus:ring-0"
+              >
+                {sortOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
+
+        {/* Pagination Controls in Bar */}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={page === 1}
+            className="p-2 rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            aria-label="Previous Page"
           >
-            Sort by:
-          </label>
-          <select
-            id="sort"
-            value={sortValue}
-            onChange={(e) => {
-              setSortValue(e.target.value);
-              setPage(1);
-            }}
-            className="flex-1 sm:flex-initial custom-select pl-3 pr-8 py-2 bg-white border border-gray-300 rounded-lg text-sm cursor-pointer hover:border-primary-blue transition-colors focus:ring-2 focus:ring-primary-blue focus:border-transparent"
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+          <span className="text-sm font-medium text-gray-600 min-w-20 text-center">
+            Page {page} of {totalPages}
+          </span>
+          <button
+            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            disabled={page === totalPages}
+            className="p-2 rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            aria-label="Next Page"
           >
-            {sortOptions.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
+            <ChevronRight className="w-4 h-4" />
+          </button>
         </div>
       </div>
 
@@ -300,26 +323,15 @@ const AdminProductsContainer: React.FC<AdminProductsContainerProps> = ({
           <Spinner />
         </div>
       ) : products.length > 0 ? (
-        <>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {products.map((product) =>
-              status === "active" ? (
-                <AdminActiveProductCard key={product._id} product={product} />
-              ) : (
-                <AdminEndedProductCard key={product._id} product={product} />
-              )
-            )}
-          </div>
-
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <Pagination
-              currentPage={page}
-              totalPages={totalPages}
-              onPageChange={setPage}
-            />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {products.map((product) =>
+            status === "active" ? (
+              <AdminActiveProductCard key={product._id} product={product} />
+            ) : (
+              <AdminEndedProductCard key={product._id} product={product} />
+            )
           )}
-        </>
+        </div>
       ) : (
         <div className="text-center py-12 bg-white rounded-lg border border-gray-100">
           <p className="text-gray-500">

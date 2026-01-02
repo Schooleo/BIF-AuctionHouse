@@ -111,7 +111,7 @@ const AdminBidHistoryModal: React.FC<AdminBidHistoryModalProps> = ({
                       <td className="px-4 py-3">
                         <div className="flex flex-col">
                           <span className="font-semibold text-gray-800">
-                            {maskName(row.bidder.name)}
+                            {(row.bidder.name)}
                           </span>
                           {row.bidder.rating !== undefined && (
                             <span className="text-xs text-gray-500">
