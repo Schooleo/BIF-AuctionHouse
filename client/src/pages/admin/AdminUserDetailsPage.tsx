@@ -1,21 +1,19 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
+import { adminApi, adminApiExtended } from "@services/admin.api";
+import type {
+  UserDetailResponse,
+  UserProduct,
+  OrdersSummary,
+} from "@interfaces/admin";
+import ConfirmationModal from "@components/ui/ConfirmationModal";
+import BlockReasonModal from "@components/admin/BlockReasonModal";
+import Spinner from "@components/ui/Spinner";
+import { useAlertStore } from "@stores/useAlertStore";
+import AdminReviewCard from "@components/admin/user/AdminReviewCard";
+import AdminProductCard from "@components/admin/user/AdminProductCard";
+import EditProfileModal from "@components/admin/user/EditProfileModal";
 import {
-  adminApi,
-  adminApiExtended,
-  type UserDetailResponse,
-  type UserProduct,
-  type OrdersSummary,
-} from "../../services/admin.api";
-import ConfirmationModal from "../../components/ui/ConfirmationModal";
-import BlockReasonModal from "../../components/admin/BlockReasonModal";
-import Spinner from "../../components/ui/Spinner";
-import { useAlertStore } from "../../stores/useAlertStore";
-import AdminReviewCard from "../../components/admin/user/AdminReviewCard";
-import AdminProductCard from "../../components/admin/user/AdminProductCard";
-import EditProfileModal from "../../components/admin/user/EditProfileModal";
-import {
-  ArrowLeft,
   ArrowLeftRight,
   ShieldCheck,
   ShieldAlert,
@@ -38,7 +36,7 @@ import {
   CreditCard,
   PackageCheck,
 } from "lucide-react";
-import { StarRating } from "../../components/ui/StarRating";
+import { StarRating } from "@components/ui/StarRating";
 
 type TabType = "products" | "reviews" | "orders";
 
@@ -342,22 +340,20 @@ const AdminUserDetailsPage: React.FC = () => {
     <div className="space-y-6 animate-fade-in pb-10">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <button
-            onClick={() => navigate("/admin/users")}
-            className="flex items-center gap-2 text-gray-500 hover:text-blue-600 transition-colors mb-2 group"
+        <div className="flex items-center gap-4">
+          <Link
+            to="/admin/users"
+            className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-500 hover:text-gray-900"
           >
-            <ArrowLeft
-              size={18}
-              className="group-hover:-translate-x-1 transition-transform"
-            />
-            Back to Users
-          </button>
-          <h1 className="text-2xl font-bold text-gray-800">User Details</h1>
-          <p className="text-sm text-gray-500 mt-1">
-            {profile.name} •{" "}
-            {profile.role.charAt(0).toUpperCase() + profile.role.slice(1)}
-          </p>
+            <ChevronLeft size={24} />
+          </Link>
+          <div className="flex flex-col">
+            <h1 className="text-2xl font-bold text-gray-800">User Details</h1>
+            <p className="text-sm text-gray-500 mt-1">
+              {profile.name} •{" "}
+              {profile.role.charAt(0).toUpperCase() + profile.role.slice(1)}
+            </p>
+          </div>
         </div>
 
         {/* Switch Profile Button - only for upgraded accounts */}

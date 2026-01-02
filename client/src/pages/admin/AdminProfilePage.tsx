@@ -7,7 +7,7 @@ import ProfileInfoForm from "@components/forms/ProfileInfoForm";
 import ProfilePasswordForm from "@components/forms/ProfilePasswordForm";
 import { Lock } from "lucide-react";
 import type { UpdateProfileDto, ChangePasswordDto } from "@interfaces/bidder";
-import type { SimpleUser } from "@interfaces/admin";
+import type { User } from "@interfaces/admin";
 
 const AdminProfilePage: React.FC = () => {
   const { user, setUser } = useAuthStore();
@@ -21,11 +21,11 @@ const AdminProfilePage: React.FC = () => {
       setLoading(true);
       // Ensure data conforms to what adminApi expects
       const response = await adminApi.updateProfile(
-        data as unknown as Partial<SimpleUser>
+        data as unknown as Partial<User>
       );
 
       const updatedProfile =
-        (response as unknown as { profile: SimpleUser }).profile || response;
+        (response as unknown as { profile: User }).profile || response;
 
       setUser({
         ...user,
@@ -81,6 +81,9 @@ const AdminProfilePage: React.FC = () => {
             <span className="inline-block mt-2 px-3 py-1 bg-purple-100 text-purple-800 text-xs font-bold rounded-full uppercase">
               {user.role}
             </span>
+            <p className="text-xs text-gray-400 mt-2">
+              Created at: {new Date(user.createdAt).toLocaleDateString()}
+            </p>
           </div>
         </div>
 

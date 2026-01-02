@@ -1,17 +1,22 @@
 import React, { useState, useEffect, useRef } from "react";
-import { adminApi, type ChatMessage } from "../../../services/admin.api";
-import { useAlertStore } from "../../../stores/useAlertStore";
+import { adminApi } from "@services/admin.api";
+import type { ChatMessage } from "@interfaces/admin";
+import { useAlertStore } from "@stores/useAlertStore";
 import { Send, Trash2, User } from "lucide-react";
-import ConfirmationModal from "../../ui/ConfirmationModal";
+import ConfirmationModal from "@components/ui/ConfirmationModal";
 
 interface AdminChatBoxProps {
   orderId: string;
+  sellerId: string;
+  buyerId: string;
   initialChat: { messages: ChatMessage[] } | undefined | null;
   onChatUpdate?: (newChat: { messages: ChatMessage[] }) => void;
 }
 
 const AdminChatBox: React.FC<AdminChatBoxProps> = ({
   orderId,
+  sellerId,
+  buyerId,
   initialChat,
   onChatUpdate,
 }) => {
@@ -124,10 +129,42 @@ const AdminChatBox: React.FC<AdminChatBoxProps> = ({
           <p className="text-center text-gray-400 mt-10">No messages yet.</p>
         ) : (
           messages.map((msg) => {
+            const senderId =
+              typeof msg.sender === "string" ? msg.sender : msg.sender?._id;
             const isAdmin = msg.sender?.role === "admin" || msg.isAdmin;
+            const isSeller = !isAdmin && senderId === sellerId;
+            const isBidder = !isAdmin && (senderId === buyerId || !isSeller);
 
             // Alignment
             const alignRight = isAdmin;
+
+            let bgColor = "bg-gray-100 text-gray-800";
+            let roleLabel = "User";
+            let roleBadge = null;
+
+            if (isAdmin) {
+              bgColor = "bg-blue-600 text-white rounded-tr-none";
+              roleLabel = "Administrator";
+              roleBadge = (
+                <span className="ml-1 text-[10px] bg-blue-100 text-blue-800 px-1 rounded">
+                  ADMIN
+                </span>
+              );
+            } else if (isSeller) {
+              bgColor =
+                "bg-amber-100 text-amber-900 border border-amber-200 rounded-tl-none";
+              roleLabel = "Seller";
+              roleBadge = (
+                <span className="ml-1 text-[10px] bg-amber-200 text-amber-800 px-1 rounded">
+                  SELLER
+                </span>
+              );
+            } else if (isBidder) {
+              // Bidder
+              bgColor =
+                "bg-gray-100 text-gray-800 border border-gray-200 rounded-tl-none";
+              roleLabel = "Bidder";
+            }
 
             return (
               <div
@@ -147,7 +184,9 @@ const AdminChatBox: React.FC<AdminChatBoxProps> = ({
                       className={`w-8 h-8 rounded-full flex items-center justify-center ${
                         isAdmin
                           ? "bg-primary-blue text-white"
-                          : "bg-gray-200 text-gray-600"
+                          : isSeller
+                            ? "bg-amber-500 text-white"
+                            : "bg-gray-200 text-gray-600"
                       }`}
                     >
                       {isAdmin ? (
@@ -165,14 +204,9 @@ const AdminChatBox: React.FC<AdminChatBoxProps> = ({
                     }`}
                   >
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="text-xs font-medium text-gray-700">
-                        {msg.sender?.name ||
-                          (isAdmin ? "Administrator" : "User")}
-                        {isAdmin && (
-                          <span className="ml-1 text-[10px] bg-blue-100 text-blue-800 px-1 rounded">
-                            ADMIN
-                          </span>
-                        )}
+                      <span className="text-xs font-medium text-gray-700 flex items-center">
+                        {msg.sender?.name || roleLabel}
+                        {roleBadge}
                       </span>
                       <span className="text-[10px] text-gray-400">
                         {new Date(msg.timestamp).toLocaleString([], {
@@ -183,11 +217,7 @@ const AdminChatBox: React.FC<AdminChatBoxProps> = ({
                     </div>
 
                     <div
-                      className={`relative px-4 py-2 rounded-lg text-sm ${
-                        isAdmin
-                          ? "bg-blue-600 text-white rounded-tr-none"
-                          : "bg-gray-100 text-gray-800 rounded-tl-none"
-                      }`}
+                      className={`relative px-4 py-2 rounded-lg text-sm ${bgColor}`}
                     >
                       {msg.content}
 

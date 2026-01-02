@@ -237,6 +237,34 @@ const seed = async () => {
     status: "ACTIVE",
   });
 
+  // Additional Admins
+  const admin2Id = new mongoose.Types.ObjectId("64b0f1a9e1b9b1a2b3c4d5e1");
+  const admin3Id = new mongoose.Types.ObjectId("64b0f1a9e1b9b1a2b3c4d5e2");
+
+  await User.create({
+    _id: admin2Id,
+    name: "OperationsAdmin",
+    email: "admin2@gmail.com",
+    password: commonPassword,
+    role: "admin",
+    address: "Ops Branch",
+    dateOfBirth: new Date("1990-03-22"),
+    contactEmail: "ops.admin@gmail.com",
+    status: "ACTIVE",
+  });
+
+  await User.create({
+    _id: admin3Id,
+    name: "SupportAdmin",
+    email: "admin3@gmail.com",
+    password: commonPassword,
+    role: "admin",
+    address: "Support Center",
+    dateOfBirth: new Date("1995-11-05"),
+    contactEmail: "support.admin@gmail.com",
+    status: "ACTIVE",
+  });
+
   const seller1 = await User.create({
     _id: seller1Id,
     name: "TechWorldSeller",
@@ -296,7 +324,7 @@ const seed = async () => {
     const isBlocked = Math.random() < 0.1; // 10% chance of being blocked
 
     const user = await User.create({
-      name: `Auto Bidder ${i}`,
+      name: `AutoBidder${i}`,
       email: `bidder_auto_${i}@gmail.com`,
       password: commonPassword,
       role: role,
@@ -314,7 +342,7 @@ const seed = async () => {
   const dummyPartners: any[] = [];
   for (let i = 1; i <= 20; i++) {
     const dummy = await User.create({
-      name: `HistoricalPartner${i}`,
+      name: `Partner${i}`,
       email: `dummy${i}@history.com`,
       password: commonPassword,
       role: i % 2 === 0 ? "seller" : "bidder",
@@ -512,8 +540,13 @@ const seed = async () => {
       // 3: Đã kết thúc, Đã xác nhận, Hoàn thành (Lịch sử/Đã bán)
       // 4: Đang diễn ra (Active)
 
-      let scenarioType = i % 5;
-      if (items.length > 5) scenarioType = randomInt(0, 4);
+      // 5: Đã hủy (Completed flow then cancelled or cancelled mid-way)
+      // 6: Đã kết thúc, Không có bid (Expired)
+      // 7: Đã vận chuyển (Bước 3 - Vận chuyển)
+      // 8: Đã nhận hàng (Bước 4 - Đã nhận hàng) -> Đơn hàng hoàn thành
+
+      let scenarioType = i % 9;
+      if (items.length > 9) scenarioType = randomInt(0, 8);
 
       const isEnded = scenarioType !== 4;
       const isEndingSoon = !isEnded && Math.random() > 0.5;
@@ -529,7 +562,7 @@ const seed = async () => {
         endTime = new Date(now.getTime() + randomInt(10, 180) * 60 * 1000);
       } else {
         endTime = new Date(
-          now.getTime() + randomInt(1, 5) * 24 * 60 * 60 * 1000
+          now.getTime() + randomInt(7, 60) * 24 * 60 * 60 * 1000
         );
       }
 
@@ -569,7 +602,7 @@ const seed = async () => {
       await product.save();
       totalProducts++;
 
-      const shouldHaveBids = scenarioType !== 0;
+      const shouldHaveBids = scenarioType !== 0 && scenarioType !== 6;
 
       let bidCount = 0;
       let lastBidder: any = null;
@@ -578,7 +611,7 @@ const seed = async () => {
       let currentPrice = item.price;
 
       if (shouldHaveBids) {
-        // Select 2 distinctive bidders for Auto Bid
+        // Chọn 2 bidder ngẫu nhiên
         const shuffledBidders = [...bidders].sort(() => 0.5 - Math.random());
         const participantBidders = shuffledBidders.slice(0, 2);
 
@@ -687,7 +720,7 @@ const seed = async () => {
 
       if (isEnded && lastBidder) {
         if (scenarioType === 1) {
-          // No action
+          // Không làm gì hết
         } else {
           product.winnerConfirmed = true;
           await product.save();
@@ -797,6 +830,64 @@ const seed = async () => {
             }
           }
 
+          if (scenarioType === 7) {
+            order.status = OrderStatus.SHIPPED;
+            order.step = 3;
+            order.shippingAddress = (lastBidder as any).address;
+            order.paymentProof = "https://picsum.photos/300/600";
+            order.shippingProof = "SHIPPING-CODE-123456";
+
+            chat.messages.push({
+              sender: (lastBidder as any)._id,
+              content: "I've paid the amount! Waiting for confirmation.",
+              timestamp: new Date(lastBidTime.getTime() + 120000),
+            });
+            chat.messages.push({
+              sender: sellerId as any,
+              content:
+                "Confirmed! I've shipped your item. Tracking code: SHIPPING-CODE-123456",
+              timestamp: new Date(lastBidTime.getTime() + 200000),
+            });
+            await chat.save();
+          }
+
+          if (scenarioType === 8) {
+            order.status = OrderStatus.COMPLETED;
+            order.step = 4;
+            order.shippingAddress = (lastBidder as any).address;
+            order.paymentProof = "https://picsum.photos/300/600";
+            order.shippingProof = "SHIPPING-CODE-789012";
+
+            chat.messages.push({
+              sender: (lastBidder as any)._id,
+              content: "I've paid the amount.",
+              timestamp: new Date(lastBidTime.getTime() + 120000),
+            });
+            chat.messages.push({
+              sender: sellerId as any,
+              content: "Shipped!",
+              timestamp: new Date(lastBidTime.getTime() + 200000),
+            });
+            chat.messages.push({
+              sender: (lastBidder as any)._id,
+              content: "I have received the package. Everything looks good!",
+              timestamp: new Date(lastBidTime.getTime() + 400000),
+            });
+            await chat.save();
+          }
+
+          if (scenarioType === 5) {
+            order.status = OrderStatus.CANCELLED;
+            order.step = 0;
+            chat.messages.push({
+              sender: adminId as any,
+              content: "Order cancelled by system.",
+              timestamp: new Date(lastBidTime.getTime() + 200000),
+              isAdmin: true,
+            } as any);
+            await chat.save();
+          }
+
           await order.save();
           totalOrders++;
         }
@@ -848,9 +939,9 @@ const seed = async () => {
         subImages: subImages,
         description: generateDescription(item.name, cat),
         startTime: new Date(),
-        endTime: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+        endTime: new Date(Date.now() + randomInt(7, 60) * 24 * 60 * 60 * 1000),
         startingPrice: item.price,
-        stepPrice: step, // Explicitly low step
+        stepPrice: step, // Sản phẩm có bước giá thấp
         buyNowPrice: item.price * 1.5,
         autoExtends: true,
         currentPrice: item.price,

@@ -1,12 +1,12 @@
-export interface SimpleUser {
-  _id: string;
-  name: string;
-  email: string;
-  role: "admin" | "seller" | "bidder";
+export interface OrderUserInfo {
+  _id?: string;
+  name?: string;
+  email?: string;
   avatar?: string;
-  contactEmail?: string;
-  address?: string;
-  dateOfBirth?: string;
+  reputation?: number;
+  rating?: number;
+  reputationScore?: number;
+  role?: string;
   [key: string]: unknown;
 }
 
@@ -115,21 +115,14 @@ export interface IOrder {
       }
     | string;
 
-  productInfo?: { name: string; mainImage: string; currentPrice?: number };
-  sellerInfo?: {
+  productInfo?: {
+    _id?: string;
     name: string;
-    email?: string;
-    reputation?: number;
-    rating?: number;
-    avatar?: string;
+    mainImage: string;
+    currentPrice?: number;
   };
-  buyerInfo?: {
-    name: string;
-    email?: string;
-    reputation?: number;
-    rating?: number;
-    avatar?: string;
-  };
+  sellerInfo?: OrderUserInfo;
+  buyerInfo?: OrderUserInfo;
 
   status: string;
   step: number;
@@ -160,4 +153,189 @@ export interface SystemConfig {
   bidEmailCooldown: number;
   createdAt: string;
   updatedAt: string;
+}
+
+// User Management Interfaces
+export interface User {
+  _id: string;
+  name: string;
+  email: string;
+  role: "admin" | "seller" | "bidder";
+  status: "ACTIVE" | "BLOCKED";
+  avatar?: string;
+  createdAt: string;
+  contactEmail?: string;
+  address?: string;
+  [key: string]: unknown;
+}
+
+export interface GetUsersResponse {
+  users: User[];
+  totalDocs: number;
+  totalPages: number;
+  currentPage: number;
+}
+
+export interface UserDetailResponse {
+  profile: User & {
+    starRating: number;
+    ratingCount: number;
+    reputationParam: {
+      positive: number;
+      negative: number;
+      score: number;
+    };
+    isUpgradedAccount?: boolean;
+    linkedAccountId?: string;
+    blockReason?: string;
+  };
+  bidHistory: {
+    _id: string;
+    productName: string;
+    amount: number;
+    date: string;
+    status: string;
+  }[];
+  reviews: {
+    docs: {
+      _id: string;
+      rater: { _id?: string; name: string; avatar?: string };
+      ratee?: { _id?: string; name: string; avatar?: string };
+      product?: { _id?: string; name: string; mainImage?: string };
+      score: number;
+      comment: string;
+      createdAt: string;
+    }[];
+    totalDocs: number;
+    totalPages: number;
+    page: number;
+    limit: number;
+  };
+  sellingHistory: {
+    _id: string;
+    name: string;
+    currentPrice: number;
+    endTime: string;
+    mainImage: string;
+    bidCount: number;
+  }[];
+  stats: {
+    positiveCount: number;
+    negativeCount: number;
+  };
+}
+
+// Extended User & Review Interfaces
+export interface UserProduct {
+  _id: string;
+  name: string;
+  currentPrice: number;
+  mainImage: string;
+  endTime: string;
+  startTime?: string;
+  bidCount?: number;
+  status:
+    | "scheduled"
+    | "ongoing"
+    | "ended"
+    | "sold"
+    | "won"
+    | "lost"
+    | "leading"
+    | "outbid";
+  myBidCount?: number;
+  myHighestBid?: number;
+}
+
+export interface UserProductsResponse {
+  products: UserProduct[];
+  total: number;
+  totalPages: number;
+  page: number;
+}
+
+export interface OrdersSummary {
+  summary: {
+    PENDING_PAYMENT: number;
+    PAID_CONFIRMED: number;
+    SHIPPED: number;
+    RECEIVED: number;
+    COMPLETED: number;
+    CANCELLED: number;
+  };
+  total: number;
+  role: string;
+}
+
+// Banned Users & Unban Request Interfaces
+export interface BannedUser {
+  _id: string;
+  name: string;
+  email: string;
+  avatar?: string;
+  role: string;
+  status: string;
+  blockReason?: string;
+  blockedAt?: string;
+  createdAt: string;
+  hasUnbanRequest: boolean;
+}
+
+export interface BannedUsersResponse {
+  users: BannedUser[];
+  total: number;
+  totalPages: number;
+  page: number;
+  limit: number;
+}
+
+export interface UnbanRequestData {
+  _id: string;
+  user: string;
+  title: string;
+  details: string;
+  status: "PENDING" | "APPROVED" | "DENIED";
+  adminNote?: string;
+  processedBy?: { _id: string; name: string; email: string };
+  processedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Review {
+  _id: string;
+  rater: { _id?: string; name: string; avatar?: string };
+  ratee?: { _id?: string; name: string; avatar?: string };
+  product?: { _id?: string; name: string; mainImage?: string };
+  score: number;
+  comment: string;
+  createdAt: string;
+}
+
+export interface UpgradeRequest {
+  _id: string;
+  user: {
+    _id: string;
+    name: string;
+    email: string;
+    avatar?: string;
+    role: string;
+    contactEmail?: string;
+    rating?: {
+      positive: number;
+      negative: number;
+    };
+    rejectedRequestsCount?: number;
+  };
+  status: "pending" | "approved" | "rejected";
+  title: string;
+  reasons: string;
+  createdAt: string;
+  reviewedBy?: {
+    _id: string;
+    name: string;
+    email: string;
+  };
+  rejectionReason?: string;
+  rejectedAt?: string;
 }

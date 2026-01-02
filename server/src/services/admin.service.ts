@@ -1130,8 +1130,8 @@ export const cancelOrder = async (id: string) => {
 
 export const adminSendMessage = async (
   orderId: string,
-  content: string,
-  adminId: string
+  adminId: string,
+  content: string
 ) => {
   const order = await Order.findById(orderId);
   if (!order) throw new Error("Order not found");
@@ -1867,11 +1867,7 @@ export const changePassword = async (
     throw new Error("Incorrect current password");
   }
 
-  // Hash new password
-  const salt = await bcrypt.genSalt(10);
-  const hashedPassword = await bcrypt.hash(data.newPassword, salt);
-
-  user.password = hashedPassword;
+  user.password = data.newPassword;
   await user.save();
 
   return true;
