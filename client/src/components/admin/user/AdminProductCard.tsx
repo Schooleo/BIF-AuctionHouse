@@ -113,7 +113,7 @@ const AdminProductCard: React.FC<AdminProductCardProps> = ({
       className="group border border-gray-100 rounded-xl hover:border-blue-200 hover:shadow-lg transition-all cursor-pointer bg-white overflow-hidden"
     >
       {/* Image - taller with better aspect ratio */}
-      <div className="relative aspect-[4/3] w-full bg-gray-100 overflow-hidden">
+      <div className="relative aspect-4/3 w-full bg-gray-100 overflow-hidden">
         <img
           src={product.mainImage}
           alt={product.name}

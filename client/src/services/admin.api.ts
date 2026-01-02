@@ -181,11 +181,16 @@ export interface GetUsersResponse {
 }
 
 export const adminApi = {
-  getDashboardStats: async (timeRange: string = "24h"): Promise<DashboardStats> => {
-    const response = await fetch(`${API_BASE}/api/admin/dashboard-stats?timeRange=${timeRange}`, {
+  getDashboardStats: async (
+    timeRange: string = "24h"
+  ): Promise<DashboardStats> => {
+    const response = await fetch(
+      `${API_BASE}/api/admin/dashboard-stats?timeRange=${timeRange}`,
+      {
         method: "GET",
         headers: getAuthHeaders(),
-    });
+      }
+    );
     return handleResponse<DashboardStats>(response);
   },
 
@@ -218,10 +223,13 @@ export const adminApi = {
 
     const query = new URLSearchParams(cleanParams);
 
-    const response = await fetch(`${API_BASE}/api/admin/users?${query.toString()}`, {
+    const response = await fetch(
+      `${API_BASE}/api/admin/users?${query.toString()}`,
+      {
         method: "GET",
         headers: getAuthHeaders(),
-    });
+      }
+    );
     return handleResponse<GetUsersResponse>(response);
   },
 
@@ -259,6 +267,17 @@ export const adminApi = {
     return handleResponse(response);
   },
 
+  forceDeleteUser: async (id: string) => {
+    const response = await fetch(
+      `${API_BASE}/api/admin/users/${id}/force-delete`,
+      {
+        method: "DELETE",
+        headers: getAuthHeaders(),
+      }
+    );
+    return handleResponse(response);
+  },
+
   getCategories: async (
     page?: number,
     limit?: number,
@@ -286,7 +305,10 @@ export const adminApi = {
     return handleResponse(response);
   },
 
-  createCategory: async (data: { name: string; subCategories?: string[] }): Promise<CategoryWithStats> => {
+  createCategory: async (data: {
+    name: string;
+    subCategories?: string[];
+  }): Promise<CategoryWithStats> => {
     const response = await fetch(`${API_BASE}/api/admin/categories`, {
       method: "POST",
       headers: getAuthHeaders(),
@@ -295,7 +317,10 @@ export const adminApi = {
     return handleResponse(response);
   },
 
-  updateCategory: async (id: string, data: { name: string; subCategories?: string[] }): Promise<CategoryWithStats> => {
+  updateCategory: async (
+    id: string,
+    data: { name: string; subCategories?: string[] }
+  ): Promise<CategoryWithStats> => {
     const response = await fetch(`${API_BASE}/api/admin/categories/${id}`, {
       method: "PATCH",
       headers: getAuthHeaders(),
@@ -349,7 +374,10 @@ export const adminApi = {
     return handleResponse(response);
   },
 
-  sendAdminMessage: async (id: string, content: string): Promise<{ messages: ChatMessage[] }> => {
+  sendAdminMessage: async (
+    id: string,
+    content: string
+  ): Promise<{ messages: ChatMessage[] }> => {
     const response = await fetch(`${API_BASE}/api/admin/orders/${id}/chat`, {
       method: "POST",
       headers: getAuthHeaders(),
@@ -358,11 +386,17 @@ export const adminApi = {
     return handleResponse(response);
   },
 
-  deleteAdminMessage: async (id: string, messageId: string): Promise<unknown> => {
-    const response = await fetch(`${API_BASE}/api/admin/orders/${id}/chat/${messageId}`, {
+  deleteAdminMessage: async (
+    id: string,
+    messageId: string
+  ): Promise<unknown> => {
+    const response = await fetch(
+      `${API_BASE}/api/admin/orders/${id}/chat/${messageId}`,
+      {
         method: "DELETE",
         headers: getAuthHeaders(),
-    });
+      }
+    );
     return handleResponse(response);
   },
 
@@ -412,7 +446,7 @@ export const adminApi = {
     limit: number = 10,
     status?: "pending" | "approved" | "rejected",
     search?: string,
-    sortBy?: "newest" | "oldest",
+    sortBy?: "newest" | "oldest"
   ): Promise<{
     requests: Array<{
       _id: string;
@@ -455,10 +489,13 @@ export const adminApi = {
       ...(search && { search }),
       ...(sortBy && { sortBy }),
     });
-    const response = await fetch(`${API_BASE}/api/admin/upgrade-requests?${params.toString()}`, {
+    const response = await fetch(
+      `${API_BASE}/api/admin/upgrade-requests?${params.toString()}`,
+      {
         method: "GET",
         headers: getAuthHeaders(),
-    });
+      }
+    );
     return handleResponse(response);
   },
 
@@ -469,19 +506,28 @@ export const adminApi = {
     bidderAccount: any;
     sellerAccount: any;
   }> => {
-    const response = await fetch(`${API_BASE}/api/admin/upgrade-requests/${requestId}/approve`, {
+    const response = await fetch(
+      `${API_BASE}/api/admin/upgrade-requests/${requestId}/approve`,
+      {
         method: "POST",
         headers: getAuthHeaders(),
-    });
+      }
+    );
     return handleResponse(response);
   },
 
-  rejectUpgradeRequest: async (requestId: string, reason: string): Promise<any> => {
-    const response = await fetch(`${API_BASE}/api/admin/upgrade-requests/${requestId}/reject`, {
+  rejectUpgradeRequest: async (
+    requestId: string,
+    reason: string
+  ): Promise<any> => {
+    const response = await fetch(
+      `${API_BASE}/api/admin/upgrade-requests/${requestId}/reject`,
+      {
         method: "POST",
         headers: getAuthHeaders(),
         body: JSON.stringify({ reason }),
-    });
+      }
+    );
     return handleResponse(response);
   },
 };
@@ -679,7 +725,8 @@ export interface BannedUsersResponse {
 export interface UnbanRequestData {
   _id: string;
   user: string;
-  reason: string;
+  title: string;
+  details: string;
   status: "PENDING" | "APPROVED" | "DENIED";
   adminNote?: string;
   processedBy?: { _id: string; name: string; email: string };

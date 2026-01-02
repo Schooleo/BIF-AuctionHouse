@@ -275,6 +275,23 @@ export const deleteUser = async (req: Request, res: Response) => {
   }
 };
 
+// Force delete user (bypasses safeguards)
+export const forceDeleteUser = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    if (!id) {
+      res.status(400).json({ message: "User ID is required" });
+      return;
+    }
+
+    const result = await AdminService.forceDeleteUser(id);
+    res.status(200).json(result);
+  } catch (error: any) {
+    res.status(500).json({ message: error.message || "Internal server error" });
+  }
+};
+
 export const manageUserUpgradeRequests = async (
   req: Request,
   res: Response
@@ -618,7 +635,7 @@ export const approveUnbanRequest = async (req: Request, res: Response) => {
 export const denyUnbanRequest = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const adminId = (req as unknown as AuthRequest).user?.userId;
+    const adminId = (req.user as any)?._id?.toString();
     const { adminNote } = req.body;
 
     if (!id) {
