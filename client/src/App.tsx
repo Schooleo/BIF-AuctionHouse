@@ -23,7 +23,7 @@ import {
   ProductsPage,
   ProductDetailsPage,
   ProfilePage,
-  WatchlistPage as WatchListPage,
+  WatchListPage,
   BiddingPage,
 } from "./pages/user";
 
@@ -47,10 +47,9 @@ import {
   AdminOrderDetailsPage,
   AdminUpgradeRequestsPage,
   AdminProfilePage,
+  AdminSystemConfigPage,
+  AdminBannedUsersPage
 } from "./pages/admin";
-
-import AdminSystemConfigPage from "./pages/admin/AdminSystemConfigPage";
-import AdminBannedUsersPage from "./pages/admin/AdminBannedUsersPage";
 
 import { OrderCompletionPage } from "./pages/order";
 
@@ -146,16 +145,30 @@ const App = () => {
                 <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
                   <Route path="admin" element={<AdminLayout />}>
                     <Route index element={<AdminDashboardPage />} />
+                    <Route path="users" element={<AdminUsersPage />} />
+                    <Route
+                      path="users/:id"
+                      element={<AdminUserDetailsPage />}
+                    />
                     <Route path="products" element={<AdminProductsPage />} />
                     <Route path="products/:id" element={<AdminProductDetailsPage />} />
                     <Route path="orders" element={<AdminOrdersPage />} />
-                    <Route path="orders/:id" element={<AdminOrderDetailsPage />} />
-                    <Route path="categories" element={<AdminCategoriesPage />} />
-                    <Route path="categories/:id" element={<AdminCategoryDetailsPage />} />
-                    <Route path="users" element={<AdminUsersPage />} />
-                    <Route path="users/:id" element={<AdminUserDetailsPage />} />
-                    <Route path="banned-users" element={<AdminBannedUsersPage />} />
-                    <Route path="upgrade-requests" element={<AdminUpgradeRequestsPage />} />
+                    <Route
+                      path="orders/:id"
+                      element={<AdminOrderDetailsPage />}
+                    />
+                    <Route
+                      path="categories"
+                      element={<AdminCategoriesPage />}
+                    />
+                    <Route
+                      path="categories/:id"
+                      element={<AdminCategoryDetailsPage />}
+                    />
+                    <Route
+                      path="upgrade-requests"
+                      element={<AdminUpgradeRequestsPage />}
+                    />
                     <Route path="config" element={<AdminSystemConfigPage />} />
                     <Route path="profile" element={<AdminProfilePage />} />
                   </Route>

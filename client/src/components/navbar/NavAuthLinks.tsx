@@ -3,6 +3,8 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuthStore } from "@stores/useAuthStore";
 import ConfirmationModal from "@components/ui/ConfirmationModal";
 import { useAlertStore } from "@stores/useAlertStore";
+import BidderDropdown from "./BidderDropdown";
+import SellerDropdown from "./SellerDropdown";
 
 export default function NavbarAuthLinks() {
   const { user, switchAccount } = useAuthStore();
@@ -35,18 +37,23 @@ export default function NavbarAuthLinks() {
   };
 
   if (user) {
-    // Đã có người dùng đăng nhập
-    const profileLink = user.role === "bidder" ? "/profile" : user.role === "seller" ? "/seller/profile" : "/profile";
+    if (user.role === "bidder") {
+      return <BidderDropdown user={user} />;
+    }
 
-    const canSwitchAccount = user.isUpgradedAccount && user.linkedAccountId;
-    const switchToRole = user.role === "bidder" ? "seller" : "bidder";
+    if (user.role === "seller") {
+      return <SellerDropdown user={user} />;
+    }
+
+    // Admin
+    const profileLink = "/admin/profile";
 
     return (
       <div className="hidden md:flex items-center space-x-8 text-white text-xl">
-        <Link to="/notifications" className="hover:text-primary-yellow hover:scale-110 transition-all duration-200">
-          Notifications
-        </Link>
-        <Link to={profileLink} className="hover:text-primary-yellow hover:scale-110 transition-all duration-200">
+        <Link
+          to={profileLink}
+          className="hover:text-primary-yellow hover:scale-110 transition-all duration-200"
+        >
           {user.name}
         </Link>
 
@@ -91,7 +98,7 @@ export default function NavbarAuthLinks() {
     );
   }
 
-  // Không có người dùng đăng nhập
+  // No user logged in
   return (
     <div className="hidden md:flex items-center space-x-6 text-white text-xl">
       <Link to="/auth/register" className="hover:text-primary-yellow hover:scale-110 transition-all duration-200">

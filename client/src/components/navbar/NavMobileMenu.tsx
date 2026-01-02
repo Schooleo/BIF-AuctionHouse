@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useAuthStore } from "@stores/useAuthStore";
 import { useAlertStore } from "@stores/useAlertStore";
+import { User, Star, Trophy, LogOut } from "lucide-react";
+import { useAuthStore } from "@stores/useAuthStore";
 import ConfirmationModal from "@components/ui/ConfirmationModal";
 
 interface Props {
@@ -56,34 +57,57 @@ export default function NavbarMobileMenu({ closeMenu }: Props) {
 
         {user ? (
           <>
-            <Link
-              to="/notifications"
-              onClick={closeMenu}
-              className="hover:text-primary-yellow transition-all duration-200"
-            >
-              Notifications
-            </Link>
-            <Link
-              to={user.role === "bidder" ? "/profile" : user.role === "seller" ? "/seller/products" : "/profile"}
-              onClick={closeMenu}
-              className="hover:text-primary-yellow transition-all duration-200"
-            >
-              {user.name}
-            </Link>
-
-            {canSwitchAccount && (
-              <button
-                onClick={() => setShowSwitchModal(true)}
-                className="hover:text-primary-yellow transition-all duration-200"
-              >
-                Switch to {switchToRole}
-              </button>
+            {user.role === "bidder" ? (
+              <>
+                <Link
+                  to="/profile?tab=info"
+                  onClick={closeMenu}
+                  className="flex items-center gap-2 hover:text-primary-yellow transition-all duration-200"
+                >
+                  <User size={18} />
+                  <span>Profile</span>
+                </Link>
+                <Link
+                  to="/profile?tab=ratings"
+                  onClick={closeMenu}
+                  className="flex items-center gap-2 hover:text-primary-yellow transition-all duration-200"
+                >
+                  <Star size={18} />
+                  <span>Ratings</span>
+                </Link>
+                <Link
+                  to="/profile?tab=won"
+                  onClick={closeMenu}
+                  className="flex items-center gap-2 hover:text-primary-yellow transition-all duration-200"
+                >
+                  <Trophy size={18} />
+                  <span>Won Auctions</span>
+                </Link>
+                <button
+                  onClick={() => setShowLogoutModal(true)}
+                  className="flex items-center gap-2 hover:text-red-500 transition-all duration-200"
+                >
+                  <LogOut size={18} />
+                  <span>Log out</span>
+                </button>
+              </>
+            ) : (
+              <>
+                <Link
+                  to={user.role === "seller" ? "/seller/products" : "/profile"}
+                  onClick={closeMenu}
+                  className="hover:text-primary-yellow transition-all duration-200"
+                >
+                  {user.name}
+                </Link>
+                <button
+                  onClick={() => setShowLogoutModal(true)}
+                  className="hover:text-red-500 transition-all duration-200"
+                >
+                  Logout
+                </button>
+              </>
             )}
-
-            <button onClick={() => setShowLogoutModal(true)} className="hover:text-red-500 transition-all duration-200">
-              Logout
-            </button>
-
             <ConfirmationModal
               isOpen={showLogoutModal}
               onClose={() => setShowLogoutModal(false)}
@@ -108,13 +132,6 @@ export default function NavbarMobileMenu({ closeMenu }: Props) {
           </>
         ) : (
           <>
-            <Link
-              to="/notifications"
-              onClick={closeMenu}
-              className="hover:text-primary-yellow hover:font-semibold transition-all duration-200"
-            >
-              Notifications
-            </Link>
             <Link
               to="/auth/register"
               onClick={closeMenu}

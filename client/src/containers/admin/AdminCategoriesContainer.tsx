@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { Loader2, ChevronLeft, ChevronRight } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
-import { adminApi, type CategoryWithStats } from "../../services/admin.api";
-import CategoryCard from "../../components/admin/CategoryCard";
-import { useAlertStore } from "../../stores/useAlertStore";
-import PopUpWindow from "../../components/ui/PopUpWindow";
-import ConfirmationModal from "../../components/ui/ConfirmationModal";
+import { adminApi } from "@services/admin.api";
+import type { CategoryWithStats } from "@interfaces/admin";
+import CategoryCard from "@components/admin/CategoryCard";
+import { useAlertStore } from "@stores/useAlertStore";
+import PopUpWindow from "@components/ui/PopUpWindow";
+import ConfirmationModal from "@components/ui/ConfirmationModal";
 
 export interface AdminCategoriesContainerRef {
   openAddModal: () => void;

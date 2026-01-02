@@ -21,6 +21,7 @@ import {
   listOrders,
   getOrderDetails,
   cancelOrder,
+  deleteOrder,
   adminSendMessage,
   deleteOrderMessage,
   getSystemConfig,
@@ -36,6 +37,8 @@ import {
   getUnbanRequest,
   approveUnbanRequest,
   denyUnbanRequest,
+  updateProfile,
+  changePassword,
 } from "../controllers/admin.controller";
 import { protect } from "../middleware/auth.middleware";
 
@@ -76,12 +79,17 @@ router.post("/upgrade-requests/:id/reject", rejectUserUpgrade);
 router.get("/orders", listOrders);
 router.get("/orders/:id", getOrderDetails);
 router.post("/orders/:id/cancel", cancelOrder);
+router.delete("/orders/:id", deleteOrder);
 router.post("/orders/:id/chat", adminSendMessage);
 router.delete("/orders/:id/chat/:messageId", deleteOrderMessage);
 
 // NEW: Review Management Routes
 router.patch("/reviews/:id", updateReview);
 router.delete("/reviews/:id", deleteReview);
+
+// Profile
+router.patch("/profile", updateProfile);
+router.post("/change-password", changePassword);
 
 // System Config Routes
 router.get("/config", getSystemConfig);

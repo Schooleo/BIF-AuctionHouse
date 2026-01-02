@@ -1,4 +1,14 @@
 import { handleResponse } from "@utils/handleResponse";
+import type {
+  SimpleUser,
+  DashboardStats,
+  CategoryWithStats,
+  PaginatedCategoriesResponse,
+  IOrder,
+  PaginatedOrdersResponse,
+  SystemConfig,
+  ChatMessage,
+} from "@interfaces/admin";
 
 const API_BASE = import.meta.env.VITE_APP_API_URL || "";
 
@@ -374,6 +384,14 @@ export const adminApi = {
     return handleResponse(response);
   },
 
+  deleteOrder: async (id: string): Promise<void> => {
+    const response = await fetch(`${API_BASE}/api/admin/orders/${id}`, {
+      method: "DELETE",
+      headers: getAuthHeaders(),
+    });
+    return handleResponse(response);
+  },
+
   sendAdminMessage: async (
     id: string,
     content: string
@@ -681,6 +699,12 @@ export const adminApiExtended = {
       method: "PATCH",
       headers: getAuthHeaders(),
       body: JSON.stringify({ comment }),
+      
+  updateProfile: async (data: Partial<SimpleUser>) => {
+    const response = await fetch(`${API_BASE}/api/admin/profile`, {
+      method: "PATCH",
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data),
     });
     return handleResponse(response);
   },
@@ -796,5 +820,16 @@ export const bannedUsersApi = {
       }
     );
     return handleResponse<UnbanRequestData>(response);
+  },
+  changePassword: async (data: {
+    currentPassword: string;
+    newPassword: string;
+  }) => {
+    const response = await fetch(`${API_BASE}/api/admin/change-password`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data),
+    });
+    return handleResponse(response);
   },
 };
