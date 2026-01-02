@@ -514,8 +514,10 @@ const UpgradeRequestsPage: React.FC = () => {
 
             <div>
               <h4 className="text-sm font-semibold text-gray-700 mb-3">Reasons for Upgrade</h4>
-              <div className="bg-gray-50 p-4 rounded-lg max-h-60 overflow-y-auto border border-gray-200">
-                <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">{selectedRequest.reasons}</p>
+              <div className="bg-gray-50 p-5 rounded-lg max-h-[480px] overflow-y-auto overflow-x-hidden border border-gray-200 scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-200 hover:scrollbar-thumb-gray-500">
+                <p className="text-sm text-gray-700 whitespace-pre-wrap break-words leading-relaxed">
+                  {selectedRequest.reasons}
+                </p>
               </div>
             </div>
 

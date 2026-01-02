@@ -19,10 +19,7 @@ export default function BidderDropdown({ user }: BidderDropdownProps) {
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
-      ) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsDropdownOpen(false);
       }
     };
@@ -54,14 +51,8 @@ export default function BidderDropdown({ user }: BidderDropdownProps) {
   };
 
   return (
-    <div
-      className="hidden md:flex items-center space-x-6 text-white text-xl"
-      ref={dropdownRef}
-    >
-      <Link
-        to="/profile?tab=info"
-        className="hover:text-primary-yellow hover:scale-110 transition-all duration-200"
-      >
+    <div className="hidden md:flex items-center space-x-6 text-white text-xl" ref={dropdownRef}>
+      <Link to="/profile?tab=info" className="hover:text-primary-yellow hover:scale-110 transition-all duration-200">
         {user.name}
       </Link>
       <div className="relative">
