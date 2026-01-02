@@ -1,14 +1,5 @@
 import { handleResponse } from "@utils/handleResponse";
-import type {
-  SimpleUser,
-  DashboardStats,
-  CategoryWithStats,
-  PaginatedCategoriesResponse,
-  IOrder,
-  PaginatedOrdersResponse,
-  SystemConfig,
-  ChatMessage,
-} from "@interfaces/admin";
+import type { SimpleUser } from "@interfaces/admin";
 
 const API_BASE = import.meta.env.VITE_APP_API_URL || "";
 
@@ -701,7 +692,10 @@ export const adminApiExtended = {
       method: "PATCH",
       headers: getAuthHeaders(),
       body: JSON.stringify({ comment }),
-      
+    });
+    return handleResponse(response);
+  },
+
   updateProfile: async (data: Partial<SimpleUser>) => {
     const response = await fetch(`${API_BASE}/api/admin/profile`, {
       method: "PATCH",

@@ -27,13 +27,23 @@ import {
   BiddingPage,
 } from "./pages/user";
 
-import { LoginPage, RegisterPage, ResetPasswordPage, LogoutPage } from "./pages/auth";
+import {
+  LoginPage,
+  RegisterPage,
+  ResetPasswordPage,
+  LogoutPage,
+} from "./pages/auth";
 
 import { NotFoundPage, UnauthorizedPage, ForbiddenPage } from "./pages/shared";
 import BannedPage from "./pages/shared/BannedPage";
 import UnbanRequestPage from "./pages/shared/UnbanRequestPage";
 
-import { SellerProductsPage, AddProductPage, SellerProfilePage, SellerProductDetailsPage } from "./pages/seller";
+import {
+  SellerProductsPage,
+  AddProductPage,
+  SellerProfilePage,
+  SellerProductDetailsPage,
+} from "./pages/seller";
 
 import {
   AdminDashboardPage,
@@ -48,7 +58,7 @@ import {
   AdminUpgradeRequestsPage,
   AdminProfilePage,
   AdminSystemConfigPage,
-  AdminBannedUsersPage
+  AdminBannedUsersPage,
 } from "./pages/admin";
 
 import { OrderCompletionPage } from "./pages/order";
@@ -71,7 +81,10 @@ const RoleBasedRedirect = ({ children }: { children: React.ReactNode }) => {
     if (user?.role === "seller" && location.pathname === "/") {
       navigate("/seller/products");
     }
-    if (user?.role === "admin" && (location.pathname === "/" || location.pathname === "/admin/")) {
+    if (
+      user?.role === "admin" &&
+      (location.pathname === "/" || location.pathname === "/admin/")
+    ) {
       if (location.pathname === "/") navigate("/admin");
     }
   }, [user, navigate, location]);
@@ -120,7 +133,10 @@ const App = () => {
                 <Route path="auth" element={<AuthLayout />}>
                   <Route path="login" element={<LoginPage />} />
                   <Route path="register" element={<RegisterPage />} />
-                  <Route path="reset-password" element={<ResetPasswordPage />} />
+                  <Route
+                    path="reset-password"
+                    element={<ResetPasswordPage />}
+                  />
                   <Route path="logout" element={<LogoutPage />} />
                 </Route>
 
@@ -133,11 +149,23 @@ const App = () => {
                 <Route element={<ProtectedRoute allowedRoles={["seller"]} />}>
                   <Route path="seller" element={<SellerLayout />}>
                     <Route path="products" element={<SellerProductsPage />} />
-                    <Route path="products/:id" element={<SellerProductDetailsPage />} />
-                    <Route path="ended-products" element={<SellerProductsPage />} />
-                    <Route path="bid-winners" element={<SellerProductsPage />} />
+                    <Route
+                      path="products/:id"
+                      element={<SellerProductDetailsPage />}
+                    />
+                    <Route
+                      path="ended-products"
+                      element={<SellerProductsPage />}
+                    />
+                    <Route
+                      path="bid-winners"
+                      element={<SellerProductsPage />}
+                    />
                     <Route path="add-product" element={<AddProductPage />} />
-                    <Route path="orders/:id" element={<OrderCompletionPage />} />
+                    <Route
+                      path="orders/:id"
+                      element={<OrderCompletionPage />}
+                    />
                     <Route path="profile" element={<SellerProfilePage />} />
                   </Route>
                 </Route>
@@ -150,8 +178,15 @@ const App = () => {
                       path="users/:id"
                       element={<AdminUserDetailsPage />}
                     />
+                    <Route
+                      path="banned-users"
+                      element={<AdminBannedUsersPage />}
+                    />
                     <Route path="products" element={<AdminProductsPage />} />
-                    <Route path="products/:id" element={<AdminProductDetailsPage />} />
+                    <Route
+                      path="products/:id"
+                      element={<AdminProductDetailsPage />}
+                    />
                     <Route path="orders" element={<AdminOrdersPage />} />
                     <Route
                       path="orders/:id"
