@@ -1182,6 +1182,8 @@ export const updateSystemConfig = async (data: {
   auctionExtensionWindow?: number;
   auctionExtensionTime?: number;
   autoBidDelay?: number;
+  bidEmailThrottlingWindow?: number;
+  bidEmailCooldown?: number;
 }) => {
   let config = await SystemConfig.findOne();
   if (!config) {
@@ -1196,6 +1198,12 @@ export const updateSystemConfig = async (data: {
   }
   if (data.autoBidDelay !== undefined) {
     config.autoBidDelay = data.autoBidDelay;
+  }
+  if (data.bidEmailThrottlingWindow !== undefined) {
+    config.bidEmailThrottlingWindow = data.bidEmailThrottlingWindow;
+  }
+  if (data.bidEmailCooldown !== undefined) {
+    config.bidEmailCooldown = data.bidEmailCooldown;
   }
 
   await config.save();

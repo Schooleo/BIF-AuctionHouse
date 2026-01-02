@@ -214,6 +214,8 @@ const seed = async () => {
     auctionExtensionWindow: 5,
     auctionExtensionTime: 10,
     autoBidDelay: 1000,
+    bidEmailThrottlingWindow: 30,
+    bidEmailCooldown: 6,
   });
 
   console.log("👤 Creating Users...");

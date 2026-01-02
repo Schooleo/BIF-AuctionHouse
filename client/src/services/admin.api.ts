@@ -430,6 +430,8 @@ export const adminApi = {
     auctionExtensionWindow?: number; // In minutes
     auctionExtensionTime?: number; // In minutes
     autoBidDelay?: number; // In milliseconds
+    bidEmailThrottlingWindow?: number; // In minutes
+    bidEmailCooldown?: number; // In hours
   }): Promise<SystemConfig> => {
     const response = await fetch(`${API_BASE}/api/admin/config`, {
       method: "PUT",

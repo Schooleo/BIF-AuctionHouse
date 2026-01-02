@@ -67,6 +67,10 @@ export interface IProduct extends Document {
 
   rejectedBidders: Types.ObjectId[];
   isEndedEmailSent?: boolean;
+
+  // Email Throttling (3.5)
+  emailNotifications?: { user: Types.ObjectId; lastSentAt: Date }[];
+  firstPendingBidAt?: Date | undefined;
 }
 
 // Schema cho product
@@ -116,6 +120,16 @@ const productSchema = new Schema<IProduct>(
       default: [],
     },
     isEndedEmailSent: { type: Boolean, default: false },
+    emailNotifications: {
+      type: [
+        {
+          user: { type: Schema.Types.ObjectId, ref: "User" },
+          lastSentAt: { type: Date, default: Date.now },
+        },
+      ],
+      default: [],
+    },
+    firstPendingBidAt: { type: Date },
   },
   { timestamps: true }
 );

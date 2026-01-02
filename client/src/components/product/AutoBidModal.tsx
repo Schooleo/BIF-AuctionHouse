@@ -112,7 +112,7 @@ const AutoBidModal: React.FC<AutoBidModalProps> = ({
         if (
           data.myAutoBidMaxPrice &&
           data.myAutoBidStepPrice &&
-          data.myAutoBidMaxPrice >= currentPrice
+          data.myAutoBidMaxPrice >= data.suggestedPrice
         ) {
           setMaxPrice(data.myAutoBidMaxPrice.toString());
           setCurrentStepPrice(data.myAutoBidStepPrice);
