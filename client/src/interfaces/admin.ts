@@ -156,6 +156,8 @@ export interface SystemConfig {
   auctionExtensionWindow: number;
   auctionExtensionTime: number;
   autoBidDelay: number;
+  bidEmailThrottlingWindow: number;
+  bidEmailCooldown: number;
   createdAt: string;
   updatedAt: string;
 }

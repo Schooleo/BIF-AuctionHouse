@@ -419,8 +419,12 @@ export const bidderService = {
       }
     }
 
-    // Logic gửi Email (Bất đồng bộ)
-    this._sendBidEmails(product, bidder, price);
+    // Logic gửi Email (Pending / Throttled)
+    // this._sendBidEmails(product, bidder, price);
+    if (!product.firstPendingBidAt) {
+      product.firstPendingBidAt = new Date();
+      await product.save();
+    }
 
     return { bid, product };
   },
