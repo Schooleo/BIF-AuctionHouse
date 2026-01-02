@@ -1794,6 +1794,8 @@ export const denyUnbanRequest = async (
   await forceDeleteUser(userId);
 
   return request;
+};
+
 export const deleteOrder = async (orderId: string) => {
   // 1. Find the order
   const order = await Order.findById(orderId);
