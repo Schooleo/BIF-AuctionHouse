@@ -23,7 +23,7 @@ import {
   ProductsPage,
   ProductDetailsPage,
   ProfilePage,
-  WatchlistPage as WatchListPage,
+  WatchListPage,
   BiddingPage,
 } from "./pages/user";
 
@@ -55,9 +55,8 @@ import {
   AdminOrderDetailsPage,
   AdminUpgradeRequestsPage,
   AdminProfilePage,
+  AdminSystemConfigPage,
 } from "./pages/admin";
-
-import AdminSystemConfigPage from "./pages/admin/AdminSystemConfigPage";
 
 import { OrderCompletionPage } from "./pages/order";
 

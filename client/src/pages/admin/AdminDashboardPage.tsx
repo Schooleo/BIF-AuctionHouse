@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
-import { adminApi, type DashboardStats } from "../../services/admin.api";
+import { adminApi } from "@services/admin.api";
+import type { DashboardStats } from "@interfaces/admin";
 import { Loader2 } from "lucide-react";
-import UserDistributionChart from "../../components/admin/charts/UserDistributionChart";
-import ProductCategoryChart from "../../components/admin/charts/ProductCategoryChart";
-import OrderStatusChart from "../../components/admin/charts/OrderStatusChart";
-import BidActivityWidget from "../../components/admin/charts/BidActivityWidget";
+import UserDistributionChart from "@components/admin/charts/UserDistributionChart";
+import ProductCategoryChart from "@components/admin/charts/ProductCategoryChart";
+import OrderStatusChart from "@components/admin/charts/OrderStatusChart";
+import BidActivityWidget from "@components/admin/charts/BidActivityWidget";
 
 const AdminDashboardPage = () => {
   const [stats, setStats] = useState<DashboardStats | null>(null);

@@ -1,5 +1,5 @@
 import React from "react";
-import AdminOrderDetailsContainer from "../../containers/admin/AdminOrderDetailsContainer";
+import AdminOrderDetailsContainer from "@containers/admin/AdminOrderDetailsContainer";
 
 const AdminOrderDetailsPage: React.FC = () => {
   return <AdminOrderDetailsContainer />;
