@@ -13,6 +13,7 @@ import {
   blockUser,
   unblockUser,
   deleteUser,
+  forceDeleteUser,
   manageUserUpgradeRequests,
   approveUserUpgrade,
   rejectUserUpgrade,
@@ -59,6 +60,7 @@ router.patch("/users/:id/update", updateUser);
 router.post("/users/:id/block", blockUser);
 router.post("/users/:id/unblock", unblockUser);
 router.delete("/users/:id/delete", deleteUser);
+router.delete("/users/:id/force-delete", forceDeleteUser);
 
 // NEW: Extended user routes
 router.get("/users/:id/linked-profile", getLinkedAccountProfile);

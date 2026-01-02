@@ -4,7 +4,6 @@ import {
   ShieldCheck,
   Trash2,
   Clock,
-  X,
   Mail,
   Calendar,
   MessageSquare,
@@ -52,25 +51,21 @@ const BanInfoModal: React.FC<BanInfoModalProps> = ({
     }
   };
 
-  const handleDeny = async () => {
-    setActiveAction("deny");
-    try {
-      await onDenyRequest(denyNote || undefined);
-      setDenyNote("");
-      onClose();
-    } finally {
-      setActiveAction(null);
-    }
-  };
-
   const handleDeleteClick = () => {
     setIsDeleteConfirmOpen(true);
   };
 
   const handleConfirmDelete = async () => {
-    setActiveAction("delete");
+    setActiveAction("deny");
     try {
-      await onDeleteAccount();
+      // If there's a pending unban request, call deny (which force deletes)
+      if (unbanRequest && unbanRequest.status === "PENDING") {
+        await onDenyRequest(denyNote || undefined);
+      } else {
+        // Otherwise just delete account directly
+        await onDeleteAccount();
+      }
+      setDenyNote("");
       setIsDeleteConfirmOpen(false);
       onClose();
     } finally {
@@ -155,21 +150,16 @@ const BanInfoModal: React.FC<BanInfoModalProps> = ({
                     PENDING
                   </span>
                 </div>
-                <p className="text-sm text-gray-700">{unbanRequest.reason}</p>
 
-                {/* Deny note input */}
-                <div className="mt-3">
-                  <label className="text-xs text-gray-500 block mb-1">
-                    Admin note (optional for deny):
-                  </label>
-                  <textarea
-                    value={denyNote}
-                    onChange={(e) => setDenyNote(e.target.value)}
-                    className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-200 resize-none"
-                    rows={2}
-                    placeholder="Add a note explaining the denial..."
-                  />
-                </div>
+                {/* Request Title */}
+                <h5 className="font-semibold text-gray-800 mb-2">
+                  {unbanRequest.title}
+                </h5>
+
+                {/* Request Details */}
+                <p className="text-sm text-gray-700 whitespace-pre-wrap">
+                  {unbanRequest.details}
+                </p>
               </div>
             ) : (
               <div className="p-4 bg-gray-50 rounded-lg border border-gray-100 text-center">
@@ -191,25 +181,27 @@ const BanInfoModal: React.FC<BanInfoModalProps> = ({
               {activeAction === "unban" ? "Processing..." : "Unban User"}
             </button>
 
-            {unbanRequest && unbanRequest.status === "PENDING" && (
+            {unbanRequest && unbanRequest.status === "PENDING" ? (
               <button
-                onClick={handleDeny}
+                onClick={handleDeleteClick}
                 disabled={isLoading || activeAction !== null}
-                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <X size={18} />
-                {activeAction === "deny" ? "Processing..." : "Deny Request"}
+                <Trash2 size={18} />
+                {activeAction === "deny"
+                  ? "Processing..."
+                  : "Deny & Delete Account"}
+              </button>
+            ) : (
+              <button
+                onClick={handleDeleteClick}
+                disabled={isLoading || activeAction !== null}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Trash2 size={18} />
+                Delete Account
               </button>
             )}
-
-            <button
-              onClick={handleDeleteClick}
-              disabled={isLoading || activeAction !== null}
-              className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <Trash2 size={18} />
-              Delete Account
-            </button>
           </div>
         </div>
       </PopUpWindow>
