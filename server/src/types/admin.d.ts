@@ -6,6 +6,7 @@ export interface UserSearchParams {
   status?: string | undefined;
   sortBy?: string;
   sortOrder?: "asc" | "desc";
+  viewTrash?: boolean;
 }
 
 import { Request } from "express";

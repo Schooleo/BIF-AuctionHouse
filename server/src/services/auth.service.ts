@@ -1,5 +1,6 @@
 import { User } from "../models/user.model";
 import { OtpModel } from "../models/otp.model";
+import { BlacklistedEmail } from "../models/blacklistedEmail.model";
 import { generateToken } from "../utils/jwt.util";
 import { sendOTPEmail, sendPasswordResetOTPEmail } from "../utils/email.util";
 import { verifyRecaptcha } from "../utils/recaptcha.util";
@@ -30,6 +31,18 @@ export const authService = {
 
     if (from === "register" && existing) {
       throw new Error(AuthMessages.EMAIL_REGISTERED);
+    }
+
+    // Check if email is blacklisted (for registration)
+    if (from === "register") {
+      const blacklisted = await BlacklistedEmail.findOne({
+        email: email.toLowerCase(),
+      });
+      if (blacklisted) {
+        throw new Error(
+          "This email has been permanently deleted from our system."
+        );
+      }
     }
 
     if (from === "reset-password" && !existing) {
@@ -63,7 +76,11 @@ export const authService = {
     if (!recaptchaOK) throw new Error(AuthMessages.RECAPTCHA_FAILED);
 
     const otpRecord = await OtpModel.findOne({ email });
-    if (!otpRecord || otpRecord.otp !== otp || otpRecord.expiresAt < new Date()) {
+    if (
+      !otpRecord ||
+      otpRecord.otp !== otp ||
+      otpRecord.expiresAt < new Date()
+    ) {
       throw new Error(AuthMessages.OTP_INVALID);
     }
 
@@ -144,11 +161,21 @@ export const authService = {
       throw new Error("No email found from Google profile");
     }
 
+    // Check if email or googleId is blacklisted
+    const blacklisted = await BlacklistedEmail.findOne({
+      $or: [{ email: email.toLowerCase() }, { googleId: profile.id }],
+    });
+    if (blacklisted) {
+      throw new Error("This account has been permanently deleted.");
+    }
+
     const existingUser = await User.findOne({ email });
 
     if (existingUser) {
       if (!existingUser.googleId) {
-        throw new Error("This email is already registered with password. Please login using your email and password.");
+        throw new Error(
+          "This email is already registered with password. Please login using your email and password."
+        );
       }
       return existingUser;
     }
@@ -200,7 +227,7 @@ export const authService = {
 
     // Generate new token for linked account
     const token = generateToken({
-      id: linkedAccount._id.toString(),
+      id: (linkedAccount as any)._id.toString(),
       role: linkedAccount.role,
       email: linkedAccount.email,
     });

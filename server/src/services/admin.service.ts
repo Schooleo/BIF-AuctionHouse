@@ -9,6 +9,7 @@ import { SystemConfig } from "../models/systemConfig.model";
 import { Watchlist } from "../models/watchlist.model";
 import { UpgradeRequest } from "../models/upgradeRequest.model";
 import { UnbanRequest } from "../models/unbanRequest.model";
+import { BlacklistedEmail } from "../models/blacklistedEmail.model";
 import mongoose from "mongoose";
 import * as bcrypt from "bcrypt";
 
@@ -1684,7 +1685,7 @@ export const forceDeleteUser = async (userId: string) => {
       product.currentPrice = secondHighestBid.price;
     } else {
       // No other bidders, reset to starting price
-      product.currentBidder = undefined;
+      (product as any).currentBidder = null;
       product.currentPrice = product.startingPrice;
     }
 
@@ -1732,7 +1733,21 @@ export const forceDeleteUser = async (userId: string) => {
     Chat.deleteMany({ $or: [{ buyer: userId }, { seller: userId }] }),
   ]);
 
-  // 7. Delete user
+  // 7. Add email to blacklist before deleting user
+  if (user) {
+    await BlacklistedEmail.findOneAndUpdate(
+      { email: user.email.toLowerCase() },
+      {
+        email: user.email.toLowerCase(),
+        googleId: user.googleId || undefined,
+        reason: user.blockReason || "Force deleted by admin",
+        deletedAt: new Date(),
+      },
+      { upsert: true }
+    );
+  }
+
+  // 8. Delete user
   await User.findByIdAndDelete(userId);
 
   return { message: "User force deleted successfully", userId };
