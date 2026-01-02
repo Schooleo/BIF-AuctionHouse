@@ -6,13 +6,7 @@ import type { RegisterDto } from "@interfaces/auth";
 import EmailCard from "@components/forms/EmailCard";
 import { useAlertStore } from "@stores/useAlertStore";
 import GoogleAuthButton from "@components/ui/GoogleAuthButton";
-import {
-  validateUsername,
-  validateEmail,
-  validatePassword,
-  validateAddress,
-  validateOtp,
-} from "@utils/validation";
+import { validateUsername, validateEmail, validatePassword, validateAddress, validateOtp } from "@utils/validation";
 
 const RegisterContainer = () => {
   const [name, setName] = useState<string>("");
@@ -88,7 +82,12 @@ const RegisterContainer = () => {
         const response = await authApi.register(payload);
         if (response.token) {
           localStorage.setItem("token", response.token);
-          window.location.href = "/";
+          // Check if user is banned and redirect to banned page
+          if (response.user && response.user.status === "BLOCKED") {
+            window.location.href = "/banned";
+          } else {
+            window.location.href = "/";
+          }
         } else {
           addAlert("error", response.message!);
         }
@@ -111,31 +110,25 @@ const RegisterContainer = () => {
           label: "Username",
           type: "text",
           value: name,
-          onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
-            setName(e.target.value),
+          onChange: (e: React.ChangeEvent<HTMLInputElement>) => setName(e.target.value),
           isRequired: true,
           error: error.name,
         },
         <EmailCard
           label="register"
           value={email}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-            setEmail(e.target.value)
-          }
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
           disabled={false}
           emailError={error.email}
           otpError={error.otp}
           otpValue={otp}
-          onOtpChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-            setOtp(e.target.value)
-          }
+          onOtpChange={(e: React.ChangeEvent<HTMLInputElement>) => setOtp(e.target.value)}
         />,
         {
           label: "Address",
           type: "text",
           value: address,
-          onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
-            setAddress(e.target.value),
+          onChange: (e: React.ChangeEvent<HTMLInputElement>) => setAddress(e.target.value),
           isRequired: true,
           error: error.address,
         },
@@ -143,8 +136,7 @@ const RegisterContainer = () => {
           label: "Password",
           type: "password",
           value: password,
-          onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
-            setPassword(e.target.value),
+          onChange: (e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value),
           isRequired: true,
           error: error.password,
         },
@@ -152,8 +144,7 @@ const RegisterContainer = () => {
           label: "Confirm Password",
           type: "password",
           value: confirmPassword,
-          onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
-            setConfirmPassword(e.target.value),
+          onChange: (e: React.ChangeEvent<HTMLInputElement>) => setConfirmPassword(e.target.value),
           isRequired: true,
           error: error.confirmPassword,
         },
@@ -170,7 +161,7 @@ const RegisterContainer = () => {
       onSubmit={handleSubmit}
     >
       {/* PopUpAlert is handled globally, no local errors displayed here unless specialized */}
-    
+
       <div className="mt-4">
         <div className="relative">
           <div className="absolute inset-0 flex items-center">

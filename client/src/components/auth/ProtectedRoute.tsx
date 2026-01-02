@@ -10,6 +10,10 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ allowedRoles }) => {
   const location = useLocation();
   const isAuthenticated = !!user;
 
+  console.log("ProtectedRoute - User:", user);
+  console.log("ProtectedRoute - Status:", user?.status);
+  console.log("ProtectedRoute - Location:", location.pathname);
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-screen">
@@ -22,10 +26,14 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ allowedRoles }) => {
     return <Navigate to="/unauthorized" replace />;
   }
 
-  // Check if user is banned and restrict access
+  // Check if user is banned - MUST redirect to /banned unless already there
   if (user.status === "BLOCKED") {
-    const allowedPaths = ["/banned", "/unban-request", "/auth/logout"];
-    if (!allowedPaths.includes(location.pathname)) {
+    const allowedPaths = ["/banned", "/unban-request"];
+    // Check if current path is NOT in allowed paths
+    const isAllowedPath = allowedPaths.some((path) => location.pathname === path);
+
+    if (!isAllowedPath) {
+      console.log("User is BLOCKED, redirecting to /banned from:", location.pathname);
       return <Navigate to="/banned" replace />;
     }
   }

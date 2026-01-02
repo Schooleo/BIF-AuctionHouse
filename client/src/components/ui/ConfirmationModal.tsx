@@ -62,27 +62,24 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
       >
         <div className="flex justify-between items-center p-4 bg-primary-blue text-white">
           <h3 className="text-lg font-bold">{title}</h3>
-          <button
-            onClick={onClose}
-            className="text-white/80 hover:text-white transition-colors"
-          >
+          <button onClick={onClose} className="text-white/80 hover:text-white transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>
 
         <div className="p-6">
-          <p className="text-gray-700 font-medium text-center text-lg">
-            {message}
-          </p>
+          <p className="text-gray-700 font-medium text-center text-lg">{message}</p>
         </div>
 
         <div className="flex justify-center gap-4 p-6 pt-0">
-          <button
-            onClick={onClose}
-            className="px-6 py-2.5 text-sm font-semibold text-gray-700 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors min-w-[100px]"
-          >
-            {cancelText}
-          </button>
+          {cancelText && (
+            <button
+              onClick={onClose}
+              className="px-6 py-2.5 text-sm font-semibold text-gray-700 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors min-w-[100px]"
+            >
+              {cancelText}
+            </button>
+          )}
           <button
             onClick={() => {
               onConfirm();

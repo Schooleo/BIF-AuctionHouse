@@ -60,6 +60,15 @@ const RoleBasedRedirect = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation();
 
   useEffect(() => {
+    // Check if user is banned first
+    if (user?.status === "BLOCKED") {
+      const allowedPaths = ["/banned", "/unban-request", "/auth/logout"];
+      if (!allowedPaths.includes(location.pathname)) {
+        navigate("/banned", { replace: true });
+        return;
+      }
+    }
+
     if (user?.role === "seller" && location.pathname === "/") {
       navigate("/seller/products");
     }
