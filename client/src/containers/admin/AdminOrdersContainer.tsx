@@ -1,11 +1,12 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
-import { adminApi, type IOrder } from "../../services/admin.api";
-import OrderCard from "../../components/admin/OrderCard";
-import { useAlertStore } from "../../stores/useAlertStore";
+import { adminApi } from "@services/admin.api";
+import type { IOrder } from "@interfaces/admin";
+import OrderCard from "@components/admin/OrderCard";
+import { useAlertStore } from "@stores/useAlertStore";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import Spinner from "../../components/ui/Spinner";
-import ConfirmationModal from "../../components/ui/ConfirmationModal";
+import Spinner from "@components/ui/Spinner";
+import ConfirmationModal from "@components/ui/ConfirmationModal";
 
 const ADMIN_ORDER_STATUSES = [
   { value: "ongoing", label: "Ongoing" },
@@ -99,6 +100,14 @@ const AdminOrdersContainer: React.FC = () => {
     setIsModalOpen(true);
   };
 
+  const [orderToDelete, setOrderToDelete] = useState<string | null>(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+
+  const handleDeleteClick = (id: string) => {
+    setOrderToDelete(id);
+    setIsDeleteModalOpen(true);
+  };
+
   const confirmCancel = async () => {
     if (!orderToCancel) return;
     try {
@@ -112,6 +121,22 @@ const AdminOrdersContainer: React.FC = () => {
     } finally {
       setIsModalOpen(false);
       setOrderToCancel(null);
+    }
+  };
+
+  const confirmDelete = async () => {
+    if (!orderToDelete) return;
+    try {
+      await adminApi.deleteOrder(orderToDelete);
+      addAlert("success", "Order deleted successfully");
+      fetchOrders(); // Refresh list
+    } catch (error: unknown) {
+      const msg =
+        error instanceof Error ? error.message : "Failed to delete order";
+      addAlert("error", msg);
+    } finally {
+      setIsDeleteModalOpen(false);
+      setOrderToDelete(null);
     }
   };
 
@@ -207,6 +232,7 @@ const AdminOrdersContainer: React.FC = () => {
               key={order._id}
               order={order}
               onCancel={handleCancelClick}
+              onDelete={handleDeleteClick}
             />
           ))}
         </div>
@@ -226,6 +252,17 @@ const AdminOrdersContainer: React.FC = () => {
         title="Cancel Order"
         message="Are you sure you want to cancel this order? This action cannot be undone."
         confirmText="Yes, Cancel Order"
+        type="danger"
+      />
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={confirmDelete}
+        title="Delete Order"
+        message="Are you sure you want to DELETE this order? This will remove the order and its chat history PERMANENTLY. This action cannot be undone."
+        confirmText="Yes, DELETE Order"
         type="danger"
       />
     </div>

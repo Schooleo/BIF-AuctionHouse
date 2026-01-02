@@ -6,6 +6,7 @@ export { default as AdminOrdersPage } from "./AdminOrdersPage";
 export { default as AdminProductDetailsPage } from "./AdminProductDetailsPage";
 export { default as AdminProductsPage } from "./AdminProductsPage";
 export { default as AdminProfilePage } from "./AdminProfilePage";
+export { default as AdminSystemConfigPage } from "./AdminSystemConfigPage";
 export { default as AdminUserDetailsPage } from "./AdminUserDetailsPage";
 export { default as AdminUsersPage } from "./AdminUsersPage";
 export { default as AdminUpgradeRequestsPage } from "./UpgradeRequestsPage";

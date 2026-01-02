@@ -23,7 +23,7 @@ import {
   ProductsPage,
   ProductDetailsPage,
   ProfilePage,
-  WatchlistPage as WatchListPage,
+  WatchListPage,
   BiddingPage,
 } from "./pages/user";
 
@@ -55,9 +55,8 @@ import {
   AdminOrderDetailsPage,
   AdminUpgradeRequestsPage,
   AdminProfilePage,
+  AdminSystemConfigPage,
 } from "./pages/admin";
-
-import AdminSystemConfigPage from "./pages/admin/AdminSystemConfigPage";
 
 import { OrderCompletionPage } from "./pages/order";
 
@@ -156,6 +155,11 @@ const App = () => {
                 <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
                   <Route path="admin" element={<AdminLayout />}>
                     <Route index element={<AdminDashboardPage />} />
+                    <Route path="users" element={<AdminUsersPage />} />
+                    <Route
+                      path="users/:id"
+                      element={<AdminUserDetailsPage />}
+                    />
                     <Route path="products" element={<AdminProductsPage />} />
                     <Route
                       path="products/:id"
@@ -173,11 +177,6 @@ const App = () => {
                     <Route
                       path="categories/:id"
                       element={<AdminCategoryDetailsPage />}
-                    />
-                    <Route path="users" element={<AdminUsersPage />} />
-                    <Route
-                      path="users/:id"
-                      element={<AdminUserDetailsPage />}
                     />
                     <Route
                       path="upgrade-requests"

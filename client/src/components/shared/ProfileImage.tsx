@@ -7,6 +7,7 @@ import { useAuthStore } from "@stores/useAuthStore";
 import { useAlertStore } from "@stores/useAlertStore";
 import { bidderApi } from "@services/bidder.api";
 import { sellerApi } from "@services/seller.api";
+import { adminApi } from "@services/admin.api";
 
 interface ProfileImageProps {
   src?: string;
@@ -67,6 +68,8 @@ const ProfileImage: React.FC<ProfileImageProps> = ({
 
       if (isSeller) {
         await sellerApi.updateProfile({ avatar: url });
+      } else if (user?.role === "admin") {
+        await adminApi.updateProfile({ avatar: url });
       } else {
         await bidderApi.updateProfile({ avatar: url });
       }
@@ -106,6 +109,8 @@ const ProfileImage: React.FC<ProfileImageProps> = ({
       // 1. Update profile to clear avatar
       if (isSeller) {
         await sellerApi.updateProfile({ avatar: "" });
+      } else if (user?.role === "admin") {
+        await adminApi.updateProfile({ avatar: "" });
       } else {
         await bidderApi.updateProfile({ avatar: "" });
       }

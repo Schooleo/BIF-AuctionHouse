@@ -1,5 +1,5 @@
 import React from "react";
-import AdminSystemConfigContainer from "../../containers/admin/AdminSystemConfigContainer";
+import AdminSystemConfigContainer from "@containers/admin/AdminSystemConfigContainer";
 
 const AdminSystemConfigPage: React.FC = () => {
   return (
