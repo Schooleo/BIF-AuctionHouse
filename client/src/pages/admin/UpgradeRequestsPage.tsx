@@ -20,7 +20,7 @@ interface UpgradeRequest {
     };
     rejectedRequestsCount?: number;
   };
-  status: "pending" | "approved" | "rejected";
+  status: "pending" | "approved" | "rejected" | "expired";
   title: string;
   reasons: string;
   createdAt: string;
@@ -39,7 +39,7 @@ const formatTimeAgo = (date: string) => {
   const past = new Date(date);
   const diffInSeconds = Math.floor((now.getTime() - past.getTime()) / 1000);
 
-  if (diffInSeconds < 60) return "just now";
+  if (diffInSeconds < 60) return "Just now";
   if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minutes ago`;
   if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`;
   if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)} days ago`;
@@ -294,7 +294,7 @@ const UpgradeRequestsPage: React.FC = () => {
                           request.status
                         )}`}
                       >
-                        {request.status}
+                        {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
                       </span>
                       {request.status === "rejected" && request.rejectionReason && (
                         <div className="text-xs text-gray-500 mt-1">Reason: {request.rejectionReason}</div>

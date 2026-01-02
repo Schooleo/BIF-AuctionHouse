@@ -2,7 +2,8 @@ import mongoose, { Document, Schema } from "mongoose";
 
 export interface IUnbanRequest extends Document {
   user: mongoose.Types.ObjectId;
-  reason: string;
+  title: string; // 10-100 characters
+  details: string; // 50-500 characters
   status: "PENDING" | "APPROVED" | "DENIED";
   adminNote?: string;
   processedBy?: mongoose.Types.ObjectId;
@@ -18,10 +19,19 @@ const unbanRequestSchema = new Schema<IUnbanRequest>(
       ref: "User",
       required: true,
     },
-    reason: {
+    title: {
       type: String,
       required: true,
       trim: true,
+      minlength: 10,
+      maxlength: 100,
+    },
+    details: {
+      type: String,
+      required: true,
+      trim: true,
+      minlength: 50,
+      maxlength: 500,
     },
     status: {
       type: String,
@@ -46,10 +56,7 @@ const unbanRequestSchema = new Schema<IUnbanRequest>(
 );
 
 // Index for efficient queries
-unbanRequestSchema.index({ user: 1, status: 1 });
+unbanRequestSchema.index({ user: 1 }, { unique: true }); // Only ONE request per user
 unbanRequestSchema.index({ status: 1, createdAt: -1 });
 
-export const UnbanRequest = mongoose.model<IUnbanRequest>(
-  "UnbanRequest",
-  unbanRequestSchema
-);
+export const UnbanRequest = mongoose.model<IUnbanRequest>("UnbanRequest", unbanRequestSchema);

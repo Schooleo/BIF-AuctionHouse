@@ -155,7 +155,9 @@ const ProfilePage: React.FC = () => {
       ? "Request Pending"
       : upgradeRequest.status === "approved"
         ? "Already a Seller"
-        : "Resubmit Request";
+        : upgradeRequest.status === "expired"
+          ? "Request Expired - Create New"
+          : "Resubmit Request";
 
   const tabs: { id: TabType; label: string; icon: React.ReactNode }[] = [
     { id: "info", label: "Personal Info", icon: <User size={18} /> },
@@ -298,6 +300,14 @@ const ProfilePage: React.FC = () => {
                       <p className="text-sm text-gray-600 mb-4">
                         Become a seller to post products and create auctions on our platform.
                       </p>
+                      {upgradeRequest?.status === "expired" && (
+                        <div className="mb-4 p-3 bg-amber-50 border border-amber-300 rounded-md">
+                          <p className="text-sm text-amber-800">
+                            <span className="font-semibold">⏰ Request Expired:</span> Your pending request has expired
+                            after 7 days. You can create a new upgrade request now.
+                          </p>
+                        </div>
+                      )}
                       {upgradeRequest?.status === "rejected" && upgradeRequest.rejectionReason && (
                         <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
                           <p className="text-sm text-red-800">

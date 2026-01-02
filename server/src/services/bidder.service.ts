@@ -2,6 +2,7 @@ import { Watchlist } from "../models/watchlist.model";
 import { Product } from "../models/product.model";
 import { User, SystemConfig, Bid, Rating, AutoBid } from "../models/index.model";
 import { UpgradeRequest } from "../models/upgradeRequest.model";
+import { UnbanRequest } from "../models/unbanRequest.model";
 import { BidMessages, BidderMessages, WatchlistMessages, AuthMessages, ProductMessages } from "../constants/messages";
 import {
   sendQuestionEmail,
@@ -1066,9 +1067,10 @@ export const bidderService = {
       throw new Error(BidderMessages.PENDING_REQUEST_EXISTS);
     }
 
-    // Kiểm tra request gần nhất (bất kể status) để enforce giới hạn 1 tuần
+    // Kiểm tra request gần nhất (KHÔNG BAO GỒM expired) để enforce giới hạn 1 tuần
     const lastRequest = await UpgradeRequest.findOne({
       user: bidderId,
+      status: { $ne: "expired" }, // Bỏ qua expired requests
     }).sort({ createdAt: -1 });
 
     if (lastRequest) {
@@ -1134,3 +1136,45 @@ function maskBidderName(fullName: string): string {
 
   return "*".repeat(totalMaskLength + firstNames.length - 1) + " " + lastName;
 }
+
+/**
+ * Submit unban request
+ */
+export const submitUnbanRequest = async (userId: string, title: string, details: string) => {
+  // Check if user is actually banned
+  const user = await User.findById(userId);
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  if (user.status !== "BLOCKED") {
+    throw new Error("Only banned users can submit unban requests");
+  }
+
+  // Check if user already has an unban request (only ONE allowed)
+  const existingRequest = await UnbanRequest.findOne({ user: userId });
+  if (existingRequest) {
+    throw new Error("You have already submitted an unban request");
+  }
+
+  // Create unban request
+  const unbanRequest = await UnbanRequest.create({
+    user: userId,
+    title,
+    details,
+    status: "PENDING",
+  });
+
+  return unbanRequest;
+};
+
+/**
+ * Get unban request status for user
+ */
+export const getUnbanRequestStatus = async (userId: string) => {
+  const request = await UnbanRequest.findOne({ user: userId })
+    .populate("processedBy", "name email")
+    .sort({ createdAt: -1 });
+
+  return request;
+};
