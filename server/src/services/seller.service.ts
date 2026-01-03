@@ -8,6 +8,7 @@ import {
   sendAuctionEndedSellerEmail,
   sendAuctionWonEmail,
   sendRatingReceivedEmail,
+  sendDescriptionUpdateEmail,
 } from "../utils/email.util";
 
 export class SellerService {
@@ -41,6 +42,34 @@ export class SellerService {
     } as any);
 
     await product.save();
+
+    // EMAIL: Notify all participating bidders about description update
+    try {
+      // 1. Get List of Bidders
+      const bidderIds = await Bid.find({ product: productId }).distinct(
+        "bidder"
+      );
+
+      if (bidderIds.length > 0) {
+        const { User } = await import("../models/user.model");
+        const bidders = await User.find({
+          _id: { $in: bidderIds },
+        }).select("email name");
+
+        // 2. Send Emails
+        sendDescriptionUpdateEmail(
+          bidders.map((b) => ({ email: b.email, name: b.name })),
+          product.name,
+          productId,
+          description
+        ).catch((err) =>
+          console.error("Error sending description update emails:", err)
+        );
+      }
+    } catch (emailError) {
+      console.error("Failed to process description update emails:", emailError);
+    }
+
     return product;
   }
 

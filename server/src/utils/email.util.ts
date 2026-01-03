@@ -419,3 +419,39 @@ export const sendRatingReceivedEmail = async (
     htmlBody,
   });
 };
+
+export const sendDescriptionUpdateEmail = async (
+  bidders: Array<{ email: string; name: string }>,
+  productName: string,
+  productId: string,
+  newDescriptionFragment: string
+) => {
+  if (env.EMAIL_WEBHOOK_URL.length === 0) return;
+
+  const productUrl = `${env.FRONTEND_URL}/products/${productId}`;
+
+  // Gửi email cho từng bidder
+  const emailPromises = bidders.map(async (bidder) => {
+    const htmlBody = `
+      <p>Hello ${bidder.name},</p>
+      <p>The seller has updated the description for <strong>${productName}</strong>.</p>
+
+      <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin: 15px 0; border-left: 5px solid #17a2b8;">
+        <p style="margin: 5px 0;"><strong>New Description Info:</strong></p>
+        <p style="margin: 5px 0;">"${newDescriptionFragment}"</p>
+      </div>
+
+      <p><a href="${productUrl}" style="display: inline-block; padding: 10px 20px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px;">View Product</a></p>
+
+      <p>Regards,<br/>The BIF Auction House Team</p>
+    `;
+
+    return axios.post(env.EMAIL_WEBHOOK_URL, {
+      to: bidder.email,
+      subject: `Product Update: ${productName}`,
+      htmlBody,
+    });
+  });
+
+  await Promise.allSettled(emailPromises);
+};
