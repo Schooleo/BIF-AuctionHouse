@@ -1,14 +1,23 @@
-import React from "react";
+import React, { useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import AdminProductsContainer from "@containers/admin/AdminProductsContainer";
 
 const AdminProductsPage: React.FC = () => {
-  return (
-    <div className="space-y-6">
-      <h1 className="text-3xl font-bold text-gray-800">Products Management</h1>
-      <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
-        <p className="text-gray-500">To be implemented...</p>
-      </div>
-    </div>
-  );
+  const { status } = useParams<{ status: string }>();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // Validate status parameter
+    if (status !== "active" && status !== "ended") {
+      navigate("/admin/products/active", { replace: true });
+    }
+  }, [status, navigate]);
+
+  if (status !== "active" && status !== "ended") {
+    return null;
+  }
+
+  return <AdminProductsContainer status={status as "active" | "ended"} />;
 };
 
 export default AdminProductsPage;

@@ -8,14 +8,14 @@ import {
   Calendar,
   Package,
   User,
-  DollarSign,
   CheckCircle,
   AlertCircle,
   Truck,
   CreditCard,
   ShoppingBag,
 } from "lucide-react";
-import { adminApi, type AdminProductDetails } from "@services/admin.api";
+import { adminApi } from "@services/admin.api";
+import type { AdminProductDetails } from "@interfaces/admin";
 import type { Product } from "@interfaces/product";
 import { useAlertStore } from "@stores/useAlertStore";
 import Spinner from "@components/ui/Spinner";
@@ -47,7 +47,10 @@ const AdminProductDetailsContainer: React.FC<
   const [isExtendModalOpen, setIsExtendModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isBidHistoryOpen, setIsBidHistoryOpen] = useState(false);
-  const [questionToDelete, setQuestionToDelete] = useState<{ id: string; question: string } | null>(null); // Add this
+  const [questionToDelete, setQuestionToDelete] = useState<{
+    id: string;
+    question: string;
+  } | null>(null);
 
   const [newEndTime, setNewEndTime] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
@@ -58,8 +61,10 @@ const AdminProductDetailsContainer: React.FC<
       setError(null);
       const data = await adminApi.getProductDetails(id);
       setDetails(data);
-    } catch (err: any) {
-      setError(err.message || "Failed to load product details");
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : "Failed to load product details";
+      setError(message);
     } finally {
       setLoading(false);
     }
@@ -71,14 +76,28 @@ const AdminProductDetailsContainer: React.FC<
     fetchDetails();
   }, [id, fetchDetails]);
 
-  const handleUpdateProduct = async (updateData: any) => {
+  const handleUpdateProduct = async (updateData: Partial<Product>) => {
     try {
       setActionLoading(true);
-      await adminApi.updateProduct(id, updateData);
+      const cleanUpdateData = {
+        ...updateData,
+        // Ensure category is sent as ID string if it's an object
+        category:
+          typeof updateData.category === "object"
+            ? updateData.category?._id
+            : updateData.category,
+      };
+      // Cast to correct type for update
+      await adminApi.updateProduct(
+        id,
+        cleanUpdateData as Parameters<typeof adminApi.updateProduct>[1]
+      );
       addAlert("success", "Product updated successfully");
       await fetchDetails();
-    } catch (err: any) {
-      addAlert("error", err.message || "Failed to update product");
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : "Failed to update product";
+      addAlert("error", message);
       throw err;
     } finally {
       setActionLoading(false);
@@ -100,8 +119,10 @@ const AdminProductDetailsContainer: React.FC<
       setIsExtendModalOpen(false);
       setNewEndTime("");
       await fetchDetails();
-    } catch (err: any) {
-      addAlert("error", err.message || "Failed to extend end time");
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : "Failed to extend end time";
+      addAlert("error", message);
     } finally {
       setActionLoading(false);
     }
@@ -111,10 +132,15 @@ const AdminProductDetailsContainer: React.FC<
     try {
       setActionLoading(true);
       await adminApi.deleteProduct(id);
-      addAlert("success", "Product and all associated data deleted successfully");
+      addAlert(
+        "success",
+        "Product and all associated data deleted successfully"
+      );
       navigate(-1);
-    } catch (err: any) {
-      addAlert("error", err.message || "Failed to delete product");
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : "Failed to delete product";
+      addAlert("error", message);
     } finally {
       setActionLoading(false);
       setIsDeleteModalOpen(false);
@@ -130,8 +156,10 @@ const AdminProductDetailsContainer: React.FC<
       addAlert("success", "Question deleted successfully");
       setQuestionToDelete(null);
       await fetchDetails();
-    } catch (err: any) {
-      addAlert("error", err.message || "Failed to delete question");
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : "Failed to delete question";
+      addAlert("error", message);
     } finally {
       setActionLoading(false);
     }
@@ -139,18 +167,27 @@ const AdminProductDetailsContainer: React.FC<
 
   // Computed values (must be before conditional returns)
   const product = details?.product;
-  const bidHistory = details?.bidHistory || [];
+  const bidHistory = useMemo(() => {
+    return (details?.bidHistory || []).map((bid) => ({
+      ...bid,
+      bidder: {
+        ...bid.bidder,
+        rating: (bid.bidder.reputationScore || 0) * 5,
+      },
+    }));
+  }, [details?.bidHistory]);
   const isEnded = details?.isEnded || false;
   const order = details?.order;
   const hasActiveBids = (product?.bidCount || 0) > 0;
-  const timeRemaining = product ? getTimeRemaining(product.endTime) : { text: "", isEnded: true, isUrgent: false };
-  
+  const timeRemaining = product
+    ? getTimeRemaining(product.endTime)
+    : { text: "", isEnded: true, isUrgent: false };
+
   const allImages = useMemo(() => {
     if (!product) return [];
-    return [
-      product.mainImage,
-      ...(product.subImages || []),
-    ].filter(Boolean) as string[];
+    return [product.mainImage, ...(product.subImages || [])].filter(
+      Boolean
+    ) as string[];
   }, [product]);
 
   const sanitizedDescription = useMemo(() => {
@@ -190,20 +227,22 @@ const AdminProductDetailsContainer: React.FC<
   // Get delete warning message
   const getDeleteWarningMessage = () => {
     if (!product) return "Are you sure you want to delete this product?";
-    
+
     const warnings: string[] = [];
-    
+
     if (!isEnded) {
       warnings.push("This product is still active and the auction is ongoing.");
     }
-    
+
     if (hasActiveBids) {
       warnings.push(`This product has ${product.bidCount} bid(s) placed.`);
     }
-    
+
     if (order) {
       const orderStatus = order.status.replace(/_/g, " ");
-      warnings.push(`This product is currently in the ordering process (Status: ${orderStatus}).`);
+      warnings.push(
+        `This product is currently in the ordering process (Status: ${orderStatus}).`
+      );
     }
 
     if (warnings.length === 0) {
@@ -239,7 +278,7 @@ const AdminProductDetailsContainer: React.FC<
         COMPLETED: "bg-green-100 text-green-800 border-green-300",
         CANCELLED: "bg-red-100 text-red-800 border-red-300",
       };
-      
+
       const getStatusIcon = () => {
         switch (order.status) {
           case "PENDING_PAYMENT":
@@ -261,7 +300,8 @@ const AdminProductDetailsContainer: React.FC<
       return (
         <span
           className={`px-3 py-1.5 rounded-full text-sm font-medium border flex items-center gap-2 ${
-            statusColors[order.status] || "bg-gray-100 text-gray-800 border-gray-300"
+            statusColors[order.status] ||
+            "bg-gray-100 text-gray-800 border-gray-300"
           }`}
         >
           {getStatusIcon()}
@@ -314,6 +354,16 @@ const AdminProductDetailsContainer: React.FC<
   return (
     <div className="py-6">
       <div className="max-w-6xl mx-auto px-4 md:px-0">
+        <div className="flex items-center gap-4 mb-6">
+          <button
+            onClick={() => navigate(-1)}
+            className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-500 hover:text-gray-900"
+          >
+            <ChevronLeft size={24} />
+          </button>
+          <h1 className="text-2xl font-bold text-gray-900">Product Details</h1>
+        </div>
+
         <div className="flex flex-col md:flex-row gap-10">
           {/* Left: Static Images */}
           <div className="w-full md:w-5/12 shrink-0">
@@ -372,7 +422,9 @@ const AdminProductDetailsContainer: React.FC<
                   <div className="flex items-center gap-2 text-blue-900">
                     <Clock className="w-5 h-5" />
                     <span className="font-semibold">Time Remaining:</span>
-                    <span className="text-lg font-bold">{timeRemaining.text}</span>
+                    <span className="text-lg font-bold">
+                      {timeRemaining.text}
+                    </span>
                   </div>
                 </div>
               )}
@@ -405,7 +457,9 @@ const AdminProductDetailsContainer: React.FC<
                 <div>
                   <p className="text-gray-500 mb-1">Buy Now</p>
                   <p className="font-semibold text-blue-600">
-                    {product.buyNowPrice ? formatPrice(product.buyNowPrice) : "N/A"}
+                    {product.buyNowPrice
+                      ? formatPrice(product.buyNowPrice)
+                      : "N/A"}
                   </p>
                 </div>
               </div>
@@ -414,7 +468,9 @@ const AdminProductDetailsContainer: React.FC<
             {/* Bidding Info */}
             <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
               <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-4">
-                {product?.winnerConfirmed ? "Confirmed Winner" : "Highest Bidder"}
+                {product?.winnerConfirmed
+                  ? "Confirmed Winner"
+                  : "Highest Bidder"}
               </h3>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -424,7 +480,8 @@ const AdminProductDetailsContainer: React.FC<
                       {currentBidderName}
                     </p>
                     <p className="text-sm text-gray-500">
-                      {typeof product.currentBidder === "object" && product.currentBidder?.rating
+                      {typeof product.currentBidder === "object" &&
+                      product.currentBidder?.rating
                         ? `⭐ ${product.currentBidder.rating.toFixed(1)}`
                         : "No rating"}
                     </p>
@@ -504,7 +561,9 @@ const AdminProductDetailsContainer: React.FC<
                 <div className="space-y-3 text-sm">
                   <div className="flex justify-between py-2 border-b border-gray-100">
                     <span className="text-gray-600">Order ID:</span>
-                    <span className="font-medium font-mono text-xs">{order._id}</span>
+                    <span className="font-medium font-mono text-xs">
+                      {order._id}
+                    </span>
                   </div>
                   <div className="flex justify-between py-2 border-b border-gray-100">
                     <span className="text-gray-600">Status:</span>
@@ -664,9 +723,9 @@ const AdminProductDetailsContainer: React.FC<
               type="datetime-local"
               value={newEndTime}
               onChange={(e) => setNewEndTime(e.target.value)}
-              min={new Date(
-                new Date(product.endTime).getTime() + 60000
-              ).toISOString().slice(0, 16)}
+              min={new Date(new Date(product.endTime).getTime() + 60000)
+                .toISOString()
+                .slice(0, 16)}
               className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary-blue focus:border-primary-blue"
             />
           </div>

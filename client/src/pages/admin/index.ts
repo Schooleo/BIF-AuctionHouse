@@ -1,9 +1,9 @@
 export { default as AdminCategoriesPage } from "./AdminCategoriesPage";
-export { default as AdminCategoryDetailsPage } from "./AdminCategoryDetailsPage";
 export { default as AdminDashboardPage } from "./AdminDashboardPage";
 export { default as AdminOrderDetailsPage } from "./AdminOrderDetailsPage";
 export { default as AdminOrdersPage } from "./AdminOrdersPage";
 export { default as AdminProductDetailsPage } from "./AdminProductDetailsPage";
+export { default as AdminProductsPage } from "./AdminProductsPage";
 export { default as AdminActiveProductsPage } from "./AdminActiveProductsPage";
 export { default as AdminEndedProductsPage } from "./AdminEndedProductsPage";
 export { default as AdminAddProductPage } from "./AdminAddProductPage";

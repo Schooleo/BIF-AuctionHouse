@@ -1,5 +1,5 @@
 import { handleResponse } from "@utils/handleResponse";
-import type { Product, CreateProductDto } from "@interfaces/product";
+import type { Product } from "@interfaces/product";
 import type {
   IOrder,
   DashboardStats,
@@ -17,6 +17,12 @@ import type {
   User,
   Review,
   UpgradeRequest,
+  AdminProductDetails,
+  GetProductsParams,
+  GetProductsResponse,
+  SellerOption,
+  AdminCreateProductDto,
+  UpdateProductDto,
 } from "@interfaces/admin";
 
 const API_BASE = import.meta.env.VITE_APP_API_URL || "";
@@ -41,6 +47,33 @@ export const adminApi = {
       }
     );
     return handleResponse<DashboardStats>(response);
+  },
+
+  getProducts: async (options: GetProductsParams) => {
+    const { search, ...rest } = options;
+
+    const cleanParams: Record<string, string> = {};
+
+    Object.entries(rest).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== "") {
+        cleanParams[key] = String(value);
+      }
+    });
+
+    if (search && search.trim() !== "") {
+      cleanParams.search = search.trim();
+    }
+
+    const query = new URLSearchParams(cleanParams);
+
+    const response = await fetch(
+      `${API_BASE}/api/admin/products?${query.toString()}`,
+      {
+        method: "GET",
+        headers: getAuthHeaders(),
+      }
+    );
+    return handleResponse<GetProductsResponse>(response);
   },
 
   // User Management
@@ -280,39 +313,6 @@ export const adminApi = {
     return handleResponse(response);
   },
 
-  getProducts: async (
-    params: GetProductsParams = {}
-  ): Promise<{
-    products: Product[];
-    total: number;
-    page: number;
-    totalPages: number;
-  }> => {
-    const query = new URLSearchParams();
-    if (params.page) query.append("page", params.page.toString());
-    if (params.limit) query.append("limit", params.limit.toString());
-    if (params.search) query.append("search", params.search);
-    if (params.sortBy) query.append("sortBy", params.sortBy);
-    if (params.sortOrder) query.append("sortOrder", params.sortOrder);
-    if (params.status) query.append("status", params.status);
-    if (params.categories) query.append("categories", params.categories);
-    if (params.minPrice !== undefined) query.append("minPrice", params.minPrice.toString());
-    if (params.maxPrice !== undefined) query.append("maxPrice", params.maxPrice.toString());
-
-    const url = `${API_BASE}/api/admin/products?${query.toString()}`;
-    const token = localStorage.getItem("token");
-
-    const res = await fetch(url, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    return handleResponse(res);
-  },
-
   getSellers: async (): Promise<SellerOption[]> => {
     const url = `${API_BASE}/api/admin/sellers`;
     const token = localStorage.getItem("token");
@@ -368,14 +368,11 @@ export const adminApi = {
     id: string,
     endTime: string
   ): Promise<Product> => {
-    const res = await fetch(
-      `${API_BASE}/api/admin/products/${id}/extend`,
-      {
-        method: "POST",
-        headers: getAuthHeaders(),
-        body: JSON.stringify({ endTime }),
-      }
-    );
+    const res = await fetch(`${API_BASE}/api/admin/products/${id}/extend`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ endTime }),
+    });
     return handleResponse(res);
   },
 
@@ -387,7 +384,10 @@ export const adminApi = {
     return handleResponse(res);
   },
 
-  deleteProductQuestion: async (productId: string, questionId: string): Promise<{ message: string }> => {
+  deleteProductQuestion: async (
+    productId: string,
+    questionId: string
+  ): Promise<{ message: string }> => {
     const response = await fetch(
       `${API_BASE}/api/admin/products/${productId}/questions/${questionId}`,
       {

@@ -1222,21 +1222,31 @@ export const getProducts = async (options: {
   minPrice?: number;
   maxPrice?: number;
 }) => {
-  const { page, limit, search, sortBy, sortOrder, status, categories, minPrice, maxPrice } = options;
+  const {
+    page,
+    limit,
+    search,
+    sortBy,
+    sortOrder,
+    status,
+    categories,
+    minPrice,
+    maxPrice,
+  } = options;
 
   const query: any = {};
 
   // Enhanced search: name, category, description (prioritized)
   if (search) {
     const searchRegex = new RegExp(search, "i");
-    
+
     // Find categories matching the search term (including children and grandchildren)
     const matchingCategories = await Category.find({
-      name: searchRegex
+      name: searchRegex,
     }).select("_id");
-    
-    let allCategoryIds = matchingCategories.map(c => c._id);
-    
+
+    let allCategoryIds = matchingCategories.map((c) => c._id);
+
     // If categories were found, include their children and grandchildren
     if (allCategoryIds.length > 0) {
       // Find children of matching categories
@@ -1255,7 +1265,7 @@ export const getProducts = async (options: {
         ...grandChildCats.map((c) => c._id),
       ];
     }
-    
+
     query.$or = [
       { name: searchRegex }, // Priority 1: Product name
       { category: { $in: allCategoryIds } }, // Priority 2: Category (including children)
@@ -1274,12 +1284,14 @@ export const getProducts = async (options: {
   if (categories) {
     const categoryIds = categories
       .split(",")
-      .map(id => id.trim())
-      .filter(id => mongoose.Types.ObjectId.isValid(id));
+      .map((id) => id.trim())
+      .filter((id) => mongoose.Types.ObjectId.isValid(id));
 
     if (categoryIds.length > 0) {
       // Find ALL children/grandchildren for these categories
-      const catObjectIds = categoryIds.map((id) => new mongoose.Types.ObjectId(id));
+      const catObjectIds = categoryIds.map(
+        (id) => new mongoose.Types.ObjectId(id)
+      );
 
       // Find children of selected categories
       const childCats = await Category.find({
@@ -1317,13 +1329,12 @@ export const getProducts = async (options: {
 
   const [products, total] = await Promise.all([
     Product.find(query)
-      .populate("seller", "name email rating")
+      .populate("seller", "name email reputationScore")
       .populate("category", "name")
-      .populate("currentBidder", "name rating")
+      .populate("currentBidder", "name reputationScore")
       .sort(sortObject)
       .skip(skip)
-      .limit(limit)
-      .lean(),
+      .limit(limit),
     Product.countDocuments(query),
   ]);
 
@@ -1369,17 +1380,16 @@ export const getProductDetails = async (productId: string) => {
   }
 
   const product = await Product.findById(productId)
-    .populate("seller", "name email rating")
+    .populate("seller", "name email reputationScore")
     .populate("category", "name parentCategoryId")
-    .populate("currentBidder", "name rating")
+    .populate("currentBidder", "name reputationScore")
     .populate({
       path: "questions",
       populate: [
-        { path: "questioner", select: "name email rating" },
+        { path: "questioner", select: "name email reputationScore" },
         { path: "answerer", select: "name email" },
       ],
-    })
-    .lean();
+    });
 
   if (!product) {
     throw new Error("Product not found");
@@ -1387,10 +1397,9 @@ export const getProductDetails = async (productId: string) => {
 
   // Get bid history
   const bids = await Bid.find({ product: productId })
-    .populate("bidder", "name rating")
+    .populate("bidder", "name reputationScore")
     .sort({ createdAt: -1 })
-    .limit(50)
-    .lean();
+    .limit(50);
 
   // Check if product has ended
   const now = new Date();
@@ -1399,9 +1408,10 @@ export const getProductDetails = async (productId: string) => {
   // Get order info if exists
   let order = null;
   if (isEnded && product.currentBidder) {
-    order = await Order.findOne({ product: productId })
-      .populate("buyer", "name email rating")
-      .lean();
+    order = await Order.findOne({ product: productId }).populate(
+      "buyer",
+      "name email reputationScore"
+    );
   }
 
   return {
@@ -1479,7 +1489,7 @@ export const updateProduct = async (
   if (updateData.endTime) {
     const newEndTime = new Date(updateData.endTime);
     const currentEndTime = new Date(product.endTime);
-    
+
     if (newEndTime <= currentEndTime) {
       throw new Error("New end time must be later than current end time");
     }
@@ -1489,11 +1499,14 @@ export const updateProduct = async (
   }
 
   // Update description history if description changed
-  if (updateData.description && updateData.description !== product.description) {
+  if (
+    updateData.description &&
+    updateData.description !== product.description
+  ) {
     product.descriptionHistory.push({
       content: product.description,
       updatedAt: new Date(),
-    });
+    } as any);
   }
 
   // Apply updates

@@ -1,7 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import type { Product } from "@interfaces/product";
-import { formatPrice, maskName } from "@utils/product";
+import { formatPrice } from "@utils/product";
 import { getTimeRemaining } from "@utils/time";
 import { Clock, User, Gavel, Star, DollarSign, Package } from "lucide-react";
 
@@ -26,16 +26,7 @@ const AdminActiveProductCard: React.FC<AdminActiveProductCardProps> = ({
   } = product;
 
   const timeRemaining = getTimeRemaining(product.endTime);
-  const isEnded = new Date(product.endTime) <= new Date();
   const bidder = currentBidder;
-
-  const categoryName =
-    typeof product.category === "string"
-      ? product.category
-      : product.category?.name || "Unknown";
-
-  const sellerName =
-    typeof product.seller === "object" ? product.seller.name : "Unknown";
 
   const getTimeColor = () => {
     if (timeRemaining.isEnded) return "text-gray-500";
@@ -54,14 +45,14 @@ const AdminActiveProductCard: React.FC<AdminActiveProductCardProps> = ({
     });
   };
 
-  const handleCardClick = (e: React.MouseEvent) => {
+  const handleCardClick = () => {
     // Scroll to top immediately on click
     window.scrollTo(0, 0);
   };
 
   return (
     <Link
-      to={`/admin/products/${product._id}`}
+      to={`/admin/products/details/${_id}`}
       onClick={handleCardClick}
       className="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden group"
     >
@@ -81,7 +72,7 @@ const AdminActiveProductCard: React.FC<AdminActiveProductCardProps> = ({
       <div className="p-4 space-y-3">
         {/* Product Name */}
         <h3
-          className="text-lg font-bold text-gray-900 line-clamp-2 group-hover:text-blue-600 transition-colors min-h-[3.5rem]"
+          className="text-lg font-bold text-gray-900 line-clamp-2 group-hover:text-blue-600 transition-colors min-h-14"
           title={name}
         >
           {name}
@@ -163,9 +154,7 @@ const AdminActiveProductCard: React.FC<AdminActiveProductCardProps> = ({
             </div>
           ) : (
             <div className="bg-gray-50 rounded-lg px-3 py-2 text-center">
-              <span className="text-sm text-gray-500 italic">
-                No bids yet
-              </span>
+              <span className="text-sm text-gray-500 italic">No bids yet</span>
             </div>
           )}
         </div>

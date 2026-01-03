@@ -197,7 +197,7 @@ const AdminReviewCard: React.FC<AdminReviewCardProps> = ({
             <button
               onClick={() =>
                 review.product?._id &&
-                navigate(`/admin/products/${review.product._id}`)
+                navigate(`/admin/products/details/${review.product._id}`)
               }
               className="flex items-center gap-1 hover:text-blue-600 transition-colors"
             >

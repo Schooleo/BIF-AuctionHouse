@@ -12,7 +12,9 @@ import Spinner from "@components/ui/Spinner";
 import { useAlertStore } from "@stores/useAlertStore";
 import AdminReviewCard from "@components/admin/user/AdminReviewCard";
 import AdminProductCard from "@components/admin/user/AdminProductCard";
-import EditProfileModal from "@components/admin/user/EditProfileModal";
+import EditProfileModal, {
+  type ProfileData,
+} from "@components/admin/user/EditProfileModal";
 import {
   ArrowLeftRight,
   ShieldCheck,
@@ -175,8 +177,10 @@ const AdminUserDetailsPage: React.FC = () => {
       setCurrentRole(linkedData.profile.role as "seller" | "bidder");
       setReviewPage(1);
       setProductsPage(1);
-    } catch (error: any) {
-      addAlert("error", error.message || "Failed to switch profile");
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : "Failed to switch profile";
+      addAlert("error", message);
     } finally {
       setIsSwitchingProfile(false);
     }
@@ -202,8 +206,10 @@ const AdminUserDetailsPage: React.FC = () => {
       );
       addAlert("success", "User blocked successfully");
       setIsBlockModalOpen(false);
-    } catch (error: any) {
-      addAlert("error", error.message || "Failed to block user");
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : "Failed to block user";
+      addAlert("error", message);
     } finally {
       setIsUpdatingStatus(false);
     }
@@ -228,8 +234,10 @@ const AdminUserDetailsPage: React.FC = () => {
       );
       addAlert("success", "User unblocked successfully");
       setIsUnblockModalOpen(false);
-    } catch (error: any) {
-      addAlert("error", error.message || "Failed to unblock user");
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : "Failed to unblock user";
+      addAlert("error", message);
     } finally {
       setIsUpdatingStatus(false);
     }
@@ -242,17 +250,22 @@ const AdminUserDetailsPage: React.FC = () => {
       await adminApi.deleteUser(currentProfileId);
       addAlert("success", "User deleted successfully");
       navigate("/admin/users");
-    } catch (error: any) {
-      addAlert("error", error.message || "Failed to delete user");
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : "Failed to delete user";
+      addAlert("error", message);
     } finally {
       setIsDeleting(false);
       setIsDeleteModalOpen(false);
     }
   };
 
-  const handleUpdateProfile = async (profileData: any) => {
+  const handleUpdateProfile = async (profileData: ProfileData) => {
     if (!currentProfileId) return;
-    await adminApi.updateUser(currentProfileId, profileData);
+    await adminApi.updateUser(
+      currentProfileId,
+      profileData as unknown as Partial<UserDetailResponse["profile"]>
+    );
     // Refresh data
     await fetchUserData(currentProfileId, reviewPage);
     addAlert("success", "Profile updated successfully");
@@ -833,7 +846,7 @@ const AdminUserDetailsPage: React.FC = () => {
           email: profile.email,
           address: profile.address,
           contactEmail: profile.contactEmail,
-          dateOfBirth: (profile as any).dateOfBirth,
+          dateOfBirth: profile.dateOfBirth,
         }}
       />
     </div>

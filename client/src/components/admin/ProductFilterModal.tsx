@@ -1,19 +1,22 @@
 import React, { useState, useEffect } from "react";
-import { X, DollarSign, Tag, ChevronDown, ChevronRight } from "lucide-react";
+import { DollarSign, Tag, ChevronDown, ChevronRight } from "lucide-react";
 import { productApi } from "@services/product.api";
 import type { Category } from "@interfaces/product";
-import { formatPrice } from "@utils/product";
+import PopUpWindow from "@components/ui/PopUpWindow";
+import PriceRangeFilter from "@components/ui/PriceRangeFilter";
+
+const SLIDER_MAX = 500000000; // 500 million
 
 interface ProductFilterModalProps {
   isOpen: boolean;
   onClose: () => void;
   onApply: (filters: {
-    categories: Category[];
+    category?: Category;
     minPrice?: number;
     maxPrice?: number;
   }) => void;
   currentFilters: {
-    categories: Category[];
+    category?: Category;
     minPrice?: number;
     maxPrice?: number;
   };
@@ -26,28 +29,20 @@ const ProductFilterModal: React.FC<ProductFilterModalProps> = ({
   currentFilters,
 }) => {
   const [categories, setCategories] = useState<Category[]>([]);
-  const [selectedCategories, setSelectedCategories] = useState<Category[]>(
-    currentFilters.categories
-  );
-  const [minPrice, setMinPrice] = useState<string>(
-    currentFilters.minPrice?.toString() || ""
-  );
-  const [maxPrice, setMaxPrice] = useState<string>(
-    currentFilters.maxPrice?.toString() || ""
-  );
+  const [selectedCategory, setSelectedCategory] = useState<
+    Category | undefined
+  >(currentFilters.category);
+
+  // Price range state
+  const [priceRange, setPriceRange] = useState<[number, number]>([
+    currentFilters.minPrice || 0,
+    currentFilters.maxPrice || SLIDER_MAX,
+  ]);
+
   const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
   const [isLoadingCategories, setIsLoadingCategories] = useState(false);
 
-  useEffect(() => {
-    if (isOpen) {
-      fetchCategories();
-      setSelectedCategories(currentFilters.categories);
-      setMinPrice(currentFilters.minPrice?.toString() || "");
-      setMaxPrice(currentFilters.maxPrice?.toString() || "");
-    }
-  }, [isOpen, currentFilters]);
-
-  const fetchCategories = async () => {
+  const fetchCategories = React.useCallback(async () => {
     try {
       setIsLoadingCategories(true);
       const data = await productApi.fetchCategories();
@@ -57,15 +52,34 @@ const ProductFilterModal: React.FC<ProductFilterModalProps> = ({
     } finally {
       setIsLoadingCategories(false);
     }
-  };
+  }, []);
 
-  const toggleCategory = (category: Category) => {
-    setSelectedCategories((prev) => {
-      const isSelected = prev.some((c) => c._id === category._id);
-      return isSelected
-        ? prev.filter((c) => c._id !== category._id)
-        : [...prev, category];
-    });
+  useEffect(() => {
+    if (isOpen) {
+      if (categories.length === 0) {
+        fetchCategories();
+      }
+      setSelectedCategory(currentFilters.category);
+      setPriceRange([
+        currentFilters.minPrice || 0,
+        currentFilters.maxPrice || SLIDER_MAX,
+      ]);
+    }
+  }, [
+    isOpen,
+    categories.length,
+    fetchCategories,
+    currentFilters.category,
+    currentFilters.minPrice,
+    currentFilters.maxPrice,
+  ]);
+
+  const handleSelectCategory = (category: Category) => {
+    if (selectedCategory?._id === category._id) {
+      setSelectedCategory(undefined); // Deselect if already selected
+    } else {
+      setSelectedCategory(category);
+    }
   };
 
   const toggleExpand = (categoryId: string, e: React.MouseEvent) => {
@@ -79,45 +93,31 @@ const ProductFilterModal: React.FC<ProductFilterModalProps> = ({
 
   const handleApply = () => {
     const filters: {
-      categories: Category[];
+      category?: Category;
       minPrice?: number;
       maxPrice?: number;
     } = {
-      categories: selectedCategories,
+      category: selectedCategory,
+      minPrice: priceRange[0],
+      maxPrice: priceRange[1],
     };
-
-    if (minPrice) filters.minPrice = parseFloat(minPrice);
-    if (maxPrice) filters.maxPrice = parseFloat(maxPrice);
 
     onApply(filters);
     onClose();
   };
 
-  const handleReset = () => {
-    setSelectedCategories([]);
-    setMinPrice("");
-    setMaxPrice("");
-    setExpandedCategories([]);
-  };
-
-  const isInvalid =
-    minPrice &&
-    maxPrice &&
-    parseFloat(minPrice) >= parseFloat(maxPrice);
-
-  if (!isOpen) return null;
-
   const renderCategories = (cats: Category[], depth = 0) => {
     return cats.map((cat) => {
       const hasChildren = cat.children && cat.children.length > 0;
       const isExpanded = expandedCategories.includes(cat._id);
-      const isSelected = selectedCategories.some((c) => c._id === cat._id);
+      const isSelected = selectedCategory?._id === cat._id;
 
       return (
         <div key={cat._id} style={{ marginLeft: depth * 16 }}>
           <div className="flex items-center gap-2 py-2 hover:bg-gray-50 rounded px-2 transition-colors">
             {hasChildren && (
               <button
+                type="button"
                 onClick={(e) => toggleExpand(cat._id, e)}
                 className="p-1 hover:bg-gray-200 rounded transition-colors"
                 aria-label={isExpanded ? "Collapse" : "Expand"}
@@ -132,10 +132,11 @@ const ProductFilterModal: React.FC<ProductFilterModalProps> = ({
             {!hasChildren && <div className="w-6" />}
             <label className="flex items-center gap-2 flex-1 cursor-pointer">
               <input
-                type="checkbox"
+                type="radio"
+                name="category"
                 checked={isSelected}
-                onChange={() => toggleCategory(cat)}
-                className="w-4 h-4 rounded border-gray-300 text-primary-blue focus:ring-primary-blue cursor-pointer"
+                onChange={() => handleSelectCategory(cat)}
+                className="w-4 h-4 border-gray-300 text-primary-blue focus:ring-primary-blue cursor-pointer"
               />
               <span className="text-sm text-gray-700">{cat.name}</span>
             </label>
@@ -149,127 +150,60 @@ const ProductFilterModal: React.FC<ProductFilterModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 className="text-xl font-bold text-gray-800">Filter Products</h2>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-            aria-label="Close"
-          >
-            <X className="w-5 h-5 text-gray-500" />
-          </button>
+    <PopUpWindow
+      isOpen={isOpen}
+      onClose={onClose}
+      onSubmit={handleApply}
+      title="Filter Products"
+      submitText="Apply Filters"
+      size="lg"
+      submitButtonColor="bg-primary-blue"
+      hideFooter={false}
+      isLoading={false}
+    >
+      <div className="space-y-6">
+        {/* Categories Section */}
+        <div>
+          <div className="flex items-center gap-2 mb-3">
+            <Tag className="w-5 h-5 text-primary-blue" />
+            <h3 className="text-lg font-semibold text-gray-800">Categories</h3>
+          </div>
+          <div className="border border-gray-200 rounded-lg p-4 max-h-64 overflow-y-auto">
+            {isLoadingCategories ? (
+              <div className="text-sm text-gray-500 text-center py-4">
+                Loading categories...
+              </div>
+            ) : categories.length > 0 ? (
+              renderCategories(categories)
+            ) : (
+              <p className="text-sm text-gray-500 text-center py-4">
+                No categories available
+              </p>
+            )}
+          </div>
+          {selectedCategory && (
+            <p className="text-sm text-gray-600 mt-2">
+              Selected:{" "}
+              <span className="font-medium">{selectedCategory.name}</span>
+            </p>
+          )}
         </div>
 
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          {/* Categories Section */}
-          <div>
-            <div className="flex items-center gap-2 mb-3">
-              <Tag className="w-5 h-5 text-primary-blue" />
-              <h3 className="text-lg font-semibold text-gray-800">
-                Categories
-              </h3>
-            </div>
-            <div className="border border-gray-200 rounded-lg p-4 max-h-64 overflow-y-auto">
-              {isLoadingCategories ? (
-                <div className="text-sm text-gray-500 text-center py-4">
-                  Loading categories...
-                </div>
-              ) : categories.length > 0 ? (
-                renderCategories(categories)
-              ) : (
-                <p className="text-sm text-gray-500 text-center py-4">
-                  No categories available
-                </p>
-              )}
-            </div>
-            {selectedCategories.length > 0 && (
-              <p className="text-sm text-gray-600 mt-2">
-                {selectedCategories.length} categor
-                {selectedCategories.length !== 1 ? "ies" : "y"} selected
-              </p>
-            )}
+        {/* Price Range Section */}
+        <div>
+          <div className="flex items-center gap-2 mb-3">
+            <DollarSign className="w-5 h-5 text-primary-blue" />
+            <h3 className="text-lg font-semibold text-gray-800">Price Range</h3>
           </div>
-
-          {/* Price Range Section */}
-          <div>
-            <div className="flex items-center gap-2 mb-3">
-              <DollarSign className="w-5 h-5 text-primary-blue" />
-              <h3 className="text-lg font-semibold text-gray-800">
-                Price Range
-              </h3>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Min Price
-                </label>
-                <input
-                  type="number"
-                  value={minPrice}
-                  onChange={(e) => setMinPrice(e.target.value)}
-                  placeholder="0"
-                  min="0"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-blue focus:border-transparent"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Max Price
-                </label>
-                <input
-                  type="number"
-                  value={maxPrice}
-                  onChange={(e) => setMaxPrice(e.target.value)}
-                  placeholder="No limit"
-                  min="0"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-blue focus:border-transparent"
-                />
-              </div>
-            </div>
-            {isInvalid && (
-              <p className="text-sm text-red-500 mt-2">
-                Max price must be greater than min price
-              </p>
-            )}
-            {minPrice && maxPrice && !isInvalid && (
-              <p className="text-sm text-gray-600 mt-2">
-                Price range: {formatPrice(parseFloat(minPrice))} -{" "}
-                {formatPrice(parseFloat(maxPrice))}
-              </p>
-            )}
-          </div>
-        </div>
-
-        {/* Footer */}
-        <div className="flex items-center justify-between p-6 border-t border-gray-200 bg-gray-50">
-          <button
-            onClick={handleReset}
-            className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200 rounded-lg transition-colors"
-          >
-            Reset All
-          </button>
-          <div className="flex gap-3">
-            <button
-              onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleApply}
-              disabled={isInvalid}
-              className="px-4 py-2 text-sm font-medium text-white bg-primary-blue rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Apply Filters
-            </button>
-          </div>
+          <PriceRangeFilter
+            min={0}
+            max={SLIDER_MAX}
+            value={priceRange}
+            onChange={setPriceRange}
+          />
         </div>
       </div>
-    </div>
+    </PopUpWindow>
   );
 };
 

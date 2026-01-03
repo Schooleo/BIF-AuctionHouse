@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import type { User } from "../../services/admin.api";
-import { adminApi } from "../../services/admin.api";
-import ConfirmationModal from "../../components/ui/ConfirmationModal";
-import AddUserModal from "../../components/admin/AddUserModal";
-import { useAlertStore } from "../../stores/useAlertStore";
+import type { User } from "@interfaces/admin";
+import { adminApi } from "@services/admin.api";
+import ConfirmationModal from "@components/ui/ConfirmationModal";
+import AddUserModal from "@components/admin/AddUserModal";
+import { useAlertStore } from "@stores/useAlertStore";
 import {
   Trash2,
   ShieldCheck,
@@ -43,7 +43,7 @@ const AdminUsersPage: React.FC = () => {
   const [queryParams, setQueryParams] = useState<QueryParams>(() => ({
     page: Number(searchParams.get("page")) || DEFAULT_PARAMS.page,
     limit: Number(searchParams.get("limit")) || DEFAULT_PARAMS.limit,
-    search: searchParams.get("search") || DEFAULT_PARAMS.search,
+    search: searchParams.get("q") || DEFAULT_PARAMS.search,
     role: searchParams.get("role") || DEFAULT_PARAMS.role,
     status: searchParams.get("status") || DEFAULT_PARAMS.status,
     sortBy: searchParams.get("sortBy") || DEFAULT_PARAMS.sortBy,
@@ -89,7 +89,11 @@ const AdminUsersPage: React.FC = () => {
         value !== null &&
         value !== defaultValue
       ) {
-        urlParams.set(key, String(value));
+        if (key === "search") {
+          urlParams.set("q", String(value));
+        } else {
+          urlParams.set(key, String(value));
+        }
       }
     });
     setSearchParams(urlParams, { replace: true });
@@ -119,10 +123,10 @@ const AdminUsersPage: React.FC = () => {
           setTotalPages(res.totalPages);
           setTotalDocs(res.totalDocs);
         }
-      } catch (err: any) {
-        if (err.name === "AbortError") return;
+      } catch (err: unknown) {
+        if (err instanceof Error && err.name === "AbortError") return;
         console.error("Failed to fetch users:", err);
-        setError(err.message || "Failed to load users");
+        setError(err instanceof Error ? err.message : "Failed to load users");
       } finally {
         if (!abortController.signal.aborted) {
           setLoading(false);
@@ -159,9 +163,12 @@ const AdminUsersPage: React.FC = () => {
       setSelectedUserToDelete(null);
       addAlert("success", "User deleted successfully");
       refetchUsers();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Failed to delete user:", error);
-      addAlert("error", error.message || "Failed to delete user");
+      addAlert(
+        "error",
+        error instanceof Error ? error.message : "Failed to delete user"
+      );
     } finally {
       setIsDeleting(false);
     }
@@ -171,9 +178,9 @@ const AdminUsersPage: React.FC = () => {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
+        <div className="flex flex-col gap-1">
           <h1 className="text-2xl font-bold text-gray-800">Users Management</h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="text-sm text-gray-500">
             Manage all registered users in the system
           </p>
         </div>

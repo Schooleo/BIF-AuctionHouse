@@ -221,6 +221,26 @@ BIF-AuctionHouse/
   </tr>
 </table>
 
+---
+
+### 📸 Image Credits
+
+Product images used in the seed data are sourced from [Unsplash](https://unsplash.com/), a platform for freely-usable images. We extend our gratitude to the following photographers and contributors:
+
+**Special thanks to all Unsplash photographers whose work enriches this project**, including but not limited to:
+
+- Howard Bouchevereau
+- Hakim Menikh
+- Thai Nguyen
+- Lumi W
+- Its me Pravin
+- amjed omaf
+- And many other talented photographers
+
+All images are used in accordance with the [Unsplash License](https://unsplash.com/license), which allows free use for commercial and non-commercial purposes without requiring permission.
+
+---
+
 ### 📜 License
 
 This project is for educational purposes only and not intended for commercial use.

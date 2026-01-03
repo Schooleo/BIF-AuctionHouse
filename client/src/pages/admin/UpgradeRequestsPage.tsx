@@ -40,11 +40,16 @@ const formatTimeAgo = (date: string) => {
   const diffInSeconds = Math.floor((now.getTime() - past.getTime()) / 1000);
 
   if (diffInSeconds < 60) return "Just now";
-  if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minutes ago`;
-  if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`;
-  if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)} days ago`;
-  if (diffInSeconds < 2592000) return `${Math.floor(diffInSeconds / 604800)} weeks ago`;
-  if (diffInSeconds < 31536000) return `${Math.floor(diffInSeconds / 2592000)} months ago`;
+  if (diffInSeconds < 3600)
+    return `${Math.floor(diffInSeconds / 60)} minutes ago`;
+  if (diffInSeconds < 86400)
+    return `${Math.floor(diffInSeconds / 3600)} hours ago`;
+  if (diffInSeconds < 604800)
+    return `${Math.floor(diffInSeconds / 86400)} days ago`;
+  if (diffInSeconds < 2592000)
+    return `${Math.floor(diffInSeconds / 604800)} weeks ago`;
+  if (diffInSeconds < 31536000)
+    return `${Math.floor(diffInSeconds / 2592000)} months ago`;
   return `${Math.floor(diffInSeconds / 31536000)} years ago`;
 };
 
@@ -54,14 +59,24 @@ const UpgradeRequestsPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   // Get initial values from URL or defaults
-  const [filter, setFilter] = useState<"default" | "pending" | "approved" | "rejected">(
-    (searchParams.get("status") as any) || "default"
+  const [filter, setFilter] = useState<
+    "default" | "pending" | "approved" | "rejected"
+  >(
+    (searchParams.get("status") as
+      | "default"
+      | "pending"
+      | "approved"
+      | "rejected") || "default"
   );
   const [page, setPage] = useState(Number(searchParams.get("page")) || 1);
   const [totalPages, setTotalPages] = useState(1);
-  const [sortBy, setSortBy] = useState<"newest" | "oldest">((searchParams.get("sort") as any) || "newest");
+  const [sortBy, setSortBy] = useState<"newest" | "oldest">(
+    (searchParams.get("sort") as "newest" | "oldest") || "newest"
+  );
 
-  const [selectedRequest, setSelectedRequest] = useState<UpgradeRequest | null>(null);
+  const [selectedRequest, setSelectedRequest] = useState<UpgradeRequest | null>(
+    null
+  );
   const [showApproveModal, setShowApproveModal] = useState(false);
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
@@ -71,35 +86,49 @@ const UpgradeRequestsPage: React.FC = () => {
   const { addAlert } = useAlertStore();
 
   // Update URL params whenever filters change
-  const updateURLParams = () => {
+  const updateURLParams = React.useCallback(() => {
     const params = new URLSearchParams();
     if (filter !== "default") params.set("status", filter);
     if (page !== 1) params.set("page", page.toString());
     if (sortBy !== "newest") params.set("sort", sortBy);
     setSearchParams(params, { replace: true });
-  };
+  }, [filter, page, sortBy, setSearchParams]);
 
   useEffect(() => {
     updateURLParams();
-  }, [filter, page, sortBy]);
+  }, [updateURLParams]);
 
-  const fetchRequests = async () => {
+  const fetchRequests = React.useCallback(async () => {
     try {
       setLoading(true);
-      const statusFilter = filter === "default" ? undefined : (filter as "pending" | "approved" | "rejected");
-      const response = await adminApi.getUpgradeRequests(page, 10, statusFilter, undefined, sortBy);
+      const statusFilter =
+        filter === "default"
+          ? undefined
+          : (filter as "pending" | "approved" | "rejected");
+      const response = await adminApi.getUpgradeRequests(
+        page,
+        10,
+        statusFilter,
+        undefined,
+        sortBy
+      );
       setRequests(response.requests as UpgradeRequest[]);
       setTotalPages(response.pagination.totalPages);
-    } catch (error: any) {
-      addAlert("error", error.message || "Failed to fetch upgrade requests");
+    } catch (error: unknown) {
+      addAlert(
+        "error",
+        error instanceof Error
+          ? error.message
+          : "Failed to fetch upgrade requests"
+      );
     } finally {
       setLoading(false);
     }
-  };
+  }, [filter, page, sortBy, addAlert]);
 
   useEffect(() => {
     fetchRequests();
-  }, [page, filter, sortBy]);
+  }, [fetchRequests]);
 
   const handleApprove = async () => {
     if (!selectedRequest) return;
@@ -111,8 +140,11 @@ const UpgradeRequestsPage: React.FC = () => {
       setShowApproveModal(false);
       setSelectedRequest(null);
       fetchRequests();
-    } catch (error: any) {
-      addAlert("error", error.message || "Failed to approve request");
+    } catch (error: unknown) {
+      addAlert(
+        "error",
+        error instanceof Error ? error.message : "Failed to approve request"
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -132,8 +164,11 @@ const UpgradeRequestsPage: React.FC = () => {
       setSelectedRequest(null);
       setRejectionReason("");
       fetchRequests();
-    } catch (error: any) {
-      addAlert("error", error.message || "Failed to reject request");
+    } catch (error: unknown) {
+      addAlert(
+        "error",
+        error instanceof Error ? error.message : "Failed to reject request"
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -164,9 +199,12 @@ const UpgradeRequestsPage: React.FC = () => {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">Upgrade Requests Management</h1>
+          <h1 className="text-2xl font-bold text-gray-800">
+            Upgrade Requests Management
+          </h1>
           <p className="text-sm text-gray-500 mt-1">
-            Manage bidder upgrade requests to become sellers and view request history.
+            Manage bidder upgrade requests to become sellers and view request
+            history.
           </p>
         </div>
       </div>
@@ -180,7 +218,13 @@ const UpgradeRequestsPage: React.FC = () => {
               <select
                 value={filter}
                 onChange={(e) => {
-                  setFilter(e.target.value as any);
+                  setFilter(
+                    e.target.value as
+                      | "default"
+                      | "pending"
+                      | "approved"
+                      | "rejected"
+                  );
                   setPage(1);
                 }}
                 className="custom-select pl-4 py-2 bg-white border border-gray-200 rounded-lg text-sm cursor-pointer hover:border-primary-blue transition-colors focus:ring-0"
@@ -197,7 +241,7 @@ const UpgradeRequestsPage: React.FC = () => {
               <select
                 value={sortBy}
                 onChange={(e) => {
-                  setSortBy(e.target.value as any);
+                  setSortBy(e.target.value as "newest" | "oldest");
                   setPage(1);
                 }}
                 className="custom-select pl-4 py-2 bg-white border border-gray-200 rounded-lg text-sm cursor-pointer hover:border-primary-blue transition-colors focus:ring-0"
@@ -239,7 +283,9 @@ const UpgradeRequestsPage: React.FC = () => {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  User
+                </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Title
                 </th>
@@ -257,7 +303,10 @@ const UpgradeRequestsPage: React.FC = () => {
             <tbody className="bg-white divide-y divide-gray-200">
               {requests.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-4 text-center text-gray-500">
+                  <td
+                    colSpan={5}
+                    className="px-6 py-4 text-center text-gray-500"
+                  >
                     No upgrade requests found
                   </td>
                 </tr>
@@ -280,13 +329,19 @@ const UpgradeRequestsPage: React.FC = () => {
                           )}
                         </div>
                         <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">{request.user.name}</div>
-                          <div className="text-sm text-gray-500">{request.user.email}</div>
+                          <div className="text-sm font-medium text-gray-900">
+                            {request.user.name}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {request.user.email}
+                          </div>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="text-sm font-medium text-gray-900">{request.title}</div>
+                      <div className="text-sm font-medium text-gray-900">
+                        {request.title}
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span
@@ -294,11 +349,15 @@ const UpgradeRequestsPage: React.FC = () => {
                           request.status
                         )}`}
                       >
-                        {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
+                        {request.status.charAt(0).toUpperCase() +
+                          request.status.slice(1)}
                       </span>
-                      {request.status === "rejected" && request.rejectionReason && (
-                        <div className="text-xs text-gray-500 mt-1">Reason: {request.rejectionReason}</div>
-                      )}
+                      {request.status === "rejected" &&
+                        request.rejectionReason && (
+                          <div className="text-xs text-gray-500 mt-1">
+                            Reason: {request.rejectionReason}
+                          </div>
+                        )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {formatTimeAgo(request.createdAt)}
@@ -338,25 +397,41 @@ const UpgradeRequestsPage: React.FC = () => {
         {selectedRequest && (
           <div className="space-y-4">
             <div className="flex items-center justify-center w-16 h-16 mx-auto bg-green-100 rounded-full">
-              <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              <svg
+                className="w-8 h-8 text-green-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M5 13l4 4L19 7"
+                />
               </svg>
             </div>
 
             <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
               <p className="text-sm text-blue-800 mb-2">
-                <span className="font-semibold">{selectedRequest.user.name}</span> will receive a new seller account
-                with:
+                <span className="font-semibold">
+                  {selectedRequest.user.name}
+                </span>{" "}
+                will receive a new seller account with:
               </p>
               <ul className="ml-4 text-sm text-blue-700 space-y-1">
-                <li>• Email: {selectedRequest.user.email.replace("@", "+seller@")}</li>
+                <li>
+                  • Email: {selectedRequest.user.email.replace("@", "+seller@")}
+                </li>
                 <li>• Username: Seller-{selectedRequest.user.name}</li>
                 <li>• Same password as bidder account</li>
                 <li>• Ability to switch between accounts</li>
               </ul>
             </div>
 
-            <p className="text-center text-gray-600">Are you sure you want to proceed?</p>
+            <p className="text-center text-gray-600">
+              Are you sure you want to proceed?
+            </p>
           </div>
         )}
       </PopUpWindow>
@@ -379,15 +454,27 @@ const UpgradeRequestsPage: React.FC = () => {
         {selectedRequest && (
           <div className="space-y-4">
             <div className="flex items-center justify-center w-16 h-16 mx-auto bg-red-100 rounded-full">
-              <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              <svg
+                className="w-8 h-8 text-red-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
               </svg>
             </div>
 
             <div className="bg-amber-50 border-l-4 border-amber-500 p-4 rounded">
               <p className="text-sm text-amber-800">
-                <span className="font-semibold">{selectedRequest.user.name}</span> will be notified about this
-                rejection.
+                <span className="font-semibold">
+                  {selectedRequest.user.name}
+                </span>{" "}
+                will be notified about this rejection.
               </p>
             </div>
 
@@ -434,10 +521,20 @@ const UpgradeRequestsPage: React.FC = () => {
         }
         title="Request Details"
         submitText={selectedRequest?.status === "pending" ? "Approve" : "Close"}
-        cancelText={selectedRequest?.status === "pending" ? "Reject" : undefined}
+        cancelText={
+          selectedRequest?.status === "pending" ? "Reject" : undefined
+        }
         hideCancelButton={selectedRequest?.status !== "pending"}
-        submitButtonColor={selectedRequest?.status === "pending" ? "bg-green-600 hover:bg-green-700" : undefined}
-        cancelButtonColor={selectedRequest?.status === "pending" ? "text-white bg-red-600 hover:bg-red-700" : undefined}
+        submitButtonColor={
+          selectedRequest?.status === "pending"
+            ? "bg-green-600 hover:bg-green-700"
+            : undefined
+        }
+        cancelButtonColor={
+          selectedRequest?.status === "pending"
+            ? "text-white bg-red-600 hover:bg-red-700"
+            : undefined
+        }
         size="lg"
       >
         {selectedRequest && (
@@ -462,22 +559,32 @@ const UpgradeRequestsPage: React.FC = () => {
 
                 {/* User Info */}
                 <div className="flex-1">
-                  <h3 className="text-xl font-bold text-gray-900 mb-1">{selectedRequest.user.name}</h3>
+                  <h3 className="text-xl font-bold text-gray-900 mb-1">
+                    {selectedRequest.user.name}
+                  </h3>
                   <div className="space-y-2">
                     <div className="flex items-center gap-2 text-sm">
                       <span className="font-medium text-gray-700">Email:</span>
-                      <span className="text-gray-600">{selectedRequest.user.email}</span>
+                      <span className="text-gray-600">
+                        {selectedRequest.user.email}
+                      </span>
                     </div>
                     {selectedRequest.user.contactEmail && (
                       <div className="flex items-center gap-2 text-sm">
-                        <span className="font-medium text-gray-700">Contact Email:</span>
-                        <span className="text-gray-600">{selectedRequest.user.contactEmail}</span>
+                        <span className="font-medium text-gray-700">
+                          Contact Email:
+                        </span>
+                        <span className="text-gray-600">
+                          {selectedRequest.user.contactEmail}
+                        </span>
                       </div>
                     )}
                     {/* Rating */}
                     {selectedRequest.user.rating && (
                       <div className="flex items-center gap-2 text-sm">
-                        <span className="font-medium text-gray-700">Rating:</span>
+                        <span className="font-medium text-gray-700">
+                          Rating:
+                        </span>
                         <div className="flex items-center gap-3">
                           <span className="inline-flex items-center px-2 py-1 rounded-md bg-green-100 text-green-700 text-xs font-semibold">
                             👍 {selectedRequest.user.rating.positive}
@@ -492,10 +599,15 @@ const UpgradeRequestsPage: React.FC = () => {
                     {selectedRequest.user.rejectedRequestsCount !== undefined &&
                       selectedRequest.user.rejectedRequestsCount > 0 && (
                         <div className="flex items-center gap-2 text-sm">
-                          <span className="font-medium text-gray-700">Previous Rejections:</span>
+                          <span className="font-medium text-gray-700">
+                            Previous Rejections:
+                          </span>
                           <span className="inline-flex items-center px-2 py-1 rounded-md bg-amber-100 text-amber-800 text-xs font-semibold">
-                            {selectedRequest.user.rejectedRequestsCount} rejected request
-                            {selectedRequest.user.rejectedRequestsCount > 1 ? "s" : ""}
+                            {selectedRequest.user.rejectedRequestsCount}{" "}
+                            rejected request
+                            {selectedRequest.user.rejectedRequestsCount > 1
+                              ? "s"
+                              : ""}
                           </span>
                         </div>
                       )}
@@ -506,16 +618,22 @@ const UpgradeRequestsPage: React.FC = () => {
 
             {/* Request Information */}
             <div>
-              <h4 className="text-sm font-semibold text-gray-700 mb-3">Request Title</h4>
+              <h4 className="text-sm font-semibold text-gray-700 mb-3">
+                Request Title
+              </h4>
               <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                <p className="text-sm font-medium text-gray-900">{selectedRequest.title}</p>
+                <p className="text-sm font-medium text-gray-900">
+                  {selectedRequest.title}
+                </p>
               </div>
             </div>
 
             <div>
-              <h4 className="text-sm font-semibold text-gray-700 mb-3">Reasons for Upgrade</h4>
+              <h4 className="text-sm font-semibold text-gray-700 mb-3">
+                Reasons for Upgrade
+              </h4>
               <div className="bg-gray-50 p-5 rounded-lg max-h-[480px] overflow-y-auto overflow-x-hidden border border-gray-200 scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-200 hover:scrollbar-thumb-gray-500">
-                <p className="text-sm text-gray-700 whitespace-pre-wrap break-words leading-relaxed">
+                <p className="text-sm text-gray-700 whitespace-pre-wrap break-all leading-relaxed">
                   {selectedRequest.reasons}
                 </p>
               </div>
@@ -523,7 +641,9 @@ const UpgradeRequestsPage: React.FC = () => {
 
             {/* Status Information */}
             <div>
-              <h4 className="text-sm font-semibold text-gray-700 mb-3">Request Status</h4>
+              <h4 className="text-sm font-semibold text-gray-700 mb-3">
+                Request Status
+              </h4>
               <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
                 <div className="flex items-center justify-between">
                   <span
@@ -533,14 +653,21 @@ const UpgradeRequestsPage: React.FC = () => {
                   >
                     {selectedRequest.status.toUpperCase()}
                   </span>
-                  <p className="text-xs text-gray-500">Requested {formatTimeAgo(selectedRequest.createdAt)}</p>
+                  <p className="text-xs text-gray-500">
+                    Requested {formatTimeAgo(selectedRequest.createdAt)}
+                  </p>
                 </div>
-                {selectedRequest.status === "rejected" && selectedRequest.rejectionReason && (
-                  <div className="mt-3 pt-3 border-t border-gray-200">
-                    <p className="text-xs font-semibold text-gray-700 mb-1">Rejection Reason:</p>
-                    <p className="text-sm text-red-600">{selectedRequest.rejectionReason}</p>
-                  </div>
-                )}
+                {selectedRequest.status === "rejected" &&
+                  selectedRequest.rejectionReason && (
+                    <div className="mt-3 pt-3 border-t border-gray-200">
+                      <p className="text-xs font-semibold text-gray-700 mb-1">
+                        Rejection Reason:
+                      </p>
+                      <p className="text-sm text-red-600">
+                        {selectedRequest.rejectionReason}
+                      </p>
+                    </div>
+                  )}
               </div>
             </div>
           </div>

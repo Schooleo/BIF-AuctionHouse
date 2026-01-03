@@ -20,6 +20,27 @@ export const orderApi = {
     return handleResponse(res);
   },
 
+  getOrderByProduct: async (productId: string): Promise<Order | null> => {
+    const url = `${API_BASE}/api/orders/product/${productId}`;
+    const token = localStorage.getItem("token");
+
+    try {
+      const res = await fetch(url, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (res.status === 404) return null;
+      return handleResponse(res);
+    } catch (error) {
+      console.error("Error fetching order by product:", error);
+      return null;
+    }
+  },
+
   getOrder: async (orderId: string): Promise<Order> => {
     const url = `${API_BASE}/api/orders/${orderId}`;
     const token = localStorage.getItem("token");

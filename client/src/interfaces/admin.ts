@@ -166,6 +166,7 @@ export interface User {
   createdAt: string;
   contactEmail?: string;
   address?: string;
+  dateOfBirth?: string;
   [key: string]: unknown;
 }
 
@@ -339,3 +340,51 @@ export interface UpgradeRequest {
   rejectionReason?: string;
   rejectedAt?: string;
 }
+
+// Product Helper Interfaces
+import type { Product, CreateProductDto } from "@interfaces/product";
+
+export interface AdminProductDetails {
+  product: Product;
+  bidHistory: {
+    _id: string;
+    bidder: {
+      _id: string;
+      name: string;
+      avatar?: string;
+      reputationScore?: number;
+    };
+    price: number;
+    createdAt: string;
+  }[];
+  isEnded: boolean;
+  order?: IOrder;
+}
+
+export interface GetProductsParams {
+  page: number;
+  limit: number;
+  search: string;
+  sortBy: string;
+  sortOrder: "asc" | "desc";
+  status: "active" | "ended";
+  categories?: string;
+  minPrice?: number;
+  maxPrice?: number;
+}
+
+export interface GetProductsResponse {
+  products: Product[];
+  total: number;
+  page: number;
+  totalPages: number;
+}
+
+export interface SellerOption {
+  _id: string;
+  name: string;
+  email: string;
+}
+
+export type AdminCreateProductDto = CreateProductDto & { sellerId: string };
+export type UpdateProductDto = Partial<CreateProductDto>;
