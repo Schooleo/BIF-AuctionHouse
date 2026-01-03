@@ -287,12 +287,7 @@ const ProductInfoCard: React.FC<ProductInfoCardProps> = ({ product: initialProdu
       <h1 className="text-2xl md:text-3xl font-bold">{product.name}</h1>
       <p className="text-gray-500 text-sm md:text-base">Posted Time: {formatPostedTime(product.startTime)}</p>
       {isAuctionEnded ? (
-        <div className="flex items-center gap-2">
-          <span className="px-3 py-1 bg-gray-200 text-gray-700 rounded-full text-xs md:text-sm font-bold uppercase">
-            Auction Ended
-          </span>
-          <p className="text-gray-600 text-sm">Ended {timeRemaining(product.endTime)}</p>
-        </div>
+        <p className="text-gray-600 text-sm">{timeRemaining(product.endTime)}</p>
       ) : (
         <p className="text-red-600 font-semibold text-base md:text-lg">
           Time Remaining: {timeRemaining(product.endTime)}
@@ -331,7 +326,7 @@ const ProductInfoCard: React.FC<ProductInfoCardProps> = ({ product: initialProdu
               setSelectedUserName(product.seller.name);
               setIsRatingModalOpen(true);
             }}
-            className="text-xs px-2 py-1 bg-primary-blue text-white rounded-full hover:bg-blue-700 transition-colors"
+            className="text-xs px-2 py-1 bg-primary-blue text-white rounded-full hover:scale-105 transition-transform"
           >
             View Details
           </button>
@@ -350,7 +345,7 @@ const ProductInfoCard: React.FC<ProductInfoCardProps> = ({ product: initialProdu
                 <div className="flex items-center gap-2">
                   <p className="text-green-700 font-semibold">
                     Winner:{" "}
-                    {user?.role === "seller" && (product.currentBidder?._id || product.highestBidder?._id) ? (
+                    {product.currentBidder?._id || product.highestBidder?._id ? (
                       <button
                         onClick={() => {
                           const bidderId = product.currentBidder?._id || product.highestBidder?._id;
@@ -361,9 +356,9 @@ const ProductInfoCard: React.FC<ProductInfoCardProps> = ({ product: initialProdu
                             setIsRatingModalOpen(true);
                           }
                         }}
-                        className="text-green-700 hover:underline hover:text-green-800 font-semibold"
+                        className="text-green-700 hover:underline hover:scale-150 transition-transform inline-block font-semibold"
                       >
-                        {maskName(product.currentBidder?.name || product.highestBidder?.name || "Anonymous")}
+                        {product.currentBidder?.name || product.highestBidder?.name || "Anonymous"}
                       </button>
                     ) : (
                       maskName(product.currentBidder?.name || product.highestBidder?.name || "Anonymous")
@@ -398,7 +393,7 @@ const ProductInfoCard: React.FC<ProductInfoCardProps> = ({ product: initialProdu
           Current Highest Bidder -{" "}
           {product.bidCount > 0 ? (
             <>
-              {user?.role === "seller" && (product.currentBidder?._id || product.highestBidder?._id) ? (
+              {product.currentBidder?._id || product.highestBidder?._id ? (
                 <button
                   onClick={() => {
                     const bidderId = product.currentBidder?._id || product.highestBidder?._id;
@@ -409,9 +404,9 @@ const ProductInfoCard: React.FC<ProductInfoCardProps> = ({ product: initialProdu
                       setIsRatingModalOpen(true);
                     }
                   }}
-                  className="text-gray-700 hover:underline hover:text-primary-blue font-medium"
+                  className="text-gray-700 hover:underline hover:scale-150 transition-transform inline-block hover:text-primary-blue font-medium"
                 >
-                  {maskName(product.highestBidder?.name || product.currentBidder?.name || "Anonymous")}
+                  {product.highestBidder?.name || product.currentBidder?.name || "Anonymous"}
                 </button>
               ) : (
                 maskName(product.highestBidder?.name || product.currentBidder?.name || "Anonymous")
@@ -478,7 +473,7 @@ const ProductInfoCard: React.FC<ProductInfoCardProps> = ({ product: initialProdu
                   : isInWatchlist
                     ? "bg-gray-600 hover:scale-105"
                     : "bg-red-500 hover:scale-105"
-              } rounded-2xl transition-transform duration-150 px-4 py-3 flex items-center gap-2 text-sm font-medium`}
+              } rounded-2xl transition-transform duration-150 px-4 py-2 flex items-center gap-2 text-sm font-medium`}
               title={isAuctionEnded ? "Cannot modify watchlist for ended auctions" : ""}
             >
               {isAddingToWatchlist ? (
@@ -488,7 +483,7 @@ const ProductInfoCard: React.FC<ProductInfoCardProps> = ({ product: initialProdu
                 </>
               ) : isInWatchlist ? (
                 <>
-                  <Heart className="w-8 h-8" />
+                  <Heart className="w-4 h-4" />
                   <span>Remove Watchlist</span>
                 </>
               ) : (
@@ -511,7 +506,7 @@ const ProductInfoCard: React.FC<ProductInfoCardProps> = ({ product: initialProdu
                 : "bg-primary-blue hover:scale-105"
             } text-white transition-transform duration-200 text-center block`}
           >
-            {isAuctionEnded ? "Auction Ended" : "Sign In to Start Bidding"}
+            Sign In to Start Bidding
           </Link>
         ) : isAuctionEnded ? (
           isCurrentUserWinner ? (
