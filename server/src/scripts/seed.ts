@@ -127,6 +127,36 @@ const PRODUCT_CATALOG: Record<string, any[]> = {
         "https://images.unsplash.com/photo-1594470760093-c02cf339ad45?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHw0fHxMZWljYSUyMENhbWVyYXxlbnwwfHx8fDE3Njc0MzE5MjV8MA&ixlib=rb-4.1.0&q=80&w=400",
       ],
     },
+    {
+      name: "Sony Alpha 7 IV",
+      price: 60000000,
+      img: "https://images.unsplash.com/photo-1711322353001-6faf2c9110e1?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwxfHxTb255JTIwQWxwaGElMjA3JTIwSVZ8ZW58MHx8fHwxNzY3NDM1NTc0fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      subImages: [
+        "https://images.unsplash.com/photo-1758118107816-ddddfa3a1f44?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwyfHxTb255JTIwQWxwaGElMjA3JTIwSVZ8ZW58MHx8fHwxNzY3NDM1NTc0fDA&ixlib=rb-4.1.0&q=80&w=400",
+        "https://images.unsplash.com/photo-1696041760231-dc91e0046a09?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwzfHxTb255JTIwQWxwaGElMjA3JTIwSVZ8ZW58MHx8fHwxNzY3NDM1NTc0fDA&ixlib=rb-4.1.0&q=80&w=400",
+        "https://images.unsplash.com/photo-1642884422166-256f19bcbd85?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHw0fHxTb255JTIwQWxwaGElMjA3JTIwSVZ8ZW58MHx8fHwxNzY3NDM1NTc0fDA&ixlib=rb-4.1.0&q=80&w=400",
+      ],
+    },
+    {
+      name: "Fujifilm X-T5",
+      price: 45000000,
+      img: "https://images.unsplash.com/photo-1749016888524-967635aa2c6f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwxfHxGdWppZmlsbSUyMFgtVDUlMjBDYW1lcmF8ZW58MHx8fHwxNzY3NDM1NTgwfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      subImages: [
+        "https://images.unsplash.com/photo-1713846511721-78302c72c79a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwyfHxGdWppZmlsbSUyMFgtVDUlMjBDYW1lcmF8ZW58MHx8fHwxNzY3NDM1NTgwfDA&ixlib=rb-4.1.0&q=80&w=400",
+        "https://images.unsplash.com/photo-1655904174259-5514f4a37fd1?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwzfHxGdWppZmlsbSUyMFgtVDUlMjBDYW1lcmF8ZW58MHx8fHwxNzY3NDM1NTgwfDA&ixlib=rb-4.1.0&q=80&w=400",
+        "https://images.unsplash.com/photo-1655904174535-8faeb14e70e1?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHw0fHxGdWppZmlsbSUyMFgtVDUlMjBDYW1lcmF8ZW58MHx8fHwxNzY3NDM1NTgwfDA&ixlib=rb-4.1.0&q=80&w=400",
+      ],
+    },
+    {
+      name: "Canon EOS R5",
+      price: 90000000,
+      img: "https://images.unsplash.com/photo-1648781329670-5f00c1b37404?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwxfHxDYW5vbiUyMEVPUyUyMFI1fGVufDB8fHx8MTc2NzQzNTU4Nnww&ixlib=rb-4.1.0&q=80&w=1080",
+      subImages: [
+        "https://images.unsplash.com/photo-1698429772559-46b6fcf69513?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwyfHxDYW5vbiUyMEVPUyUyMFI1fGVufDB8fHx8MTc2NzQzNTU4Nnww&ixlib=rb-4.1.0&q=80&w=400",
+        "https://images.unsplash.com/photo-1698429772375-e15d1dfe023f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwzfHxDYW5vbiUyMEVPUyUyMFI1fGVufDB8fHx8MTc2NzQzNTU4Nnww&ixlib=rb-4.1.0&q=80&w=400",
+        "https://images.unsplash.com/photo-1628682993915-d7a90eddd2db?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHw0fHxDYW5vbiUyMEVPUyUyMFI1fGVufDB8fHx8MTc2NzQzNTU4Nnww&ixlib=rb-4.1.0&q=80&w=400",
+      ],
+    },
   ],
   Audio: [
     {
@@ -137,6 +167,36 @@ const PRODUCT_CATALOG: Record<string, any[]> = {
         "https://images.unsplash.com/photo-1571081607311-066958b1deba?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwyfHxIaWdoLUVuZCUyMEhlYWRwaG9uZXN8ZW58MHx8fHwxNzY3NDMxOTcwfDA&ixlib=rb-4.1.0&q=80&w=400",
         "https://images.unsplash.com/photo-1615554851544-e6249b92a492?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwzfHxIaWdoLUVuZCUyMEhlYWRwaG9uZXN8ZW58MHx8fHwxNzY3NDMxOTcwfDA&ixlib=rb-4.1.0&q=80&w=400",
         "https://images.unsplash.com/photo-1505739718967-6df30ff369c7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHw0fHxIaWdoLUVuZCUyMEhlYWRwaG9uZXN8ZW58MHx8fHwxNzY3NDMxOTcwfDA&ixlib=rb-4.1.0&q=80&w=400",
+      ],
+    },
+    {
+      name: "Sonos Era 300",
+      price: 12000000,
+      img: "https://images.unsplash.com/photo-1586855114963-c90b5ea55408?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwxfHxTb25vcyUyMEVyYSUyMDMwMCUyMFNwZWFrZXJ8ZW58MHx8fHwxNzY3NDM1NTkxfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      subImages: [
+        "https://images.unsplash.com/photo-1743521442683-08ffd8ac9e14?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwyfHxTb25vcyUyMEVyYSUyMDMwMCUyMFNwZWFrZXJ8ZW58MHx8fHwxNzY3NDM1NTkxfDA&ixlib=rb-4.1.0&q=80&w=400",
+        "https://images.unsplash.com/photo-1711127093141-caea1718c784?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwzfHxTb25vcyUyMEVyYSUyMDMwMCUyMFNwZWFrZXJ8ZW58MHx8fHwxNzY3NDM1NTkxfDA&ixlib=rb-4.1.0&q=80&w=400",
+        "https://images.unsplash.com/photo-1591452706295-06d0d6abc3aa?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHw0fHxTb25vcyUyMEVyYSUyMDMwMCUyMFNwZWFrZXJ8ZW58MHx8fHwxNzY3NDM1NTkxfDA&ixlib=rb-4.1.0&q=80&w=400",
+      ],
+    },
+    {
+      name: "Bose QuietComfort Headphones",
+      price: 8500000,
+      img: "https://images.unsplash.com/photo-1623318993015-4bb0490764bf?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwxfHxCb3NlJTIwUXVpZXRDb21mb3J0JTIwSGVhZHBob25lc3xlbnwwfHx8fDE3Njc0MzU1OTd8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      subImages: [
+        "https://images.unsplash.com/photo-1640300065113-738f2abb8ba6?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwyfHxCb3NlJTIwUXVpZXRDb21mb3J0JTIwSGVhZHBob25lc3xlbnwwfHx8fDE3Njc0MzU1OTd8MA&ixlib=rb-4.1.0&q=80&w=400",
+        "https://images.unsplash.com/photo-1570132251442-d38a55360c44?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwzfHxCb3NlJTIwUXVpZXRDb21mb3J0JTIwSGVhZHBob25lc3xlbnwwfHx8fDE3Njc0MzU1OTd8MA&ixlib=rb-4.1.0&q=80&w=400",
+        "https://images.unsplash.com/photo-1657223143933-33ceab36ecb9?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHw0fHxCb3NlJTIwUXVpZXRDb21mb3J0JTIwSGVhZHBob25lc3xlbnwwfHx8fDE3Njc0MzU1OTd8MA&ixlib=rb-4.1.0&q=80&w=400",
+      ],
+    },
+    {
+      name: "Vintage Turntable",
+      price: 15000000,
+      img: "https://images.unsplash.com/photo-1698074890098-63d01b33ccfd?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwxfHxWaW50YWdlJTIwVHVybnRhYmxlJTIwUmVjb3JkJTIwUGxheWVyfGVufDB8fHx8MTc2NzQzNTYwM3ww&ixlib=rb-4.1.0&q=80&w=1080",
+      subImages: [
+        "https://images.unsplash.com/photo-1616587998810-6e2a4a270866?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwyfHxWaW50YWdlJTIwVHVybnRhYmxlJTIwUmVjb3JkJTIwUGxheWVyfGVufDB8fHx8MTc2NzQzNTYwM3ww&ixlib=rb-4.1.0&q=80&w=400",
+        "https://images.unsplash.com/photo-1766353861243-71e5607a13eb?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwzfHxWaW50YWdlJTIwVHVybnRhYmxlJTIwUmVjb3JkJTIwUGxheWVyfGVufDB8fHx8MTc2NzQzNTYwM3ww&ixlib=rb-4.1.0&q=80&w=400",
+        "https://images.unsplash.com/photo-1758941853341-4e431b9693b7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHw0fHxWaW50YWdlJTIwVHVybnRhYmxlJTIwUmVjb3JkJTIwUGxheWVyfGVufDB8fHx8MTc2NzQzNTYwM3ww&ixlib=rb-4.1.0&q=80&w=400",
       ],
     },
   ],
@@ -161,6 +221,36 @@ const PRODUCT_CATALOG: Record<string, any[]> = {
         "https://images.unsplash.com/photo-1511204579483-e5c2b1d69acd?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHw0fHxQcm9mZXNzaW9uYWwlMjBEcm9uZXxlbnwwfHx8fDE3Njc0MzIwMTd8MA&ixlib=rb-4.1.0&q=80&w=400",
       ],
     },
+    {
+      name: "VR Headset Meta Quest",
+      price: 12000000,
+      img: "https://images.unsplash.com/photo-1741770067276-a10e15ff5197?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwxfHxWUiUyMEhlYWRzZXQlMjBNZXRhJTIwUXVlc3R8ZW58MHx8fHwxNzY3NDM1NjA4fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      subImages: [
+        "https://images.unsplash.com/photo-1712369448819-2ca1105339cf?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwyfHxWUiUyMEhlYWRzZXQlMjBNZXRhJTIwUXVlc3R8ZW58MHx8fHwxNzY3NDM1NjA4fDA&ixlib=rb-4.1.0&q=80&w=400",
+        "https://images.unsplash.com/photo-1713801129175-8e60c67e0412?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwzfHxWUiUyMEhlYWRzZXQlMjBNZXRhJTIwUXVlc3R8ZW58MHx8fHwxNzY3NDM1NjA4fDA&ixlib=rb-4.1.0&q=80&w=400",
+        "https://images.unsplash.com/photo-1641576039236-4c9b4cf846b0?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHw0fHxWUiUyMEhlYWRzZXQlMjBNZXRhJTIwUXVlc3R8ZW58MHx8fHwxNzY3NDM1NjA4fDA&ixlib=rb-4.1.0&q=80&w=400",
+      ],
+    },
+    {
+      name: "Smart Home Hub",
+      price: 4500000,
+      img: "https://images.unsplash.com/photo-1571251455684-2eb131fdb294?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwxfHxTbWFydCUyMEhvbWUlMjBIdWIlMjBEaXNwbGF5fGVufDB8fHx8MTc2NzQzNTYxNHww&ixlib=rb-4.1.0&q=80&w=1080",
+      subImages: [
+        "https://images.unsplash.com/photo-1650682009477-52fd77302b78?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwyfHxTbWFydCUyMEhvbWUlMjBIdWIlMjBEaXNwbGF5fGVufDB8fHx8MTc2NzQzNTYxNHww&ixlib=rb-4.1.0&q=80&w=400",
+        "https://images.unsplash.com/photo-1758577515339-93872db0d37e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwzfHxTbWFydCUyMEhvbWUlMjBIdWIlMjBEaXNwbGF5fGVufDB8fHx8MTc2NzQzNTYxNHww&ixlib=rb-4.1.0&q=80&w=400",
+        "https://images.unsplash.com/photo-1767355272538-e7177d16f979?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHw0fHxTbWFydCUyMEhvbWUlMjBIdWIlMjBEaXNwbGF5fGVufDB8fHx8MTc2NzQzNTYxNHww&ixlib=rb-4.1.0&q=80&w=400",
+      ],
+    },
+    {
+      name: "Kindle E-reader",
+      price: 3800000,
+      img: "https://images.unsplash.com/photo-1643913398973-f8e24bf6d1c1?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwxfHxLaW5kbGUlMjBFLXJlYWRlcnxlbnwwfHx8fDE3Njc0MzU2MTl8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      subImages: [
+        "https://images.unsplash.com/photo-1591719675150-a9302a9cb467?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwyfHxLaW5kbGUlMjBFLXJlYWRlcnxlbnwwfHx8fDE3Njc0MzU2MTl8MA&ixlib=rb-4.1.0&q=80&w=400",
+        "https://images.unsplash.com/photo-1506953752663-add60014e80e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwzfHxLaW5kbGUlMjBFLXJlYWRlcnxlbnwwfHx8fDE3Njc0MzU2MTl8MA&ixlib=rb-4.1.0&q=80&w=400",
+        "https://images.unsplash.com/photo-1747347643676-55ff6873cd51?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHw0fHxLaW5kbGUlMjBFLXJlYWRlcnxlbnwwfHx8fDE3Njc0MzU2MTl8MA&ixlib=rb-4.1.0&q=80&w=400",
+      ],
+    },
   ],
   Gaming: [
     {
@@ -173,6 +263,36 @@ const PRODUCT_CATALOG: Record<string, any[]> = {
         "https://images.unsplash.com/photo-1640301133815-4bec64fca33f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHw0fHxSZXRybyUyMEFyY2FkZSUyME1hY2hpbmV8ZW58MHx8fHwxNzY3NDMxOTAzfDA&ixlib=rb-4.1.0&q=80&w=400",
       ],
     },
+    {
+      name: "Nintendo Switch OLED",
+      price: 8500000,
+      img: "https://images.unsplash.com/photo-1680007966627-d49ae18dbbae?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwxfHxOaW50ZW5kbyUyMFN3aXRjaCUyME9MRUR8ZW58MHx8fHwxNzY3NDM1NjI1fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      subImages: [
+        "https://images.unsplash.com/photo-1715081406782-d605bd2d39a8?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwyfHxOaW50ZW5kbyUyMFN3aXRjaCUyME9MRUR8ZW58MHx8fHwxNzY3NDM1NjI1fDA&ixlib=rb-4.1.0&q=80&w=400",
+        "https://images.unsplash.com/photo-1665042003944-bc86d2efb0bf?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwzfHxOaW50ZW5kbyUyMFN3aXRjaCUyME9MRUR8ZW58MHx8fHwxNzY3NDM1NjI1fDA&ixlib=rb-4.1.0&q=80&w=400",
+        "https://images.unsplash.com/photo-1737055056934-0d274175b161?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHw0fHxOaW50ZW5kbyUyMFN3aXRjaCUyME9MRUR8ZW58MHx8fHwxNzY3NDM1NjI1fDA&ixlib=rb-4.1.0&q=80&w=400",
+      ],
+    },
+    {
+      name: "PlayStation 5",
+      price: 14000000,
+      img: "https://images.unsplash.com/photo-1622979138084-c03ae28968ed?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwxfHxQbGF5U3RhdGlvbiUyMDUlMjBDb25zb2xlfGVufDB8fHx8MTc2NzQzNTYzMXww&ixlib=rb-4.1.0&q=80&w=1080",
+      subImages: [
+        "https://images.unsplash.com/photo-1606813907291-d86efa9b94db?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwyfHxQbGF5U3RhdGlvbiUyMDUlMjBDb25zb2xlfGVufDB8fHx8MTc2NzQzNTYzMXww&ixlib=rb-4.1.0&q=80&w=400",
+        "https://images.unsplash.com/photo-1665041974623-d398d035023e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwzfHxQbGF5U3RhdGlvbiUyMDUlMjBDb25zb2xlfGVufDB8fHx8MTc2NzQzNTYzMXww&ixlib=rb-4.1.0&q=80&w=400",
+        "https://images.unsplash.com/photo-1632254219709-95d444c41189?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHw0fHxQbGF5U3RhdGlvbiUyMDUlMjBDb25zb2xlfGVufDB8fHx8MTc2NzQzNTYzMXww&ixlib=rb-4.1.0&q=80&w=400",
+      ],
+    },
+    {
+      name: "Xbox Series X",
+      price: 13500000,
+      img: "https://images.unsplash.com/photo-1607853827120-6847830b38b0?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwxfHxYYm94JTIwU2VyaWVzJTIwWCUyMENvbnNvbGV8ZW58MHx8fHwxNzY3NDM1NjM3fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      subImages: [
+        "https://images.unsplash.com/photo-1683823363266-efa8cedec4d4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwyfHxYYm94JTIwU2VyaWVzJTIwWCUyMENvbnNvbGV8ZW58MHx8fHwxNzY3NDM1NjM3fDA&ixlib=rb-4.1.0&q=80&w=400",
+        "https://images.unsplash.com/photo-1620815023653-f65690227267?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwzfHxYYm94JTIwU2VyaWVzJTIwWCUyMENvbnNvbGV8ZW58MHx8fHwxNzY3NDM1NjM3fDA&ixlib=rb-4.1.0&q=80&w=400",
+        "https://images.unsplash.com/photo-1620815023675-c9ed9927536b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHw0fHxYYm94JTIwU2VyaWVzJTIwWCUyMENvbnNvbGV8ZW58MHx8fHwxNzY3NDM1NjM3fDA&ixlib=rb-4.1.0&q=80&w=400",
+      ],
+    },
   ],
   TechAccessories: [
     {
@@ -183,6 +303,36 @@ const PRODUCT_CATALOG: Record<string, any[]> = {
         "https://images.unsplash.com/photo-1558050032-160f36233a07?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwyfHxNZWNoYW5pY2FsJTIwS2V5Ym9hcmR8ZW58MHx8fHwxNzY3NDMxOTQ4fDA&ixlib=rb-4.1.0&q=80&w=400",
         "https://images.unsplash.com/photo-1602025882379-e01cf08baa51?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwzfHxNZWNoYW5pY2FsJTIwS2V5Ym9hcmR8ZW58MHx8fHwxNzY3NDMxOTQ4fDA&ixlib=rb-4.1.0&q=80&w=400",
         "https://images.unsplash.com/photo-1625130694338-4110ba634e59?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHw0fHxNZWNoYW5pY2FsJTIwS2V5Ym9hcmR8ZW58MHx8fHwxNzY3NDMxOTQ4fDA&ixlib=rb-4.1.0&q=80&w=400",
+      ],
+    },
+    {
+      name: "MX Master 3S Mouse",
+      price: 2500000,
+      img: "https://images.unsplash.com/photo-1611846199341-e68b0da801eb?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwxfHxMb2dpdGVjaCUyME1YJTIwTWFzdGVyJTIwTW91c2V8ZW58MHx8fHwxNzY3NDM1NjQyfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      subImages: [
+        "https://images.unsplash.com/photo-1722682810978-98d5a0412546?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwyfHxMb2dpdGVjaCUyME1YJTIwTWFzdGVyJTIwTW91c2V8ZW58MHx8fHwxNzY3NDM1NjQyfDA&ixlib=rb-4.1.0&q=80&w=400",
+        "https://images.unsplash.com/photo-1722682811175-5df0b444d659?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwzfHxMb2dpdGVjaCUyME1YJTIwTWFzdGVyJTIwTW91c2V8ZW58MHx8fHwxNzY3NDM1NjQyfDA&ixlib=rb-4.1.0&q=80&w=400",
+        "https://images.unsplash.com/photo-1722682810969-06dfc9c9d517?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHw0fHxMb2dpdGVjaCUyME1YJTIwTWFzdGVyJTIwTW91c2V8ZW58MHx8fHwxNzY3NDM1NjQyfDA&ixlib=rb-4.1.0&q=80&w=400",
+      ],
+    },
+    {
+      name: "Anker Power Bank",
+      price: 1500000,
+      img: "https://images.unsplash.com/photo-1632156752304-8b3db7a7bab4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwxfHxBbmtlciUyMFBvd2VyJTIwQmFua3xlbnwwfHx8fDE3Njc0MzU2NDh8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      subImages: [
+        "https://images.unsplash.com/photo-1676116777245-1cc40079cd38?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwyfHxBbmtlciUyMFBvd2VyJTIwQmFua3xlbnwwfHx8fDE3Njc0MzU2NDh8MA&ixlib=rb-4.1.0&q=80&w=400",
+        "https://images.unsplash.com/photo-1632156752398-2b2cb4e6c907?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwzfHxBbmtlciUyMFBvd2VyJTIwQmFua3xlbnwwfHx8fDE3Njc0MzU2NDh8MA&ixlib=rb-4.1.0&q=80&w=400",
+        "https://images.unsplash.com/photo-1632156752251-e3759ed58466?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHw0fHxBbmtlciUyMFBvd2VyJTIwQmFua3xlbnwwfHx8fDE3Njc0MzU2NDh8MA&ixlib=rb-4.1.0&q=80&w=400",
+      ],
+    },
+    {
+      name: "Apple AirPods Max",
+      price: 13000000,
+      img: "https://images.unsplash.com/photo-1612116454817-2b0841e30eaf?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwxfHxBcHBsZSUyMEFpclBvZHMlMjBNYXh8ZW58MHx8fHwxNzY3NDM1NjUzfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      subImages: [
+        "https://images.unsplash.com/photo-1616661318204-51ededbdf7a8?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwyfHxBcHBsZSUyMEFpclBvZHMlMjBNYXh8ZW58MHx8fHwxNzY3NDM1NjUzfDA&ixlib=rb-4.1.0&q=80&w=400",
+        "https://images.unsplash.com/photo-1628329567705-f8f7150c3cff?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwzfHxBcHBsZSUyMEFpclBvZHMlMjBNYXh8ZW58MHx8fHwxNzY3NDM1NjUzfDA&ixlib=rb-4.1.0&q=80&w=400",
+        "https://images.unsplash.com/photo-1625245488459-ee9051a7030f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHw0fHxBcHBsZSUyMEFpclBvZHMlMjBNYXh8ZW58MHx8fHwxNzY3NDM1NjUzfDA&ixlib=rb-4.1.0&q=80&w=400",
       ],
     },
   ],
@@ -198,33 +348,33 @@ const PRODUCT_CATALOG: Record<string, any[]> = {
       ],
     },
     {
-      name: "Adidas Yeezy Boost 350",
-      price: 5500000,
-      img: "https://images.unsplash.com/photo-1581497396202-a94013084c83?w=800&q=80",
+      name: "Dr Martens Boots",
+      price: 4500000,
+      img: "https://images.unsplash.com/photo-1747083996241-3d86d9dbab11?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwxfHxEciUyME1hcnRlbnMlMjBCb290c3xlbnwwfHx8fDE3Njc0MzU2NTl8MA&ixlib=rb-4.1.0&q=80&w=1080",
       subImages: [
-        "https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?w=800&q=80",
-        "https://images.unsplash.com/photo-1516478177764-9fe5bd7e9717?w=800&q=80",
-        "https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?w=800&q=80",
+        "https://images.unsplash.com/photo-1551109988-2387d9439af7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwyfHxEciUyME1hcnRlbnMlMjBCb290c3xlbnwwfHx8fDE3Njc0MzU2NTl8MA&ixlib=rb-4.1.0&q=80&w=400",
+        "https://images.unsplash.com/photo-1548768707-d1fc5712d7fc?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwzfHxEciUyME1hcnRlbnMlMjBCb290c3xlbnwwfHx8fDE3Njc0MzU2NTl8MA&ixlib=rb-4.1.0&q=80&w=400",
+        "https://images.unsplash.com/photo-1583238620298-25dd9fa7f5cf?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHw0fHxEciUyME1hcnRlbnMlMjBCb290c3xlbnwwfHx8fDE3Njc0MzU2NTl8MA&ixlib=rb-4.1.0&q=80&w=400",
       ],
     },
     {
-      name: "Converse Chuck 70 High",
-      price: 1200000,
+      name: "Loafers Leather Shoes",
+      price: 3500000,
+      img: "https://images.unsplash.com/photo-1616406432452-07bc5938759d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwxfHxMb2FmZXJzJTIwTGVhdGhlciUyMFNob2VzfGVufDB8fHx8MTc2NzQzNTY2NHww&ixlib=rb-4.1.0&q=80&w=1080",
+      subImages: [
+        "https://images.unsplash.com/photo-1576792741377-eb0f4f6d1a47?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwyfHxMb2FmZXJzJTIwTGVhdGhlciUyMFNob2VzfGVufDB8fHx8MTc2NzQzNTY2NHww&ixlib=rb-4.1.0&q=80&w=400",
+        "https://images.unsplash.com/photo-1569844913922-54a682be698b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwzfHxMb2FmZXJzJTIwTGVhdGhlciUyMFNob2VzfGVufDB8fHx8MTc2NzQzNTY2NHww&ixlib=rb-4.1.0&q=80&w=400",
+        "https://images.unsplash.com/photo-1760616172899-0681b97a2de3?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHw0fHxMb2FmZXJzJTIwTGVhdGhlciUyMFNob2VzfGVufDB8fHx8MTc2NzQzNTY2NHww&ixlib=rb-4.1.0&q=80&w=400",
+      ],
+    },
+    {
+      name: "Converse Chuck 70",
+      price: 1800000,
       img: "https://images.unsplash.com/photo-1607522370275-f14206abe5d3?w=800&q=80",
       subImages: [
         "https://images.unsplash.com/photo-1494496195158-c31bda6741d8?w=800&q=80",
         "https://images.unsplash.com/photo-1460353581641-37baddab0fa2?w=800&q=80",
         "https://images.unsplash.com/photo-1494496195158-c31bda6741d8?w=800&q=80",
-      ],
-    },
-    {
-      name: "New Balance 550 White",
-      price: 2500000,
-      img: "https://images.unsplash.com/photo-1551107696-a4b0c5a0d9a2?w=800&q=80",
-      subImages: [
-        "https://images.unsplash.com/photo-1539185441755-769473a23570?w=800&q=80",
-        "https://images.unsplash.com/photo-1597045566677-8cf032ed6634?w=800&q=80",
-        "https://images.unsplash.com/photo-1539185441755-769473a23570?w=800&q=80",
       ],
     },
   ],
@@ -345,6 +495,36 @@ const PRODUCT_CATALOG: Record<string, any[]> = {
         "https://images.unsplash.com/photo-1710023209229-ec9877bbb95b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHw0fHxFdmVuaW5nJTIwR293bnxlbnwwfHx8fDE3Njc0MzIwNDV8MA&ixlib=rb-4.1.0&q=80&w=400",
       ],
     },
+    {
+      name: "Men Suit Jacket",
+      price: 6000000,
+      img: "https://images.unsplash.com/photo-1598915850252-fb07ad1e6768?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwxfHxNZW4lMjBTdWl0JTIwSmFja2V0fGVufDB8fHx8MTc2NzQzNTY3MHww&ixlib=rb-4.1.0&q=80&w=1080",
+      subImages: [
+        "https://images.unsplash.com/photo-1631858493688-689ab2d0c6bb?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwyfHxNZW4lMjBTdWl0JTIwSmFja2V0fGVufDB8fHx8MTc2NzQzNTY3MHww&ixlib=rb-4.1.0&q=80&w=400",
+        "https://images.unsplash.com/photo-1631858494345-830b475551fa?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwzfHxNZW4lMjBTdWl0JTIwSmFja2V0fGVufDB8fHx8MTc2NzQzNTY3MHww&ixlib=rb-4.1.0&q=80&w=400",
+        "https://images.unsplash.com/photo-1631858493688-107c103ce289?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHw0fHxNZW4lMjBTdWl0JTIwSmFja2V0fGVufDB8fHx8MTc2NzQzNTY3MHww&ixlib=rb-4.1.0&q=80&w=400",
+      ],
+    },
+    {
+      name: "Vintage Leather Jacket",
+      price: 12000000,
+      img: "https://images.unsplash.com/photo-1606163015906-ad3c68002dcb?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwxfHxWaW50YWdlJTIwTGVhdGhlciUyMEphY2tldHxlbnwwfHx8fDE3Njc0MzU2NzZ8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      subImages: [
+        "https://images.unsplash.com/photo-1575531278801-9cafa590a2f2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwyfHxWaW50YWdlJTIwTGVhdGhlciUyMEphY2tldHxlbnwwfHx8fDE3Njc0MzU2NzZ8MA&ixlib=rb-4.1.0&q=80&w=400",
+        "https://images.unsplash.com/photo-1699462654889-1c42a57f2ed6?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwzfHxWaW50YWdlJTIwTGVhdGhlciUyMEphY2tldHxlbnwwfHx8fDE3Njc0MzU2NzZ8MA&ixlib=rb-4.1.0&q=80&w=400",
+        "https://images.unsplash.com/photo-1760533091973-1262bf57d244?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHw0fHxWaW50YWdlJTIwTGVhdGhlciUyMEphY2tldHxlbnwwfHx8fDE3Njc0MzU2NzZ8MA&ixlib=rb-4.1.0&q=80&w=400",
+      ],
+    },
+    {
+      name: "Summer Floral Dress",
+      price: 2500000,
+      img: "https://images.unsplash.com/photo-1704806100524-faf9aa4f7cf9?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwxfHxTdW1tZXIlMjBGbG9yYWwlMjBEcmVzc3xlbnwwfHx8fDE3Njc0MzU2ODF8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      subImages: [
+        "https://images.unsplash.com/photo-1624969709134-8dee89a7adb0?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwyfHxTdW1tZXIlMjBGbG9yYWwlMjBEcmVzc3xlbnwwfHx8fDE3Njc0MzU2ODF8MA&ixlib=rb-4.1.0&q=80&w=400",
+        "https://images.unsplash.com/photo-1624902810049-8ea0199d32ff?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwzfHxTdW1tZXIlMjBGbG9yYWwlMjBEcmVzc3xlbnwwfHx8fDE3Njc0MzU2ODF8MA&ixlib=rb-4.1.0&q=80&w=400",
+        "https://images.unsplash.com/photo-1650468954888-f54920c1cce6?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHw0fHxTdW1tZXIlMjBGbG9yYWwlMjBEcmVzc3xlbnwwfHx8fDE3Njc0MzU2ODF8MA&ixlib=rb-4.1.0&q=80&w=400",
+      ],
+    },
   ],
   Beauty: [
     {
@@ -355,6 +535,36 @@ const PRODUCT_CATALOG: Record<string, any[]> = {
         "https://images.unsplash.com/photo-1680503504111-1bbc7fc2103e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwyfHxMdXh1cnklMjBQZXJmdW1lfGVufDB8fHx8MTc2NzQzMjAwNXww&ixlib=rb-4.1.0&q=80&w=400",
         "https://images.unsplash.com/photo-1724732678052-1437962cbbab?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwzfHxMdXh1cnklMjBQZXJmdW1lfGVufDB8fHx8MTc2NzQzMjAwNXww&ixlib=rb-4.1.0&q=80&w=400",
         "https://images.unsplash.com/photo-1605463967516-b73a52062ab0?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHw0fHxMdXh1cnklMjBQZXJmdW1lfGVufDB8fHx8MTc2NzQzMjAwNXww&ixlib=rb-4.1.0&q=80&w=400",
+      ],
+    },
+    {
+      name: "Dyson Airwrap",
+      price: 13000000,
+      img: "https://images.unsplash.com/photo-1732057401307-d359adf8ab83?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwxfHxEeXNvbiUyMEFpcndyYXB8ZW58MHx8fHwxNzY3NDM1Njg3fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      subImages: [
+        "https://images.unsplash.com/photo-1694610882150-4de206edf95a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwyfHxEeXNvbiUyMEFpcndyYXB8ZW58MHx8fHwxNzY3NDM1Njg3fDA&ixlib=rb-4.1.0&q=80&w=400",
+        "https://images.unsplash.com/photo-1660760144156-283959017370?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwzfHxEeXNvbiUyMEFpcndyYXB8ZW58MHx8fHwxNzY3NDM1Njg3fDA&ixlib=rb-4.1.0&q=80&w=400",
+        "https://images.unsplash.com/photo-1716224431482-172eed7206bf?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHw0fHxEeXNvbiUyMEFpcndyYXB8ZW58MHx8fHwxNzY3NDM1Njg3fDA&ixlib=rb-4.1.0&q=80&w=400",
+      ],
+    },
+    {
+      name: "Chanel Lipstick",
+      price: 1500000,
+      img: "https://images.unsplash.com/photo-1606390791565-d8f927109029?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwxfHxDaGFuZWwlMjBMaXBzdGlja3xlbnwwfHx8fDE3Njc0MzU2OTN8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      subImages: [
+        "https://images.unsplash.com/photo-1590156221350-bbf9f89cd368?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwyfHxDaGFuZWwlMjBMaXBzdGlja3xlbnwwfHx8fDE3Njc0MzU2OTN8MA&ixlib=rb-4.1.0&q=80&w=400",
+        "https://images.unsplash.com/photo-1590156117763-d5909f5ccbc8?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwzfHxDaGFuZWwlMjBMaXBzdGlja3xlbnwwfHx8fDE3Njc0MzU2OTN8MA&ixlib=rb-4.1.0&q=80&w=400",
+        "https://images.unsplash.com/photo-1590156221187-1710315f710b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHw0fHxDaGFuZWwlMjBMaXBzdGlja3xlbnwwfHx8fDE3Njc0MzU2OTN8MA&ixlib=rb-4.1.0&q=80&w=400",
+      ],
+    },
+    {
+      name: "Skincare Serum",
+      price: 2000000,
+      img: "https://images.unsplash.com/photo-1643379850623-7eb6442cd262?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwxfHxTa2luY2FyZSUyMFNlcnVtJTIwQm90dGxlfGVufDB8fHx8MTc2NzQzNTY5OHww&ixlib=rb-4.1.0&q=80&w=1080",
+      subImages: [
+        "https://images.unsplash.com/photo-1643379852776-308d9bbf8645?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwyfHxTa2luY2FyZSUyMFNlcnVtJTIwQm90dGxlfGVufDB8fHx8MTc2NzQzNTY5OHww&ixlib=rb-4.1.0&q=80&w=400",
+        "https://images.unsplash.com/photo-1643379850274-77d2e3703ef9?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwzfHxTa2luY2FyZSUyMFNlcnVtJTIwQm90dGxlfGVufDB8fHx8MTc2NzQzNTY5OHww&ixlib=rb-4.1.0&q=80&w=400",
+        "https://images.unsplash.com/photo-1638301868496-43577744a46c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHw0fHxTa2luY2FyZSUyMFNlcnVtJTIwQm90dGxlfGVufDB8fHx8MTc2NzQzNTY5OHww&ixlib=rb-4.1.0&q=80&w=400",
       ],
     },
   ],
@@ -476,13 +686,23 @@ const PRODUCT_CATALOG: Record<string, any[]> = {
       ],
     },
     {
-      name: "First Edition Book",
-      price: 6000000,
-      img: "https://images.unsplash.com/photo-1569997851406-472ce7b75c6c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwxfHxGaXJzdCUyMEVkaXRpb24lMjBCb29rfGVufDB8fHx8MTc2NzQzMTk4OHww&ixlib=rb-4.1.0&q=80&w=1080",
+      name: "Spiderman Comic Vintage",
+      price: 5000000,
+      img: "https://images.unsplash.com/photo-1611443595494-aa7aa8b0e741?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwxfHxTcGlkZXJtYW4lMjBDb21pYyUyMEJvb2slMjBWaW50YWdlfGVufDB8fHx8MTc2NzQzNTcwNHww&ixlib=rb-4.1.0&q=80&w=1080",
       subImages: [
-        "https://images.unsplash.com/photo-1547760916-b23a6eb6014d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwyfHxGaXJzdCUyMEVkaXRpb24lMjBCb29rfGVufDB8fHx8MTc2NzQzMTk4OHww&ixlib=rb-4.1.0&q=80&w=400",
-        "https://images.unsplash.com/photo-1623314473757-006147a3daab?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwzfHxGaXJzdCUyMEVkaXRpb24lMjBCb29rfGVufDB8fHx8MTc2NzQzMTk4OHww&ixlib=rb-4.1.0&q=80&w=400",
-        "https://images.unsplash.com/photo-1755545730104-3cb4545282b1?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHw0fHxGaXJzdCUyMEVkaXRpb24lMjBCb29rfGVufDB8fHx8MTc2NzQzMTk4OHww&ixlib=rb-4.1.0&q=80&w=400",
+        "https://images.unsplash.com/photo-1680016790208-756cd493c1a1?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwyfHxTcGlkZXJtYW4lMjBDb21pYyUyMEJvb2slMjBWaW50YWdlfGVufDB8fHx8MTc2NzQzNTcwNHww&ixlib=rb-4.1.0&q=80&w=400",
+        "https://images.unsplash.com/photo-1612036782180-6f0b6cd846fe?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwzfHxTcGlkZXJtYW4lMjBDb21pYyUyMEJvb2slMjBWaW50YWdlfGVufDB8fHx8MTc2NzQzNTcwNHww&ixlib=rb-4.1.0&q=80&w=400",
+        "https://images.unsplash.com/photo-1628426912206-d88e22da5c76?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHw0fHxTcGlkZXJtYW4lMjBDb21pYyUyMEJvb2slMjBWaW50YWdlfGVufDB8fHx8MTc2NzQzNTcwNHww&ixlib=rb-4.1.0&q=80&w=400",
+      ],
+    },
+    {
+      name: "Batman Comic 1st Ed",
+      price: 8000000,
+      img: "https://images.unsplash.com/photo-1601645191163-3fc0d5d64e35?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwxfHxCYXRtYW4lMjBDb21pYyUyMEJvb2slMjBGaXJzdCUyMEVkaXRpb258ZW58MHx8fHwxNzY3NDM1NzEwfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      subImages: [
+        "https://images.unsplash.com/photo-1628426912206-d88e22da5c76?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwyfHxCYXRtYW4lMjBDb21pYyUyMEJvb2slMjBGaXJzdCUyMEVkaXRpb258ZW58MHx8fHwxNzY3NDM1NzEwfDA&ixlib=rb-4.1.0&q=80&w=400",
+        "https://images.unsplash.com/photo-1628426912481-b66c067fdf7a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwzfHxCYXRtYW4lMjBDb21pYyUyMEJvb2slMjBGaXJzdCUyMEVkaXRpb258ZW58MHx8fHwxNzY3NDM1NzEwfDA&ixlib=rb-4.1.0&q=80&w=400",
+        "https://images.unsplash.com/photo-1593345216067-47a359874578?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHw0fHxCYXRtYW4lMjBDb21pYyUyMEJvb2slMjBGaXJzdCUyMEVkaXRpb258ZW58MHx8fHwxNzY3NDM1NzEwfDA&ixlib=rb-4.1.0&q=80&w=400",
       ],
     },
   ],
@@ -497,11 +717,51 @@ const PRODUCT_CATALOG: Record<string, any[]> = {
         "https://images.unsplash.com/photo-1613771404738-65d22f979710?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHw0fHxSYXJlJTIwUG9rJUMzJUE5bW9uJTIwQ2FyZHxlbnwwfHx8fDE3Njc0MzE5NjV8MA&ixlib=rb-4.1.0&q=80&w=400",
       ],
     },
+    {
+      name: "MTG Card Rare",
+      price: 15000000,
+      img: "https://images.unsplash.com/photo-1746572651436-7da5d437ebca?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwxfHxNYWdpYyUyMFRoZSUyMEdhdGhlcmluZyUyMENhcmQlMjBSYXJlfGVufDB8fHx8MTc2NzQzNTcxNXww&ixlib=rb-4.1.0&q=80&w=1080",
+      subImages: [
+        "https://images.unsplash.com/photo-1628508006164-997f40c7ecce?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwyfHxNYWdpYyUyMFRoZSUyMEdhdGhlcmluZyUyMENhcmQlMjBSYXJlfGVufDB8fHx8MTc2NzQzNTcxNXww&ixlib=rb-4.1.0&q=80&w=400",
+        "https://images.unsplash.com/photo-1644007824843-37e9069834bd?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwzfHxNYWdpYyUyMFRoZSUyMEdhdGhlcmluZyUyMENhcmQlMjBSYXJlfGVufDB8fHx8MTc2NzQzNTcxNXww&ixlib=rb-4.1.0&q=80&w=400",
+        "https://images.unsplash.com/photo-1736988957201-c3f057b82f5b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHw0fHxNYWdpYyUyMFRoZSUyMEdhdGhlcmluZyUyMENhcmQlMjBSYXJlfGVufDB8fHx8MTc2NzQzNTcxNXww&ixlib=rb-4.1.0&q=80&w=400",
+      ],
+    },
+    {
+      name: "YuGiOh Card Holo",
+      price: 3000000,
+      img: "https://images.unsplash.com/photo-1630345269467-59efe8aaecec?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwxfHxZdUd1T2glMjBDYXJkJTIwSG9sb3xlbnwwfHx8fDE3Njc0MzU3MjF8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      subImages: [
+        "https://images.unsplash.com/photo-1728165932410-4238dd745af2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwyfHxZdUd1T2glMjBDYXJkJTIwSG9sb3xlbnwwfHx8fDE3Njc0MzU3MjF8MA&ixlib=rb-4.1.0&q=80&w=400",
+        "https://images.unsplash.com/photo-1609437737562-c7c4989f6b0d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwzfHxZdUd1T2glMjBDYXJkJTIwSG9sb3xlbnwwfHx8fDE3Njc0MzU3MjF8MA&ixlib=rb-4.1.0&q=80&w=400",
+        "https://images.unsplash.com/photo-1590708038645-ab70b69c6609?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHw0fHxZdUd1T2glMjBDYXJkJTIwSG9sb3xlbnwwfHx8fDE3Njc0MzU3MjF8MA&ixlib=rb-4.1.0&q=80&w=400",
+      ],
+    },
   ],
   Stamps: [
     {
       name: "Stamp Collection",
       price: 1500000,
+      img: "https://images.unsplash.com/photo-1688125293662-51664e9ee4e4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwxfHxTdGFtcCUyMENvbGxlY3Rpb258ZW58MHx8fHwxNzY3NDMyMDM0fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      subImages: [
+        "https://images.unsplash.com/photo-1766851265145-5bca680e81ad?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwyfHxTdGFtcCUyMENvbGxlY3Rpb258ZW58MHx8fHwxNzY3NDMyMDM0fDA&ixlib=rb-4.1.0&q=80&w=400",
+        "https://images.unsplash.com/photo-1579279263245-bbf82b50092f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwzfHxTdGFtcCUyMENvbGxlY3Rpb258ZW58MHx8fHwxNzY3NDMyMDM0fDA&ixlib=rb-4.1.0&q=80&w=400",
+        "https://images.unsplash.com/photo-1767226633814-2e78c54c61b2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHw0fHxTdGFtcCUyMENvbGxlY3Rpb258ZW58MHx8fHwxNzY3NDMyMDM0fDA&ixlib=rb-4.1.0&q=80&w=400",
+      ],
+    },
+    {
+      name: "Rare Penny Black Stamp",
+      price: 25000000,
+      img: "https://images.unsplash.com/photo-1585848777174-84381285215c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwxfHxQZW5ueSUyMEJsYWNrJTIwU3RhbXB8ZW58MHx8fHwxNzY3NDM1NzI2fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      subImages: [
+        "https://images.unsplash.com/photo-1628155930542-3c7a64e2c833?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwyfHxQZW5ueSUyMEJsYWNrJTIwU3RhbXB8ZW58MHx8fHwxNzY3NDM1NzI2fDA&ixlib=rb-4.1.0&q=80&w=400",
+        "https://images.unsplash.com/photo-1502092120021-0a373b759600?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwzfHxQZW5ueSUyMEJsYWNrJTIwU3RhbXB8ZW58MHx8fHwxNzY3NDM1NzI2fDA&ixlib=rb-4.1.0&q=80&w=400",
+        "https://images.unsplash.com/photo-1628155930810-721448b375b0?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHw0fHxQZW5ueSUyMEJsYWNrJTIwU3RhbXB8ZW58MHx8fHwxNzY3NDM1NzI2fDA&ixlib=rb-4.1.0&q=80&w=400",
+      ],
+    },
+    {
+      name: "Vintage Airmail Stamp",
+      price: 4500000,
       img: "https://images.unsplash.com/photo-1688125293662-51664e9ee4e4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwxfHxTdGFtcCUyMENvbGxlY3Rpb258ZW58MHx8fHwxNzY3NDMyMDM0fDA&ixlib=rb-4.1.0&q=80&w=1080",
       subImages: [
         "https://images.unsplash.com/photo-1766851265145-5bca680e81ad?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwyfHxTdGFtcCUyMENvbGxlY3Rpb258ZW58MHx8fHwxNzY3NDMyMDM0fDA&ixlib=rb-4.1.0&q=80&w=400",
@@ -519,6 +779,26 @@ const PRODUCT_CATALOG: Record<string, any[]> = {
         "https://images.unsplash.com/photo-1688867380908-1882c61add8f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwyfHxBbmNpZW50JTIwQ29pbnxlbnwwfHx8fDE3Njc0MzIwMjN8MA&ixlib=rb-4.1.0&q=80&w=400",
         "https://images.unsplash.com/photo-1738460340635-101f1e8d2856?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwzfHxBbmNpZW50JTIwQ29pbnxlbnwwfHx8fDE3Njc0MzIwMjN8MA&ixlib=rb-4.1.0&q=80&w=400",
         "https://images.unsplash.com/photo-1663888674098-38c8d5bcca28?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHw0fHxBbmNpZW50JTIwQ29pbnxlbnwwfHx8fDE3Njc0MzIwMjN8MA&ixlib=rb-4.1.0&q=80&w=400",
+      ],
+    },
+    {
+      name: "Gold Doubloon Real",
+      price: 25000000,
+      img: "https://images.unsplash.com/photo-1620288627223-53302f4e8c74?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwxfHxHb2xkJTIwRG91Ymxvb258ZW58MHx8fHwxNzY3NDM1NzQyfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      subImages: [
+        "https://images.unsplash.com/photo-1610375461246-83c485099759?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwyfHxHb2xkJTIwRG91Ymxvb258ZW58MHx8fHwxNzY3NDM1NzQyfDA&ixlib=rb-4.1.0&q=80&w=400",
+        "https://images.unsplash.com/photo-1610375461369-d612b1238d2a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwzfHxHb2xkJTIwRG91Ymxvb258ZW58MHx8fHwxNzY3NDM1NzQyfDA&ixlib=rb-4.1.0&q=80&w=400",
+        "https://images.unsplash.com/photo-1620288627192-35805d762955?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHw0fHxHb2xkJTIwRG91Ymxvb258ZW58MHx8fHwxNzY3NDM1NzQyfDA&ixlib=rb-4.1.0&q=80&w=400",
+      ],
+    },
+    {
+      name: "Silver Dollar Morgan",
+      price: 6000000,
+      img: "https://images.unsplash.com/photo-1605792657660-596af9009e82?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwxfHxTaWx2ZXIlMjBEb2xsYXIlMjBNb3JnYW58ZW58MHx8fHwxNzY3NDM1NzQ3fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      subImages: [
+        "https://images.unsplash.com/photo-1629910549247-f3d2f9d18c39?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwyfHxTaWx2ZXIlMjBEb2xsYXIlMjBNb3JnYW58ZW58MHx8fHwxNzY3NDM1NzQ3fDA&ixlib=rb-4.1.0&q=80&w=400",
+        "https://images.unsplash.com/photo-1624823183570-58c9735a266a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwzfHxTaWx2ZXIlMjBEb2xsYXIlMjBNb3JnYW58ZW58MHx8fHwxNzY3NDM1NzQ3fDA&ixlib=rb-4.1.0&q=80&w=400",
+        "https://images.unsplash.com/photo-1658428131600-482208e925cc?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHw0fHxTaWx2ZXIlMjBEb2xsYXIlMjBNb3JnYW58ZW58MHx8fHwxNzY3NDM1NzQ3fDA&ixlib=rb-4.1.0&q=80&w=400",
       ],
     },
   ],
@@ -573,6 +853,36 @@ const PRODUCT_CATALOG: Record<string, any[]> = {
         "https://images.unsplash.com/photo-1708724326817-c1c2c488e33c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwyfHxTaWduZWQlMjBCYXNlYmFsbHxlbnwwfHx8fDE3Njc0MzE5NDJ8MA&ixlib=rb-4.1.0&q=80&w=400",
         "https://images.unsplash.com/photo-1755632112479-51dd6cb3f9ec?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwzfHxTaWduZWQlMjBCYXNlYmFsbHxlbnwwfHx8fDE3Njc0MzE5NDJ8MA&ixlib=rb-4.1.0&q=80&w=400",
         "https://images.unsplash.com/photo-1615356696487-af36a68f358a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHw0fHxTaWduZWQlMjBCYXNlYmFsbHxlbnwwfHx8fDE3Njc0MzE5NDJ8MA&ixlib=rb-4.1.0&q=80&w=400",
+      ],
+    },
+    {
+      name: "Basketball Jersey Vintage",
+      price: 8000000,
+      img: "https://images.unsplash.com/photo-1515523110800-9415d13b84a8?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwxfHxCYXNrZXRiYWxsJTIwSmVyc2V5JTIwVmludGFnZXxlbnwwfHx8fDE3Njc0MzU3NTN8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      subImages: [
+        "https://images.unsplash.com/photo-1515523110800-9415d13b84a8?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwxfHxCYXNrZXRiYWxsJTIwSmVyc2V5JTIwVmludGFnZXxlbnwwfHx8fDE3Njc0MzU3NTN8MA&ixlib=rb-4.1.0&q=80&w=400",
+        "https://images.unsplash.com/photo-1515523110800-9415d13b84a8?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwxfHxCYXNrZXRiYWxsJTIwSmVyc2V5JTIwVmludGFnZXxlbnwwfHx8fDE3Njc0MzU3NTN8MA&ixlib=rb-4.1.0&q=80&w=400",
+        "https://images.unsplash.com/photo-1515523110800-9415d13b84a8?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwxfHxCYXNrZXRiYWxsJTIwSmVyc2V5JTIwVmludGFnZXxlbnwwfHx8fDE3Njc0MzU3NTN8MA&ixlib=rb-4.1.0&q=80&w=400",
+      ],
+    },
+    {
+      name: "Football Helmet Signed",
+      price: 12000000,
+      img: "https://images.unsplash.com/photo-1615460549969-36fa19521a4f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwxfHxGb290YmFsbCUyMEhlbG1ldCUyMFNpZ25lZHxlbnwwfHx8fDE3Njc0MzU3NTh8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      subImages: [
+        "https://images.unsplash.com/photo-1615460549969-36fa19521a4f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwxfHxGb290YmFsbCUyMEhlbG1ldCUyMFNpZ25lZHxlbnwwfHx8fDE3Njc0MzU3NTh8MA&ixlib=rb-4.1.0&q=80&w=400",
+        "https://images.unsplash.com/photo-1615460549969-36fa19521a4f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwxfHxGb290YmFsbCUyMEhlbG1ldCUyMFNpZ25lZHxlbnwwfHx8fDE3Njc0MzU3NTh8MA&ixlib=rb-4.1.0&q=80&w=400",
+        "https://images.unsplash.com/photo-1615460549969-36fa19521a4f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwxfHxGb290YmFsbCUyMEhlbG1ldCUyMFNpZ25lZHxlbnwwfHx8fDE3Njc0MzU3NTh8MA&ixlib=rb-4.1.0&q=80&w=400",
+      ],
+    },
+    {
+      name: "Boxing Gloves Muhammad Ali",
+      price: 50000000,
+      img: "https://images.unsplash.com/photo-1549719386-74dfcbf7dbed?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwxfHxCb3hpbmclMjBHbG92ZXMlMjBWaW50YWdlfGVufDB8fHx8MTc2NzQzNTc2M3ww&ixlib=rb-4.1.0&q=80&w=1080",
+      subImages: [
+        "https://images.unsplash.com/photo-1549719386-74dfcbf7dbed?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwxfHxCb3hpbmclMjBHbG92ZXMlMjBWaW50YWdlfGVufDB8fHx8MTc2NzQzNTc2M3ww&ixlib=rb-4.1.0&q=80&w=400",
+        "https://images.unsplash.com/photo-1549719386-74dfcbf7dbed?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwxfHxCb3hpbmclMjBHbG92ZXMlMjBWaW50YWdlfGVufDB8fHx8MTc2NzQzNTc2M3ww&ixlib=rb-4.1.0&q=80&w=400",
+        "https://images.unsplash.com/photo-1549719386-74dfcbf7dbed?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MzU4Mzl8MHwxfHNlYXJjaHwxfHxCb3hpbmclMjBHbG92ZXMlMjBWaW50YWdlfGVufDB8fHx8MTc2NzQzNTc2M3ww&ixlib=rb-4.1.0&q=80&w=400",
       ],
     },
   ],
@@ -658,6 +968,10 @@ const seed = async () => {
   const adminId = new mongoose.Types.ObjectId("64b0f1a9e1b9b1a2b3c4d5e6");
   const seller1Id = new mongoose.Types.ObjectId("64b0f1a9e1b9b1a2b3c4d5e7");
   const seller2Id = new mongoose.Types.ObjectId("64b0f1a9e1b9b1a2b3c4d5e8");
+  const seller3Id = new mongoose.Types.ObjectId("64b0f1a9e1b9b1a2b3c4d5e9");
+  const seller4Id = new mongoose.Types.ObjectId("64b0f1a9e1b9b1a2b3c4d5ea");
+  const seller5Id = new mongoose.Types.ObjectId("64b0f1a9e1b9b1a2b3c4d5eb");
+  const seller6Id = new mongoose.Types.ObjectId("64b0f1a9e1b9b1a2b3c4d5ec");
 
   await User.create({
     _id: adminId,
@@ -721,6 +1035,62 @@ const seed = async () => {
     role: "seller",
     address: "HCMC, Vietnam",
     dateOfBirth: new Date("1988-08-10"),
+    positiveRatings: 0,
+    negativeRatings: 0,
+    status: "ACTIVE",
+  });
+
+  const seller3 = await User.create({
+    _id: seller3Id,
+    name: "HomeComforts",
+    email: "seller3@gmail.com",
+    password: commonPassword,
+    role: "seller",
+    address: "Da Nang, Vietnam",
+    dateOfBirth: new Date("1985-02-15"),
+    contactEmail: "home.comforts@gmail.com",
+    positiveRatings: 0,
+    negativeRatings: 0,
+    status: "ACTIVE",
+  });
+
+  const seller4 = await User.create({
+    _id: seller4Id,
+    name: "RetroCollectibles",
+    email: "seller4@gmail.com",
+    password: commonPassword,
+    role: "seller",
+    address: "Hue, Vietnam",
+    dateOfBirth: new Date("1978-11-30"),
+    contactEmail: "retro.collectibles@gmail.com",
+    positiveRatings: 0,
+    negativeRatings: 0,
+    status: "ACTIVE",
+  });
+
+  const seller5 = await User.create({
+    _id: seller5Id,
+    name: "ArtGallery",
+    email: "seller5@gmail.com",
+    password: commonPassword,
+    role: "seller",
+    address: "Hanoi, Vietnam",
+    dateOfBirth: new Date("1980-07-20"),
+    contactEmail: "art.gallery@gmail.com",
+    positiveRatings: 0,
+    negativeRatings: 0,
+    status: "ACTIVE",
+  });
+
+  const seller6 = await User.create({
+    _id: seller6Id,
+    name: "SportsLegends",
+    email: "seller6@gmail.com",
+    password: commonPassword,
+    role: "seller",
+    address: "HCMC, Vietnam",
+    dateOfBirth: new Date("1992-04-12"),
+    contactEmail: "sports.legends@gmail.com",
     positiveRatings: 0,
     negativeRatings: 0,
     status: "ACTIVE",
@@ -1041,6 +1411,10 @@ const seed = async () => {
   console.log("⭐ Generating Historical Ratings...");
   await generateTransactionHistory(seller1, "seller", 15);
   await generateTransactionHistory(seller2, "seller", 25);
+  await generateTransactionHistory(seller3, "seller", 20); // HomeComforts
+  await generateTransactionHistory(seller4, "seller", 20); // RetroCollectibles
+  await generateTransactionHistory(seller5, "seller", 20); // ArtGallery
+  await generateTransactionHistory(seller6, "seller", 20); // SportsLegends
 
   for (const b of bidders) {
     await generateTransactionHistory(b, "bidder", randomInt(3, 8));
@@ -1471,21 +1845,21 @@ const seed = async () => {
   await processCatalog("Beauty", seller2._id, 3);
 
   // Home (2 subcats): 2 * (1 + 11) = 24
-  await processCatalog("Furniture", seller2._id, 11);
-  await processCatalog("Decor", seller2._id, 11);
+  await processCatalog("Furniture", seller3._id, 11);
+  await processCatalog("Decor", seller3._id, 11);
 
   // Collectibles (5 subcats): 5 * (1 + 4) = 25
-  await processCatalog("Comics", seller2._id, 4);
-  await processCatalog("Cards", seller2._id, 4);
-  await processCatalog("Stamps", seller2._id, 4);
-  await processCatalog("Coins", seller2._id, 4);
-  await processCatalog("Memorabilia", seller2._id, 4);
+  await processCatalog("Comics", seller4._id, 4);
+  await processCatalog("Cards", seller4._id, 4);
+  await processCatalog("Stamps", seller4._id, 4);
+  await processCatalog("Coins", seller4._id, 4);
+  await processCatalog("Memorabilia", seller4._id, 4);
 
   // Art (1 subcat): 1 * (1 + 23) = 24
-  await processCatalog("Art", seller2._id, 23);
+  await processCatalog("Art", seller5._id, 23);
 
   // Sports (1 subcat): 1 * (1 + 23) = 24
-  await processCatalog("SportsMemorabilia", seller2._id, 23);
+  await processCatalog("SportsMemorabilia", seller6._id, 23);
 
   try {
     console.log("🆕 Creating Zero-Bid Low-Step Products...");
