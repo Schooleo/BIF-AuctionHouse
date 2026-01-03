@@ -39,6 +39,15 @@ const AutoBidModal: React.FC<AutoBidModalProps> = ({
   const [warning, setWarning] = useState<string>("");
   const [showConfirmation, setShowConfirmation] = useState<boolean>(false);
   const addAlert = useAlertStore((state) => state.addAlert);
+  const user = useAuthStore((state) => state.user);
+
+  // Calculate user reputation
+  const userReputation = user ? 
+    (user.positiveRatings || 0) + (user.negativeRatings || 0) === 0 
+      ? 1 // No ratings = 100% reputation
+      : (user.positiveRatings || 0) / ((user.positiveRatings || 0) + (user.negativeRatings || 0))
+    : 1;
+  const hasLowReputation = userReputation < 0.5; // Below 50% is considered low
 
   const handleChangeMaxPrice = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -211,6 +220,7 @@ const AutoBidModal: React.FC<AutoBidModalProps> = ({
       cancelText={showConfirmation ? "Back to Edit" : "Cancel"}
       onCancel={showConfirmation ? handleBackToEdit : undefined}
       isLoading={isLoading}
+      isDisabled={!showConfirmation && hasLowReputation}
       size="md"
     >
       {isFetching ? (
@@ -317,6 +327,25 @@ const AutoBidModal: React.FC<AutoBidModalProps> = ({
       ) : (
         // Input View
         <div className="space-y-6">
+          {/* Low Reputation Warning */}
+          {hasLowReputation && (
+            <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-lg">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
+                <div className="flex-1">
+                  <h3 className="text-sm font-semibold text-red-900 mb-1">
+                    Low Reputation Score
+                  </h3>
+                  <p className="text-sm text-red-800">
+                    Your reputation score is below 80% ({Math.round(userReputation * 100)}%). 
+                    Auto bidding is disabled to protect sellers. Please improve your reputation 
+                    by completing transactions successfully to use this feature.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Info Section */}
           <div className="bg-gray-50 rounded-lg p-4 space-y-2">
             <div className="flex justify-between">

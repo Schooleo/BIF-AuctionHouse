@@ -1139,9 +1139,9 @@ const seed = async () => {
     address: "Low Rep Street, Problem City",
     dateOfBirth: new Date("1995-06-15"),
     contactEmail: "unreliable.contact@gmail.com",
-    positiveRatings: 2,
-    negativeRatings: 8,
-    reputationScore: 0.2, // 20% reputation (2 positive / 10 total)
+    positiveRatings: 0,
+    negativeRatings: 0,
+    reputationScore: 0,
     status: "ACTIVE",
   });
   bidders.push(lowRepBidder);
@@ -1180,6 +1180,33 @@ const seed = async () => {
       address: `History Lane ${i}`,
     });
     dummyPartners.push(dummy);
+  }
+
+  // --- CREATE RATINGS FOR LOW REPUTATION BIDDER ---
+  console.log("⭐ Creating ratings for Low Reputation Bidder...");
+  // Create 2 positive ratings
+  for (let i = 0; i < 2; i++) {
+    const seller = dummyPartners[i];
+    await Rating.create({
+      type: "bidder",
+      rater: seller._id,
+      ratee: lowRepBidder._id,
+      product: new mongoose.Types.ObjectId(), // Dummy product ID
+      score: 1,
+      comment: SAMPLE_COMMENTS.positive[i % SAMPLE_COMMENTS.positive.length],
+    });
+  }
+  // Create 8 negative ratings
+  for (let i = 0; i < 8; i++) {
+    const seller = dummyPartners[i + 2]; // Use different partners
+    await Rating.create({
+      type: "bidder",
+      rater: seller._id,
+      ratee: lowRepBidder._id,
+      product: new mongoose.Types.ObjectId(), // Dummy product ID
+      score: -1,
+      comment: SAMPLE_COMMENTS.negative[i % SAMPLE_COMMENTS.negative.length],
+    });
   }
 
   console.log("📂 Creating Categories...");
@@ -1477,6 +1504,8 @@ const seed = async () => {
   await generateTransactionHistory(seller6, "seller", 20); // SportsLegends
 
   for (const b of bidders) {
+    // Skip low reputation bidder - their ratings are manually set
+    if (b._id.toString() === lowRepBidderId.toString()) continue;
     await generateTransactionHistory(b, "bidder", randomInt(3, 8));
   }
 
@@ -1574,8 +1603,11 @@ const seed = async () => {
     let currentPrice = item.price;
 
     if (shouldHaveBids) {
-      // Chọn 2 bidder ngẫu nhiên
-      const shuffledBidders = [...bidders].sort(() => 0.5 - Math.random());
+      // Chọn 2 bidder ngẫu nhiên (excluding low reputation bidder)
+      const eligibleBidders = bidders.filter(
+        (b) => b._id.toString() !== lowRepBidderId.toString()
+      );
+      const shuffledBidders = [...eligibleBidders].sort(() => 0.5 - Math.random());
       const participantBidders = shuffledBidders.slice(0, 2);
 
       if (participantBidders.length === 2) {
