@@ -123,10 +123,10 @@ const AdminUsersPage: React.FC = () => {
           setTotalPages(res.totalPages);
           setTotalDocs(res.totalDocs);
         }
-      } catch (err: any) {
-        if (err.name === "AbortError") return;
+      } catch (err: unknown) {
+        if (err instanceof Error && err.name === "AbortError") return;
         console.error("Failed to fetch users:", err);
-        setError(err.message || "Failed to load users");
+        setError(err instanceof Error ? err.message : "Failed to load users");
       } finally {
         if (!abortController.signal.aborted) {
           setLoading(false);
@@ -163,9 +163,12 @@ const AdminUsersPage: React.FC = () => {
       setSelectedUserToDelete(null);
       addAlert("success", "User deleted successfully");
       refetchUsers();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Failed to delete user:", error);
-      addAlert("error", error.message || "Failed to delete user");
+      addAlert(
+        "error",
+        error instanceof Error ? error.message : "Failed to delete user"
+      );
     } finally {
       setIsDeleting(false);
     }
@@ -175,9 +178,9 @@ const AdminUsersPage: React.FC = () => {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
+        <div className="flex flex-col gap-1">
           <h1 className="text-2xl font-bold text-gray-800">Users Management</h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="text-sm text-gray-500">
             Manage all registered users in the system
           </p>
         </div>

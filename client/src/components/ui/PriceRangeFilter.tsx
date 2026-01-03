@@ -33,6 +33,8 @@ const PriceRangeFilter: React.FC<PriceRangeFilterProps> = ({
             { borderColor: "#042443", backgroundColor: "#fff", opacity: 1 },
           ]}
           railStyle={{ backgroundColor: "#e5e7eb" }}
+          pushable={10000}
+          step={500000}
         />
       </div>
 

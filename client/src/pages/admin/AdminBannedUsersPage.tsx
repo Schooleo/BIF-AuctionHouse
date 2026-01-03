@@ -1,13 +1,9 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import {
-  bannedUsersApi,
-  adminApi,
-  type BannedUser,
-  type UnbanRequestData,
-} from "../../services/admin.api";
-import BanInfoModal from "../../components/admin/user/BanInfoModal";
-import { useAlertStore } from "../../stores/useAlertStore";
+import { bannedUsersApi, adminApi } from "@services/admin.api";
+import type { BannedUser, UnbanRequestData } from "@interfaces/admin";
+import BanInfoModal from "@components/admin/user/BanInfoModal";
+import { useAlertStore } from "@stores/useAlertStore";
 import {
   ShieldX,
   ChevronLeft,
@@ -45,8 +41,9 @@ const AdminBannedUsersPage: React.FC = () => {
       setUsers(data.users);
       setTotalPages(data.totalPages);
       setTotal(data.total);
-    } catch (error: any) {
-      addAlert("error", error.message || "Failed to fetch banned users");
+    } catch (error) {
+      const err = error as Error;
+      addAlert("error", err.message || "Failed to fetch banned users");
     } finally {
       setLoading(false);
     }
@@ -88,8 +85,9 @@ const AdminBannedUsersPage: React.FC = () => {
       await adminApi.unblockUser(selectedUser._id);
       addAlert("success", `${selectedUser.name} has been unbanned`);
       fetchBannedUsers();
-    } catch (error: any) {
-      addAlert("error", error.message || "Failed to unban user");
+    } catch (error) {
+      const err = error as Error;
+      addAlert("error", err.message || "Failed to unban user");
       throw error;
     } finally {
       setIsProcessing(false);
@@ -104,8 +102,9 @@ const AdminBannedUsersPage: React.FC = () => {
       await bannedUsersApi.denyUnbanRequest(unbanRequest._id, adminNote);
       addAlert("success", "Unban request has been denied");
       fetchBannedUsers();
-    } catch (error: any) {
-      addAlert("error", error.message || "Failed to deny request");
+    } catch (error) {
+      const err = error as Error;
+      addAlert("error", err.message || "Failed to deny request");
       throw error;
     } finally {
       setIsProcessing(false);
@@ -120,8 +119,9 @@ const AdminBannedUsersPage: React.FC = () => {
       await adminApi.forceDeleteUser(selectedUser._id);
       addAlert("success", `Account ${selectedUser.name} has been deleted`);
       fetchBannedUsers();
-    } catch (error: any) {
-      addAlert("error", error.message || "Failed to delete account");
+    } catch (error) {
+      const err = error as Error;
+      addAlert("error", err.message || "Failed to delete account");
       throw error;
     } finally {
       setIsProcessing(false);
@@ -144,10 +144,10 @@ const AdminBannedUsersPage: React.FC = () => {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
+        <div className="flex flex-col gap-1">
           <button
             onClick={() => navigate("/admin/users")}
-            className="flex items-center gap-2 text-gray-500 hover:text-primary-blue transition-colors mb-2 group text-sm"
+            className="flex items-center gap-2 text-gray-500 hover:text-primary-blue transition-colors mb-1 group text-sm w-fit"
           >
             <ArrowLeft
               size={16}
@@ -156,7 +156,7 @@ const AdminBannedUsersPage: React.FC = () => {
             Back to Users
           </button>
           <h1 className="text-2xl font-bold text-gray-800">Banned Users</h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="text-sm text-gray-500">
             Manage blocked users and their unban requests
           </p>
         </div>

@@ -8,7 +8,9 @@ import {
   Package,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import type { UserProduct } from "../../../services/admin.api";
+import type { UserProduct } from "@interfaces/admin";
+import { formatPrice } from "@utils/product";
+import { formatBidTime } from "@utils/time";
 
 interface AdminProductCardProps {
   product: UserProduct;
@@ -81,32 +83,6 @@ const AdminProductCard: React.FC<AdminProductCardProps> = ({
     navigate(`/admin/products/${product._id}`);
   };
 
-  // Format price
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat("en-US").format(price);
-  };
-
-  // Format date - simpler display
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diff = date.getTime() - now.getTime();
-
-    if (diff > 0) {
-      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-      const hours = Math.floor(
-        (diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
-      );
-      if (days > 0) return `${days}d`;
-      return `${hours}h`;
-    } else {
-      return date.toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-      });
-    }
-  };
-
   return (
     <div
       onClick={handleClick}
@@ -137,14 +113,14 @@ const AdminProductCard: React.FC<AdminProductCardProps> = ({
 
         {/* Price */}
         <div className="text-primary-blue font-bold text-base mb-1">
-          ${formatPrice(product.currentPrice)}
+          {formatPrice(product.currentPrice)}
         </div>
 
         {/* Meta info row - compact */}
         <div className="flex items-center justify-between text-[11px] text-gray-500">
           <span className="flex items-center gap-1">
             <Clock size={10} />
-            {formatDate(product.endTime)}
+            {formatBidTime(product.endTime)}
           </span>
 
           {/* Bid count */}

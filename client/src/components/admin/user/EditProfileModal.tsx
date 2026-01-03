@@ -13,7 +13,7 @@ interface EditProfileModalProps {
   initialData: ProfileData;
 }
 
-interface ProfileData {
+export interface ProfileData {
   name: string;
   email: string;
   address?: string;
@@ -79,8 +79,10 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
     try {
       await onSave(formData);
       onClose();
-    } catch (error: any) {
-      setApiError(error.message || "Failed to update profile");
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : "Failed to update profile";
+      setApiError(message);
     } finally {
       setIsLoading(false);
     }

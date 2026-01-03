@@ -47,8 +47,7 @@ import {
 
 import {
   AdminDashboardPage,
-  AdminActiveProductsPage,
-  AdminEndedProductsPage,
+  AdminProductsPage,
   AdminAddProductPage,
   AdminProductDetailsPage,
   AdminCategoriesPage,
@@ -175,12 +174,8 @@ const App = () => {
                   <Route path="admin" element={<AdminLayout />}>
                     <Route index element={<AdminDashboardPage />} />
                     <Route
-                      path="products/active"
-                      element={<AdminActiveProductsPage />}
-                    />
-                    <Route
-                      path="products/ended"
-                      element={<AdminEndedProductsPage />}
+                      path="products/:status"
+                      element={<AdminProductsPage />}
                     />
                     <Route
                       path="products/:id"

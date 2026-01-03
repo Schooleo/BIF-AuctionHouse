@@ -1,4 +1,9 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, {
+  useEffect,
+  useState,
+  useCallback,
+  useLayoutEffect,
+} from "react";
 import { useSearchParams } from "react-router-dom";
 import { adminApi } from "@services/admin.api";
 import type { Product, Category } from "@interfaces/product";
@@ -7,6 +12,7 @@ import AdminActiveProductCard from "@components/admin/ActiveProductCard";
 import { Filter, X, ChevronLeft, ChevronRight } from "lucide-react";
 import Spinner from "@components/ui/Spinner";
 import AdminProductFilterModal from "@components/admin/ProductFilterModal";
+import { formatPrice } from "@utils/product";
 
 interface AdminProductsContainerProps {
   status: "active" | "ended";
@@ -35,6 +41,21 @@ const SORT_OPTIONS = {
   ],
 };
 
+const limit = 10;
+const SLIDER_MAX = 500000000;
+
+interface ProductQuery {
+  page: number;
+  limit: number;
+  status: "active" | "ended";
+  search: string;
+  sortBy: string;
+  sortOrder: "asc" | "desc";
+  minPrice?: number;
+  maxPrice?: number;
+  categories?: string;
+}
+
 const AdminProductsContainer: React.FC<AdminProductsContainerProps> = ({
   status,
 }) => {
@@ -42,27 +63,28 @@ const AdminProductsContainer: React.FC<AdminProductsContainerProps> = ({
   const searchQuery = searchParams.get("q") || "";
 
   const [products, setProducts] = useState<Product[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [total, setTotal] = useState(0);
+  const [totalDocs, setTotalDocs] = useState(0);
 
   // Search state (controlled locally to prevent refresh)
   const [localSearch, setLocalSearch] = useState(searchQuery);
   const [debouncedSearch, setDebouncedSearch] = useState(searchQuery);
 
   // Filter states
-  const [selectedCategories, setSelectedCategories] = useState<Category[]>([]);
+  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(
+    null
+  );
   const [minPrice, setMinPrice] = useState<number | undefined>(undefined);
   const [maxPrice, setMaxPrice] = useState<number | undefined>(undefined);
-  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
 
   // Sort state
   const defaultSort = status === "active" ? "createdAt-desc" : "endTime-desc";
   const [sortValue, setSortValue] = useState(defaultSort);
   const [sortBy, sortOrder] = sortValue.split("-") as [string, "asc" | "desc"];
 
-  const limit = 12;
   const sortOptions = SORT_OPTIONS[status];
 
   // Debounce search input
@@ -90,68 +112,83 @@ const AdminProductsContainer: React.FC<AdminProductsContainerProps> = ({
   // Fetch products
   const fetchProducts = useCallback(async () => {
     try {
-      setIsLoading(true);
-      const result = await adminApi.getProducts({
+      setLoading(true);
+      const categoryId = selectedCategory ? selectedCategory._id : undefined;
+
+      const query: ProductQuery = {
         page,
         limit,
+        status,
         search: debouncedSearch,
         sortBy,
         sortOrder,
-        status,
-        categories:
-          selectedCategories.length > 0
-            ? selectedCategories.map((c) => c._id).join(",")
-            : undefined,
         minPrice,
         maxPrice,
-      });
+      };
+
+      if (categoryId) query.categories = categoryId;
+
+      const result = await adminApi.getProducts(query);
 
       setProducts(result.products);
-      setTotal(result.total);
+      setTotalDocs(result.total);
       setTotalPages(result.totalPages);
     } catch (error) {
       console.error("Error fetching products:", error);
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   }, [
     page,
-    limit,
     debouncedSearch,
     sortBy,
     sortOrder,
     status,
-    selectedCategories,
+    selectedCategory,
     minPrice,
     maxPrice,
   ]);
+
+  // Reset filters/page when status changes
+  useLayoutEffect(() => {
+    setPage(1);
+    setSortValue(status === "active" ? "createdAt-desc" : "endTime-desc");
+  }, [status]);
 
   useEffect(() => {
     fetchProducts();
   }, [fetchProducts]);
 
   const handleApplyFilters = (filters: {
-    categories: Category[];
+    category?: Category;
     minPrice?: number;
     maxPrice?: number;
   }) => {
-    setSelectedCategories(filters.categories);
-    setMinPrice(filters.minPrice);
-    setMaxPrice(filters.maxPrice);
-    setPage(1);
+    setSelectedCategory(filters.category || null);
+
+    // Only apply price filter if it differs from default (0 - MAX)
+    if (filters.minPrice === 0 && filters.maxPrice === SLIDER_MAX) {
+      setMinPrice(undefined);
+      setMaxPrice(undefined);
+    } else {
+      setMinPrice(filters.minPrice);
+      setMaxPrice(filters.maxPrice);
+    }
+
+    setPage(1); // Reset to first page
     setIsFilterModalOpen(false);
   };
 
   const handleResetFilters = () => {
-    setSelectedCategories([]);
+    setSelectedCategory(null);
     setMinPrice(undefined);
     setMaxPrice(undefined);
     setSortValue(defaultSort);
     setPage(1);
   };
 
-  const handleRemoveCategory = (categoryId: string) => {
-    setSelectedCategories((prev) => prev.filter((c) => c._id !== categoryId));
+  const handleRemoveCategory = () => {
+    setSelectedCategory(null);
     setPage(1);
   };
 
@@ -161,39 +198,17 @@ const AdminProductsContainer: React.FC<AdminProductsContainerProps> = ({
     setPage(1);
   };
 
-  const hasActiveFilters =
-    selectedCategories.length > 0 ||
-    minPrice !== undefined ||
-    maxPrice !== undefined ||
-    sortValue !== defaultSort;
-
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-800">
-            {status === "active" ? "Active Products" : "Ended Products"}
-          </h1>
-          <p className="text-gray-600 mt-1">
-            {total} product{total !== 1 ? "s" : ""} found
-          </p>
-        </div>
-
-        <div className="flex gap-3">
-          <button
-            onClick={() => setIsFilterModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-primary-blue text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm relative"
-          >
-            <Filter className="w-4 h-4" />
-            Filters
-            {hasActiveFilters && (
-              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
-                !
-              </span>
-            )}
-          </button>
-        </div>
+      <div className="flex flex-col gap-1">
+        <h1 className="text-2xl font-bold text-gray-800">
+          {status === "active" ? "Active Products" : "Ended Products"}
+        </h1>
+        <p className="text-sm text-gray-500">
+          Manage your product inventory, monitor status, and update listings.
+          Currently viewing {totalDocs} products.
+        </p>
       </div>
 
       {/* Search Bar */}
@@ -208,64 +223,82 @@ const AdminProductsContainer: React.FC<AdminProductsContainerProps> = ({
         <p className="text-xs text-gray-500 mt-2">
           Search priority: Product name → Category → Description
         </p>
-      </div>
-
-      {/* Active Filters Display */}
-      {hasActiveFilters && (
-        <div className="flex flex-wrap gap-2 items-center bg-blue-50 p-3 rounded-lg border border-blue-200">
-          <span className="text-sm text-gray-700 font-medium">
-            Active Filters:
-          </span>
-          {selectedCategories.map((cat) => (
-            <span
-              key={cat._id}
-              className="inline-flex items-center gap-1 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full"
+        {/* Active Filters */}
+        {(selectedCategory ||
+          minPrice !== undefined ||
+          maxPrice !== undefined ||
+          sortValue !== defaultSort) && (
+          <div className="flex flex-wrap gap-2 items-center mt-4 pt-4 border-t border-gray-100">
+            <span className="text-sm text-gray-700 font-medium">
+              Active Filters:
+            </span>
+            {selectedCategory && (
+              <span
+                key={selectedCategory._id}
+                className="inline-flex items-center gap-1 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full"
+              >
+                {selectedCategory.name}
+                <button
+                  onClick={handleRemoveCategory}
+                  className="hover:text-blue-900"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            )}
+            {(minPrice !== undefined || maxPrice !== undefined) && (
+              <span className="inline-flex items-center gap-1 text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
+                Price:{" "}
+                {minPrice !== undefined ? `${formatPrice(minPrice)}` : "0"} -{" "}
+                {maxPrice !== undefined ? `${formatPrice(maxPrice)}` : "∞"}
+                <button
+                  onClick={handleRemovePriceFilter}
+                  className="hover:text-green-900"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            )}
+            {sortValue !== defaultSort && (
+              <span className="inline-flex items-center gap-1 text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded-full">
+                Sorted
+                <button
+                  onClick={() => setSortValue(defaultSort)}
+                  className="hover:text-purple-900"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            )}
+            <button
+              onClick={handleResetFilters}
+              className="text-xs text-red-600 hover:text-red-800 font-medium underline ml-2"
             >
-              {cat.name}
-              <button
-                onClick={() => handleRemoveCategory(cat._id)}
-                className="hover:text-blue-900"
-              >
-                <X className="w-3 h-3" />
-              </button>
-            </span>
-          ))}
-          {(minPrice !== undefined || maxPrice !== undefined) && (
-            <span className="inline-flex items-center gap-1 text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
-              Price:{" "}
-              {minPrice !== undefined ? `${minPrice.toLocaleString()}` : "0"} -{" "}
-              {maxPrice !== undefined ? `${maxPrice.toLocaleString()}` : "∞"}
-              <button
-                onClick={handleRemovePriceFilter}
-                className="hover:text-green-900"
-              >
-                <X className="w-3 h-3" />
-              </button>
-            </span>
-          )}
-          {sortValue !== defaultSort && (
-            <span className="inline-flex items-center gap-1 text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded-full">
-              Sorted
-              <button
-                onClick={() => setSortValue(defaultSort)}
-                className="hover:text-purple-900"
-              >
-                <X className="w-3 h-3" />
-              </button>
-            </span>
-          )}
-          <button
-            onClick={handleResetFilters}
-            className="text-xs text-red-600 hover:text-red-800 font-medium underline ml-2"
-          >
-            Clear all
-          </button>
-        </div>
-      )}
+              Clear all
+            </button>
+          </div>
+        )}
+      </div>
 
       {/* Sort & Pagination Control Bar */}
       <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col md:flex-row items-center justify-between gap-4">
         <div className="flex flex-wrap items-center gap-6 w-full md:w-auto">
+          <div className="flex gap-3">
+            {/* Filter Button */}
+            <button
+              onClick={() => setIsFilterModalOpen(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors shadow-sm relative"
+            >
+              <Filter size={18} />
+              <span className="font-medium">Apply Filters</span>
+              {(selectedCategory ||
+                minPrice !== undefined ||
+                maxPrice !== undefined) && (
+                <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white"></span>
+              )}
+            </button>
+          </div>
+
           {/* Sort */}
           <div className="flex items-center gap-3">
             <span className="text-sm font-medium text-gray-700">Sort:</span>
@@ -314,27 +347,30 @@ const AdminProductsContainer: React.FC<AdminProductsContainerProps> = ({
       </div>
 
       {/* Products Grid */}
-      {isLoading ? (
-        <div className="flex justify-center py-12">
-          <Spinner />
-        </div>
-      ) : products.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {products.map((product) =>
-            status === "active" ? (
-              <AdminActiveProductCard key={product._id} product={product} />
-            ) : (
-              <AdminEndedProductCard key={product._id} product={product} />
-            )
-          )}
-        </div>
-      ) : (
-        <div className="text-center py-12 bg-white rounded-lg border border-gray-100">
-          <p className="text-gray-500">
-            No products found matching your criteria.
-          </p>
-        </div>
-      )}
+      <div className="relative min-h-[200px]">
+        {loading && (
+          <div className="absolute inset-0 bg-white/40 z-10 flex items-center justify-center backdrop-blur-[1px] transition-all duration-200">
+            <Spinner />
+          </div>
+        )}
+        {products.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {products.map((product) =>
+              status === "active" ? (
+                <AdminActiveProductCard key={product._id} product={product} />
+              ) : (
+                <AdminEndedProductCard key={product._id} product={product} />
+              )
+            )}
+          </div>
+        ) : (
+          <div className="text-center py-12 bg-white rounded-lg border border-gray-100">
+            <p className="text-gray-500">
+              No products found matching your criteria.
+            </p>
+          </div>
+        )}
+      </div>
 
       {/* Filter Modal */}
       <AdminProductFilterModal
@@ -342,7 +378,7 @@ const AdminProductsContainer: React.FC<AdminProductsContainerProps> = ({
         onClose={() => setIsFilterModalOpen(false)}
         onApply={handleApplyFilters}
         currentFilters={{
-          categories: selectedCategories,
+          category: selectedCategory || undefined,
           minPrice,
           maxPrice,
         }}
