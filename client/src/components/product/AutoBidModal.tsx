@@ -6,7 +6,7 @@ import { formatPrice } from "@utils/product";
 import ErrorMessage from "@components/message/ErrorMessage";
 import Spinner from "@components/ui/Spinner";
 import { useAlertStore } from "@stores/useAlertStore";
-import { ChevronUp, ChevronDown } from "lucide-react";
+import { ChevronUp, ChevronDown, AlertCircle, CheckCircle } from "lucide-react";
 import type { Product } from "@interfaces/product";
 
 interface AutoBidModalProps {
@@ -37,6 +37,7 @@ const AutoBidModal: React.FC<AutoBidModalProps> = ({
   const [isFetching, setIsFetching] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
   const [warning, setWarning] = useState<string>("");
+  const [showConfirmation, setShowConfirmation] = useState<boolean>(false);
   const addAlert = useAlertStore((state) => state.addAlert);
 
   const handleChangeMaxPrice = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -49,7 +50,7 @@ const AutoBidModal: React.FC<AutoBidModalProps> = ({
       return;
     }
     setMaxPrice(rawValue);
-    setWarning(""); // Xóa cảnh báo khi thay đổi
+    setWarning("");
     setError("");
   };
 
@@ -61,7 +62,6 @@ const AutoBidModal: React.FC<AutoBidModalProps> = ({
       setWarning("");
       setError("");
     } else if (buyNowPrice && val > buyNowPrice) {
-      // Đặt giá trần thành giá mua ngay
       setMaxPrice(buyNowPrice.toString());
       setWarning("You're currently setting the Highest Amount possible");
       setError("");
@@ -93,7 +93,10 @@ const AutoBidModal: React.FC<AutoBidModalProps> = ({
   };
 
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen) {
+      setShowConfirmation(false);
+      return;
+    }
 
     const fetchSuggested = async () => {
       try {
@@ -108,7 +111,6 @@ const AutoBidModal: React.FC<AutoBidModalProps> = ({
         setSuggestedPrice(data.suggestedPrice);
         setBuyNowPrice(data.buyNowPrice);
 
-        // Khởi tạo ban đầu
         if (
           data.myAutoBidMaxPrice &&
           data.myAutoBidStepPrice &&
@@ -130,38 +132,45 @@ const AutoBidModal: React.FC<AutoBidModalProps> = ({
     };
 
     fetchSuggested();
-  }, [isOpen, productId, currentPrice]);
+  }, [isOpen, productId]);
 
-  const handleSubmit = async () => {
+  const handleReviewBid = () => {
+    setError("");
+    const maxVal = parseFloat(maxPrice);
+
+    if (isNaN(maxVal) || maxVal <= 0) {
+      setError("Please enter a valid amount.");
+      return;
+    }
+
+    if (maxVal < suggestedPrice) {
+      setError(`Max amount must be at least ${formatPrice(suggestedPrice)}.`);
+      return;
+    }
+
+    if (buyNowPrice && maxVal > buyNowPrice) {
+      setError(
+        `Max amount cannot exceed Buy Now price (${formatPrice(buyNowPrice)}).`
+      );
+      return;
+    }
+
+    if (currentStepPrice % baseStepPrice !== 0) {
+      setError(
+        `Step price must be a multiple of ${formatPrice(baseStepPrice)}.`
+      );
+      return;
+    }
+
+    setShowConfirmation(true);
+  };
+
+  const handleConfirmBid = async () => {
     try {
       setIsLoading(true);
       setError("");
 
       const maxVal = parseFloat(maxPrice);
-
-      if (isNaN(maxVal) || maxVal <= 0) {
-        setError("Please enter a valid amount.");
-        return;
-      }
-
-      if (maxVal < suggestedPrice) {
-        setError(`Max amount must be at least ${formatPrice(suggestedPrice)}.`);
-        return;
-      }
-
-      if (buyNowPrice && maxVal > buyNowPrice) {
-        setError(
-          `Max amount cannot exceed Buy Now price (${formatPrice(buyNowPrice)}).`
-        );
-        return;
-      }
-
-      if (currentStepPrice % baseStepPrice !== 0) {
-        setError(
-          `Step price must be a multiple of ${formatPrice(baseStepPrice)}.`
-        );
-        return;
-      }
 
       await bidderApi.setAutoBid(
         productId,
@@ -177,27 +186,136 @@ const AutoBidModal: React.FC<AutoBidModalProps> = ({
         err instanceof Error ? err.message : "Failed to set auto bid.";
       setError(message);
       addAlert("error", message);
+      setShowConfirmation(false);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleBackToEdit = () => {
+    setShowConfirmation(false);
+    setError("");
   };
 
   return (
     <PopUpWindow
       isOpen={isOpen}
       onClose={onClose}
-      onSubmit={handleSubmit}
-      title={`Set Auto Bid for "${productName}"`}
-      submitText="Update"
+      onSubmit={showConfirmation ? handleConfirmBid : handleReviewBid}
+      title={
+        showConfirmation
+          ? "Confirm Auto Bid"
+          : `Set Auto Bid for "${productName}"`
+      }
+      submitText={showConfirmation ? "Confirm & Place Bid" : "Set Auto Bid"}
+      cancelText={showConfirmation ? "Back to Edit" : "Cancel"}
+      onCancel={showConfirmation ? handleBackToEdit : undefined}
       isLoading={isLoading}
       size="md"
     >
       {isFetching ? (
-        <div className="flex justify-center items-center h-32">
+        <div className="flex flex-col justify-center items-center h-32 gap-3">
           <Spinner />
-          <p className="mt-4 text-gray-600">Loading...</p>
+          <p className="text-gray-600">Loading bid information...</p>
+        </div>
+      ) : showConfirmation ? (
+        // Confirmation View
+        <div className="space-y-6">
+          <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-lg">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+              <div className="flex-1">
+                <h3 className="text-sm font-semibold text-blue-900 mb-1">
+                  Review Your Auto Bid
+                </h3>
+                <p className="text-sm text-blue-800">
+                  Please carefully review the details below before confirming
+                  your automatic bid.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Bid Summary */}
+          <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+            <div className="bg-gray-50 px-4 py-3 border-b border-gray-200">
+              <h4 className="font-semibold text-gray-900">Bid Summary</h4>
+            </div>
+            <div className="p-4 space-y-3">
+              <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                <span className="text-gray-600 text-sm">Product</span>
+                <span className="font-semibold text-gray-900 text-right max-w-[60%] truncate">
+                  {productName}
+                </span>
+              </div>
+              <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                <span className="text-gray-600 text-sm">Current Price</span>
+                <span className="font-semibold text-gray-900">
+                  {formatPrice(currentPrice)}
+                </span>
+              </div>
+              <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                <span className="text-gray-600 text-sm">Your Max Bid</span>
+                <span className="font-bold text-primary-blue text-lg">
+                  {formatPrice(parseFloat(maxPrice))}
+                </span>
+              </div>
+              <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                <span className="text-gray-600 text-sm">Bid Step</span>
+                <span className="font-semibold text-gray-900">
+                  {formatPrice(currentStepPrice)}
+                </span>
+              </div>
+              {buyNowPrice && (
+                <div className="flex justify-between items-center py-2">
+                  <span className="text-gray-600 text-sm">Buy Now Price</span>
+                  <span className="font-semibold text-green-600">
+                    {formatPrice(buyNowPrice)}
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* How It Works */}
+          <div className="bg-gradient-to-br from-indigo-50 to-blue-50 border border-indigo-200 rounded-lg p-4">
+            <div className="flex items-start gap-3">
+              <CheckCircle className="w-5 h-5 text-indigo-600 mt-0.5 flex-shrink-0" />
+              <div className="flex-1">
+                <h4 className="font-semibold text-indigo-900 mb-2 text-sm">
+                  How Auto Bidding Works
+                </h4>
+                <ul className="text-xs text-indigo-800 space-y-1.5">
+                  <li className="flex items-start gap-2">
+                    <span className="text-indigo-400 mt-0.5">•</span>
+                    <span>
+                      The system will automatically place bids on your behalf up
+                      to your maximum amount
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-indigo-400 mt-0.5">•</span>
+                    <span>
+                      Bids will increase by your chosen step price (
+                      {formatPrice(currentStepPrice)})
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-indigo-400 mt-0.5">•</span>
+                    <span>
+                      You'll only pay the minimum amount needed to win, not
+                      necessarily your max bid
+                    </span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          {error && <ErrorMessage text={error} />}
         </div>
       ) : (
+        // Input View
         <div className="space-y-6">
           {/* Info Section */}
           <div className="bg-gray-50 rounded-lg p-4 space-y-2">
@@ -214,7 +332,7 @@ const AutoBidModal: React.FC<AutoBidModalProps> = ({
             {buyNowPrice && (
               <div className="flex justify-between">
                 <span className="text-gray-600">Buy Now Price:</span>
-                <span className="font-semibold text-red-600">
+                <span className="font-semibold text-green-600">
                   {formatPrice(buyNowPrice)}
                 </span>
               </div>
@@ -270,7 +388,7 @@ const AutoBidModal: React.FC<AutoBidModalProps> = ({
                 <button
                   type="button"
                   onClick={handleIncrementStep}
-                  className="p-1 bg-gray-200 hover:bg-gray-300 rounded"
+                  className="p-1 bg-gray-200 hover:bg-gray-300 rounded transition-colors"
                 >
                   <ChevronUp className="w-4 h-4" />
                 </button>
@@ -278,7 +396,7 @@ const AutoBidModal: React.FC<AutoBidModalProps> = ({
                   type="button"
                   onClick={handleDecrementStep}
                   disabled={currentStepPrice <= baseStepPrice}
-                  className="p-1 bg-gray-200 hover:bg-gray-300 rounded disabled:opacity-50"
+                  className="p-1 bg-gray-200 hover:bg-gray-300 rounded disabled:opacity-50 transition-colors"
                 >
                   <ChevronDown className="w-4 h-4" />
                 </button>
@@ -289,10 +407,12 @@ const AutoBidModal: React.FC<AutoBidModalProps> = ({
             </div>
           </div>
 
-          <div className="flex items-center justify-center p-2 bg-blue-50 text-blue-700 rounded-md font-medium animate-pulse">
-            Currently bidding...{" "}
-            <span className="m-1 font-bold">
-              {formatPrice(parseFloat(maxPrice))}
+          <div className="flex items-center justify-center p-3 bg-blue-50 border border-blue-200 text-blue-700 rounded-md font-medium">
+            <span className="text-sm">
+              Ready to auto-bid up to{" "}
+              <span className="font-bold text-lg">
+                {formatPrice(parseFloat(maxPrice))}
+              </span>
             </span>
           </div>
 
