@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import PopUpWindow from "@components/ui/PopUpWindow";
+import UserRatingDetailsModal from "@components/user/UserRatingDetailsModal";
 import Spinner from "@components/ui/Spinner";
 import ErrorMessage from "@components/message/ErrorMessage";
 import EmptyMessage from "@components/message/EmptyMessage";
@@ -51,16 +52,18 @@ const SellerBidHistoryModal: React.FC<SellerBidHistoryModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [pendingError, setPendingError] = useState<string | null>(null);
   const [tableError, setTableError] = useState<string | null>(null);
-  const [pendingReject, setPendingReject] = useState<BidHistoryRow | null>(
-    null
-  );
+  const [pendingReject, setPendingReject] = useState<BidHistoryRow | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [showOnlyRejected, setShowOnlyRejected] = useState(false);
   const [totalRejected, setTotalRejected] = useState(0);
 
+  // Rating modal state
+  const [isRatingModalOpen, setIsRatingModalOpen] = useState(false);
+  const [selectedBidderId, setSelectedBidderId] = useState<string | null>(null);
+  const [selectedBidderName, setSelectedBidderName] = useState<string | null>(null);
+
   const isRejected = useCallback(
-    (bidderId: string) =>
-      rejectedBidderIds.some((id) => id.toString() === bidderId),
+    (bidderId: string) => rejectedBidderIds.some((id) => id.toString() === bidderId),
     [rejectedBidderIds]
   );
 
@@ -102,7 +105,7 @@ const SellerBidHistoryModal: React.FC<SellerBidHistoryModalProps> = ({
           limit: PAGE_SIZE,
           includeRejected: showOnlyRejected,
         });
-        
+
         const mappedRows = mapBidHistory(response.bidHistory);
         setRows(mappedRows);
         setCurrentPage(response.pagination.currentPage);
@@ -110,8 +113,7 @@ const SellerBidHistoryModal: React.FC<SellerBidHistoryModalProps> = ({
         setTotalBids(response.pagination.totalBids);
         setTotalRejected(response.pagination.totalRejected || 0);
       } catch (err: any) {
-        const message =
-          err?.message || "Failed to fetch bid history. Please try again.";
+        const message = err?.message || "Failed to fetch bid history. Please try again.";
         setTableError(message);
       } finally {
         setLoading(false);
@@ -133,8 +135,7 @@ const SellerBidHistoryModal: React.FC<SellerBidHistoryModalProps> = ({
   }, [isOpen, fetchBidHistory]);
 
   const handlePageChange = async (direction: "next" | "prev") => {
-    const targetPage =
-      direction === "next" ? currentPage + 1 : currentPage - 1;
+    const targetPage = direction === "next" ? currentPage + 1 : currentPage - 1;
 
     if (targetPage < 1 || targetPage > totalPages) return;
 
@@ -158,8 +159,7 @@ const SellerBidHistoryModal: React.FC<SellerBidHistoryModalProps> = ({
       setPendingReject(null);
       await fetchBidHistory(1);
     } catch (err: any) {
-      const message =
-        err?.message || "Failed to reject bidder. Please try again.";
+      const message = err?.message || "Failed to reject bidder. Please try again.";
       setPendingError(message);
     } finally {
       setActionLoading(false);
@@ -184,9 +184,7 @@ const SellerBidHistoryModal: React.FC<SellerBidHistoryModalProps> = ({
 
         {!loading && tableError && <ErrorMessage text={tableError} />}
 
-        {!loading && !tableError && rows.length === 0 && (
-          <EmptyMessage text="No bids placed for this product yet." />
-        )}
+        {!loading && !tableError && rows.length === 0 && <EmptyMessage text="No bids placed for this product yet." />}
 
         {!loading && !tableError && rows.length > 0 && (
           <div className="space-y-4">
@@ -223,9 +221,7 @@ const SellerBidHistoryModal: React.FC<SellerBidHistoryModalProps> = ({
                         <th className="px-4 py-3 text-left">Bidder</th>
                         <th className="px-4 py-3 text-center">Bid Amount</th>
                         <th className="px-4 py-3 text-center">Placed At</th>
-                        {!winnerConfirmed && (
-                          <th className="px-4 py-3 text-center">Actions</th>
-                        )}
+                        {!winnerConfirmed && <th className="px-4 py-3 text-center">Actions</th>}
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
@@ -237,38 +233,32 @@ const SellerBidHistoryModal: React.FC<SellerBidHistoryModalProps> = ({
                         return (
                           <tr
                             key={row.entryId}
-                            className={
-                              isCurrentWinner
-                                ? "bg-emerald-50"
-                                : bidderRejected
-                                ? "bg-red-50"
-                                : "bg-white"
-                            }
+                            className={isCurrentWinner ? "bg-emerald-50" : bidderRejected ? "bg-red-50" : "bg-white"}
                           >
-                            <td className="px-4 py-3 font-medium text-gray-700">
-                              {globalIndex}
-                            </td>
+                            <td className="px-4 py-3 font-medium text-gray-700">{globalIndex}</td>
                             <td className="px-4 py-3">
                               <div className="flex flex-col">
-                                <span className="font-semibold text-gray-800">
+                                <button
+                                  onClick={() => {
+                                    setSelectedBidderId(row.bidderId);
+                                    setSelectedBidderName(row.bidderName);
+                                    setIsRatingModalOpen(true);
+                                  }}
+                                  disabled={!row.bidderId}
+                                  className="font-semibold text-gray-800 hover:text-primary-blue hover:underline text-left disabled:cursor-default disabled:hover:no-underline disabled:hover:text-gray-800"
+                                >
                                   {row.bidderName}
-                                </span>
+                                </button>
                                 {row.bidderRating !== undefined && (
-                                  <span className="text-xs text-gray-500">
-                                    Rating: {row.bidderRating.toFixed(2)} ★
-                                  </span>
+                                  <span className="text-xs text-gray-500">Rating: {row.bidderRating.toFixed(2)} ★</span>
                                 )}
                                 {isCurrentWinner && !bidderRejected && (
                                   <span
                                     className={`text-xs font-medium ${
-                                      winnerConfirmed
-                                        ? "text-emerald-600"
-                                        : "text-indigo-700"
+                                      winnerConfirmed ? "text-emerald-600" : "text-indigo-700"
                                     }`}
                                   >
-                                    {winnerConfirmed
-                                      ? "Confirmed winner"
-                                      : "Highest bidder"}
+                                    {winnerConfirmed ? "Confirmed winner" : "Highest bidder"}
                                   </span>
                                 )}
                                 {bidderRejected && (
@@ -282,19 +272,13 @@ const SellerBidHistoryModal: React.FC<SellerBidHistoryModalProps> = ({
                             <td className="px-4 py-3 text-center font-semibold text-gray-900">
                               {formatPrice(row.bidAmount)}
                             </td>
-                            <td className="px-4 py-3 text-gray-600">
-                              {formatBidTime(row.createdAt)}
-                            </td>
+                            <td className="px-4 py-3 text-gray-600">{formatBidTime(row.createdAt)}</td>
                             {!winnerConfirmed && (
                               <td className="px-4 py-3 text-right">
                                 <button
                                   type="button"
                                   onClick={() => setPendingReject(row)}
-                                  disabled={
-                                    !row.bidderId ||
-                                    bidderRejected ||
-                                    rejectingBidderId === row.bidderId
-                                  }
+                                  disabled={!row.bidderId || bidderRejected || rejectingBidderId === row.bidderId}
                                   className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-semibold rounded-lg border border-red-500 text-red-600 hover:bg-red-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                   {rejectingBidderId === row.bidderId ? (
@@ -359,25 +343,36 @@ const SellerBidHistoryModal: React.FC<SellerBidHistoryModalProps> = ({
         {pendingReject && (
           <div className="space-y-3 text-sm text-gray-700">
             <p className="text-yellow-600 font-medium">
-              Are you sure you want to reject{" "}
-              <span className="font-semibold">{pendingReject.bidderName}</span>{" "}
-              from bidding on this product?
+              Are you sure you want to reject <span className="font-semibold">{pendingReject.bidderName}</span> from
+              bidding on this product?
             </p>
             <p>
-              All their bids will be removed from the auction history 
-              and they will no longer be able to place new bids on this product.
+              All their bids will be removed from the auction history and they will no longer be able to place new bids
+              on this product.
             </p>
             {pendingReject.bidderId === currentBidderId && (
               <p className="text-red-600 font-medium">
-                This bidder is currently the highest bidder. Rejecting them will
-                recalculate the auction winner using the next highest bid or
-                reset the price to the starting amount if no other bids exist.
+                This bidder is currently the highest bidder. Rejecting them will recalculate the auction winner using
+                the next highest bid or reset the price to the starting amount if no other bids exist.
               </p>
             )}
             {pendingError && <ErrorMessage text={pendingError} />}
           </div>
         )}
       </PopUpWindow>
+
+      {selectedBidderId && (
+        <UserRatingDetailsModal
+          isOpen={isRatingModalOpen}
+          onClose={() => {
+            setIsRatingModalOpen(false);
+            setSelectedBidderId(null);
+            setSelectedBidderName(null);
+          }}
+          userId={selectedBidderId}
+          userName={selectedBidderName || undefined}
+        />
+      )}
     </>
   );
 };
