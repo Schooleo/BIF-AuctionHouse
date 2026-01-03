@@ -63,14 +63,62 @@ export const productApi = {
     return handleResponse(res);
   },
 
-  fetchProductDetails: async ({
-    id,
-  }: FetchProductDetailsDto): Promise<ProductDetails> => {
+  fetchProductDetails: async ({ id }: FetchProductDetailsDto): Promise<ProductDetails> => {
     const params = new URLSearchParams();
 
     const paramString = params.toString() ? `?${params.toString()}` : "";
 
     const url = `${API_BASE}/api/guest/product/${id}${paramString}`;
+
+    const res = await fetch(url, {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+    });
+
+    return handleResponse(res);
+  },
+
+  getUserRatings: async ({
+    userId,
+    page = 1,
+    limit = 10,
+    score,
+  }: {
+    userId: string;
+    page?: number;
+    limit?: number;
+    score?: 1 | -1;
+  }): Promise<{
+    user: {
+      _id: string;
+      name: string;
+      positiveRatings: number;
+      negativeRatings: number;
+      reputationScore: number;
+    };
+    ratings: Array<{
+      _id: string;
+      rater: {
+        _id: string;
+        name: string;
+      };
+      score: 1 | -1;
+      comment: string;
+      createdAt: string;
+    }>;
+    pagination: {
+      page: number;
+      limit: number;
+      total: number;
+      totalPages: number;
+    };
+  }> => {
+    const params = new URLSearchParams();
+    params.append("page", page.toString());
+    params.append("limit", limit.toString());
+    if (score !== undefined) params.append("score", score.toString());
+
+    const url = `${API_BASE}/api/guest/users/${userId}/ratings?${params.toString()}`;
 
     const res = await fetch(url, {
       method: "GET",
