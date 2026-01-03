@@ -2,8 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import ProductCard from "@components/product/ProductCard";
 import type { Product } from "@interfaces/product";
-//import { allMockProducts, getTopProducts } from "@utils/product";
-import { productApi } from "@services/product.api"; // Đổi import này
+import { productApi } from "@services/product.api";
 import Spinner from "@components/ui/Spinner";
 
 const HomePage: React.FC = () => {

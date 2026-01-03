@@ -8,6 +8,7 @@ import {
   AutoBid,
 } from "../models/index.model";
 import { UpgradeRequest } from "../models/upgradeRequest.model";
+import { UnbanRequest } from "../models/unbanRequest.model";
 import {
   BidMessages,
   BidderMessages,
@@ -259,15 +260,20 @@ export const bidderService = {
         .populate("user")
         .sort({ maxPrice: -1, createdAt: 1 });
 
-      if (autoBids.length === 0) {
+      // Filter out banned users (race condition protection)
+      const activeAutoBids = autoBids.filter(
+        (ab: any) => ab.user && ab.user.status === "ACTIVE"
+      );
+
+      if (activeAutoBids.length === 0) {
         break;
       }
 
       // Add delay between auto bids
       if (i > 0 && delay > 0) await sleep(delay);
 
-      const winnerAutoBid = autoBids[0]!;
-      const runnerUpAutoBid = autoBids[1];
+      const winnerAutoBid = activeAutoBids[0]!;
+      const runnerUpAutoBid = activeAutoBids[1];
 
       const currentBidderId = product.currentBidder?.toString();
       const currentPrice = product.currentPrice;
@@ -419,8 +425,12 @@ export const bidderService = {
       }
     }
 
-    // Logic gửi Email (Bất đồng bộ)
-    this._sendBidEmails(product, bidder, price);
+    // Logic gửi Email (Pending / Throttled)
+    // this._sendBidEmails(product, bidder, price);
+    if (!product.firstPendingBidAt) {
+      product.firstPendingBidAt = new Date();
+      await product.save();
+    }
 
     return { bid, product };
   },
@@ -763,6 +773,7 @@ export const bidderService = {
       address?: string;
       dateOfBirth?: Date;
       contactEmail?: string;
+      avatar?: string;
     }
   ) {
     const bidder = await User.findByIdAndUpdate(
@@ -1124,7 +1135,7 @@ export const bidderService = {
   },
 
   // Gửi yêu cầu nâng cấp lên Seller
-  async requestSellerUpgrade(bidderId: string) {
+  async requestSellerUpgrade(bidderId: string, title: string, reasons: string) {
     // Kiểm tra bidder tồn tại
     const bidder = await User.findById(bidderId);
     if (!bidder) {
@@ -1153,20 +1164,20 @@ export const bidderService = {
       throw new Error(BidderMessages.PENDING_REQUEST_EXISTS);
     }
 
-    // Kiểm tra request bị reject gần nhất
-    const lastRejectedRequest = await UpgradeRequest.findOne({
+    // Kiểm tra request gần nhất (KHÔNG BAO GỒM expired) để enforce giới hạn 1 tuần
+    const lastRequest = await UpgradeRequest.findOne({
       user: bidderId,
-      status: "rejected",
-    }).sort({ rejectedAt: -1 });
+      status: { $ne: "expired" }, // Bỏ qua expired requests
+    }).sort({ createdAt: -1 });
 
-    if (lastRejectedRequest && lastRejectedRequest.rejectedAt) {
-      const daysSinceRejection = Math.floor(
-        (now.getTime() - lastRejectedRequest.rejectedAt.getTime()) /
+    if (lastRequest) {
+      const daysSinceLastRequest = Math.floor(
+        (now.getTime() - lastRequest.createdAt.getTime()) /
           (1000 * 60 * 60 * 24)
       );
 
-      if (daysSinceRejection < 7) {
-        const daysRemaining = 7 - daysSinceRejection;
+      if (daysSinceLastRequest < 7) {
+        const daysRemaining = 7 - daysSinceLastRequest;
         throw new Error(
           BidderMessages.MUST_WAIT_DAYS.replace(
             "{days}",
@@ -1181,6 +1192,8 @@ export const bidderService = {
 
     const upgradeRequest = await UpgradeRequest.create({
       user: bidderId,
+      title,
+      reasons,
       status: "pending",
       expiresAt,
     });
@@ -1232,3 +1245,49 @@ function maskBidderName(fullName: string): string {
 
   return "*".repeat(totalMaskLength + firstNames.length - 1) + " " + lastName;
 }
+
+/**
+ * Submit unban request
+ */
+export const submitUnbanRequest = async (
+  userId: string,
+  title: string,
+  details: string
+) => {
+  // Check if user is actually banned
+  const user = await User.findById(userId);
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  if (user.status !== "BLOCKED") {
+    throw new Error("Only banned users can submit unban requests");
+  }
+
+  // Check if user already has an unban request (only ONE allowed)
+  const existingRequest = await UnbanRequest.findOne({ user: userId });
+  if (existingRequest) {
+    throw new Error("You have already submitted an unban request");
+  }
+
+  // Create unban request
+  const unbanRequest = await UnbanRequest.create({
+    user: userId,
+    title,
+    details,
+    status: "PENDING",
+  });
+
+  return unbanRequest;
+};
+
+/**
+ * Get unban request status for user
+ */
+export const getUnbanRequestStatus = async (userId: string) => {
+  const request = await UnbanRequest.findOne({ user: userId })
+    .populate("processedBy", "name email")
+    .sort({ createdAt: -1 });
+
+  return request;
+};

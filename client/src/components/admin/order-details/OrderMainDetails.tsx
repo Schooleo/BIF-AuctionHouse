@@ -1,8 +1,9 @@
 import React, { useState } from "react";
-import { type IOrder } from "../../../services/admin.api";
-import { formatPrice } from "../../../utils/product";
+import { type IOrder } from "@interfaces/admin";
+import { formatPrice } from "@utils/product";
 import { MapPin, Clock } from "lucide-react";
-import ImageModal from "../../../components/ui/ImageModal";
+import ImageModal from "@components/ui/ImageModal";
+import { Link } from "react-router-dom";
 
 interface OrderProduct {
   [key: string]: unknown;
@@ -26,6 +27,7 @@ const OrderMainDetails: React.FC<OrderMainDetailsProps> = ({ order }) => {
   const productPx =
     typeof product === "string" ? product : product?.currentPrice || 0;
   const productImg = typeof product === "string" ? product : product?.mainImage;
+  const productId = typeof product === "string" ? product : product?._id;
 
   const openImage = (url?: string) => {
     if (url) setSelectedImage(url);
@@ -47,17 +49,22 @@ const OrderMainDetails: React.FC<OrderMainDetailsProps> = ({ order }) => {
           <div className="flex gap-4 mb-6">
             <div className="w-24 h-24 bg-gray-100 rounded-md overflow-hidden shrink-0">
               {productImg && (
-                <img
-                  src={productImg}
-                  alt={productName}
-                  className="w-full h-full object-cover"
-                />
+                <Link to={`/admin/products/${productId}`}>
+                  <img
+                    src={productImg}
+                    alt={productName}
+                    className="w-full h-full object-cover hover:opacity-90 transition-opacity"
+                  />
+                </Link>
               )}
             </div>
             <div className="flex flex-col justify-between">
-              <h4 className="font-medium text-gray-900 text-lg">
+              <Link
+                to={`/admin/products/${productId}`}
+                className="font-medium text-gray-900 text-lg hover:text-primary-blue hover:underline"
+              >
                 {productName}
-              </h4>
+              </Link>
               <p className="text-gray-500 text-sm">ID: {order._id}</p>
               <div className="mt-2 text-primary-blue font-bold text-xl">
                 {formatPrice(Number(productPx))}

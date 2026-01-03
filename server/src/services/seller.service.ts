@@ -216,22 +216,44 @@ export class SellerService {
 
     await product.save();
 
-    // EMAIL: Notify questioner
+    // EMAIL: Notify questioner and all participants
     const { sendAnswerNotificationEmail } = await import("../utils/email.util");
-    const questioner = question.questioner as any;
-    if (questioner && questioner.email) {
-      sendAnswerNotificationEmail(
-        questioner.email,
-        questioner.name,
-        product.name,
-        (product as any)._id.toString(),
-        question.question,
-        trimmedAnswer
-      ).catch(console.error);
-    }
+    const { Bid } = await import("../models/bid.model");
+    const { User } = await import("../models/user.model");
 
-    // TODO: Send to all other involved users (bidders + previous questioners)
-    // For now, doing just questioner to satisfy basic loop.
+    // 1. Get List of Bidders
+    const bidderIds = await Bid.find({ product: productId }).distinct("bidder");
+
+    // 2. Get List of Questioners
+    const questionerIds = product.questions
+      .map((q) => q.questioner)
+      .filter((id) => id); // Filter nulls
+
+    // 3. Combine unique IDs (excluding seller)
+    const recipientIds = new Set([
+      ...bidderIds.map((id) => id.toString()),
+      ...questionerIds.map((id) => id.toString()),
+    ]);
+    recipientIds.delete(userId); // Remove seller if present
+
+    // 4. Fetch Users
+    const recipients = await User.find({
+      _id: { $in: Array.from(recipientIds) },
+    }).select("email name");
+
+    // 5. Send Emails
+    Promise.allSettled(
+      recipients.map((recipient) =>
+        sendAnswerNotificationEmail(
+          recipient.email,
+          recipient.name,
+          product.name,
+          (product as any)._id.toString(),
+          question.question,
+          trimmedAnswer
+        )
+      )
+    ).catch(console.error);
 
     const refreshedProduct = await Product.findById(productId)
       .populate([
@@ -578,6 +600,7 @@ export class SellerService {
       address?: string;
       contactEmail?: string;
       dateOfBirth?: string;
+      avatar?: string;
     }
   ) {
     const [User] = await Promise.all([import("../models/user.model")]);

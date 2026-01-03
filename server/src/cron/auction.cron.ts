@@ -1,6 +1,5 @@
 import cron from "node-cron";
 import { Product } from "../models/product.model";
-import { User } from "../models/user.model";
 import {
   sendAuctionEndedSellerEmail,
   sendAuctionEndedNoBuyerEmail,
@@ -12,7 +11,6 @@ import {
  */
 export const startAuctionCron = () => {
   cron.schedule("* * * * *", async () => {
-    // console.log("Running auction cron job..."); // Disabled to avoid noise
     const now = new Date();
 
     try {
@@ -71,4 +69,195 @@ export const startAuctionCron = () => {
       console.error("Error in auction cron job:", error);
     }
   });
+
+  /**
+   * Run every minute to check for throttled bid emails
+   */
+  cron.schedule("* * * * *", async () => {
+    try {
+      // 1. Get System Config
+      const { SystemConfig } = await import("../models/systemConfig.model");
+      const config = await SystemConfig.findOne();
+
+      // Default: 30 mins window, 6 hours cooldown
+      const throttlingWindowMinutes = config?.bidEmailThrottlingWindow || 30;
+      const cooldownHours = config?.bidEmailCooldown || 6;
+
+      const now = new Date();
+
+      // 2. Find eligible products
+      const products = await Product.find({
+        firstPendingBidAt: { $exists: true, $ne: null },
+      }).populate("seller currentBidder");
+
+      if (products.length === 0) return;
+
+      for (const product of products) {
+        if (!product.firstPendingBidAt) continue;
+
+        // Check 1: Accumulation Window
+        const minutesSinceFirstBid =
+          (now.getTime() - new Date(product.firstPendingBidAt).getTime()) /
+          (1000 * 60);
+
+        if (minutesSinceFirstBid < throttlingWindowMinutes) {
+          // Still accumulating
+          continue;
+        }
+
+        // Ready to process this batch!
+        console.log(
+          `Processing THROTTLED bid emails for product ${product._id}`
+        );
+
+        // --- PREPARE RECIPIENTS ---
+        const { Bid } = await import("../models/bid.model");
+        const { User } = await import("../models/user.model");
+        const {
+          sendBidNotificationToSeller,
+          sendBidConfirmationToBidder,
+          sendOutbidNotificationToBidders,
+        } = await import("../utils/email.util");
+
+        const currentPrice = product.currentPrice;
+        const currentBidder = product.currentBidder as any;
+
+        if (!currentBidder) {
+          product.firstPendingBidAt = undefined;
+          await product.save();
+          continue;
+        }
+
+        const seller = product.seller as any;
+        const nextMinPrice = currentPrice + product.stepPrice;
+        const maskedBidderName = maskBidderName(currentBidder.name);
+
+        // Fetch outbid participants
+        const participatingBidderIds = await Bid.find({
+          product: product._id,
+          bidder: { $ne: currentBidder._id },
+        }).distinct("bidder");
+
+        const participatingBidders = await User.find({
+          _id: { $in: participatingBidderIds },
+        }).select("email name");
+
+        // --- HELPER TO CHECK & UPDATE COOLDOWN ---
+        // Helper: Check if user should receive email (not in cooldown)
+        const shouldSendToUser = (userId: string) => {
+          const userNotif = product.emailNotifications?.find(
+            (n) => n.user.toString() === userId.toString()
+          );
+          if (!userNotif) return true; // Never sent -> Send immediately
+          const hoursSinceLast =
+            (now.getTime() - new Date(userNotif.lastSentAt).getTime()) /
+            (1000 * 60 * 60);
+          return hoursSinceLast >= cooldownHours;
+        };
+
+        // Helper: Update lastSentAt for user
+        const updateLastSent = (userId: string) => {
+          const existingIndex = product.emailNotifications?.findIndex(
+            (n) => n.user.toString() === userId.toString()
+          );
+          if (
+            product.emailNotifications &&
+            existingIndex !== undefined &&
+            existingIndex > -1
+          ) {
+            product.emailNotifications[existingIndex]!.lastSentAt = now;
+          } else {
+            product.emailNotifications?.push({
+              user: userId as any,
+              lastSentAt: now,
+            });
+          }
+        };
+
+        // --- SEND EMAILS ---
+        const emailPromises: Promise<any>[] = [];
+
+        // 1. Seller
+        if (shouldSendToUser(seller._id)) {
+          emailPromises.push(
+            sendBidNotificationToSeller(
+              seller.email,
+              seller.name,
+              product.name,
+              (product as any)._id.toString(),
+              maskedBidderName,
+              currentPrice,
+              currentPrice
+            ).then(() => updateLastSent(seller._id))
+          );
+        }
+
+        // 2. Current Bidder
+        if (shouldSendToUser(currentBidder._id)) {
+          emailPromises.push(
+            sendBidConfirmationToBidder(
+              currentBidder.email,
+              currentBidder.name,
+              product.name,
+              (product as any)._id.toString(),
+              currentPrice,
+              nextMinPrice,
+              product.endTime
+            ).then(() => updateLastSent(currentBidder._id))
+          );
+        }
+
+        // 3. Outbid Bidders
+        const validOutbidBidders = participatingBidders.filter((b: any) =>
+          shouldSendToUser(b._id.toString())
+        );
+
+        if (validOutbidBidders.length > 0) {
+          // Send bulk email to all valid recipients
+          emailPromises.push(
+            sendOutbidNotificationToBidders(
+              validOutbidBidders.map((b: any) => ({
+                email: b.email,
+                name: b.name,
+              })),
+              product.name,
+              (product as any)._id.toString(),
+              currentPrice,
+              nextMinPrice
+            ).then(() => {
+              // Update status for all of them
+              validOutbidBidders.forEach((b: any) =>
+                updateLastSent(b._id.toString())
+              );
+            })
+          );
+        }
+
+        await Promise.allSettled(emailPromises);
+
+        // --- RESET ACCUMULATION ---
+        product.firstPendingBidAt = undefined;
+        await product.save();
+      }
+    } catch (error) {
+      console.error("Error in bid throttling cron job:", error);
+    }
+  });
 };
+
+// Helper: Mask Bidder Name
+function maskBidderName(fullName: string): string {
+  const nameParts = fullName.trim().split(" ");
+  if (nameParts.length === 1) {
+    const name = nameParts[0]!;
+    const maskLength = Math.ceil(name.length / 2);
+    return "*".repeat(maskLength) + name.slice(maskLength);
+  }
+  const lastName = nameParts[nameParts.length - 1];
+  const firstNames = nameParts.slice(0, -1);
+  const totalMaskLength = firstNames.reduce(
+    (sum, part) => sum + part.length,
+    0
+  );
+  return "*".repeat(totalMaskLength + firstNames.length - 1) + " " + lastName;
+}

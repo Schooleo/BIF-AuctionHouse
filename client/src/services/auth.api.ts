@@ -37,9 +37,7 @@ export const authApi = {
     return handleResponse(res);
   },
 
-  requestPasswordReset: async (
-    data: RequestPasswordResetDto
-  ): Promise<AuthResponse> => {
+  requestPasswordReset: async (data: RequestPasswordResetDto): Promise<AuthResponse> => {
     const res = await fetch(`${API_BASE}/api/auth/reset-password`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -53,6 +51,17 @@ export const authApi = {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
+    });
+    return handleResponse(res);
+  },
+
+  switchAccount: async (token: string): Promise<AuthResponse> => {
+    const res = await fetch(`${API_BASE}/api/auth/switch-account`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
     });
     return handleResponse(res);
   },

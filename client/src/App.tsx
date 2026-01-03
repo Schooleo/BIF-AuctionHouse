@@ -23,7 +23,7 @@ import {
   ProductsPage,
   ProductDetailsPage,
   ProfilePage,
-  WatchlistPage as WatchListPage,
+  WatchListPage,
   BiddingPage,
 } from "./pages/user";
 
@@ -35,6 +35,8 @@ import {
 } from "./pages/auth";
 
 import { NotFoundPage, UnauthorizedPage, ForbiddenPage } from "./pages/shared";
+import BannedPage from "./pages/shared/BannedPage";
+import UnbanRequestPage from "./pages/shared/UnbanRequestPage";
 
 import {
   SellerProductsPage,
@@ -57,9 +59,9 @@ import {
   AdminOrderDetailsPage,
   AdminUpgradeRequestsPage,
   AdminProfilePage,
+  AdminSystemConfigPage,
+  AdminBannedUsersPage,
 } from "./pages/admin";
-
-import AdminSystemConfigPage from "./pages/admin/AdminSystemConfigPage";
 
 import { OrderCompletionPage } from "./pages/order";
 
@@ -69,6 +71,15 @@ const RoleBasedRedirect = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation();
 
   useEffect(() => {
+    // Check if user is banned first
+    if (user?.status === "BLOCKED") {
+      const allowedPaths = ["/banned", "/unban-request", "/auth/logout"];
+      if (!allowedPaths.includes(location.pathname)) {
+        navigate("/banned", { replace: true });
+        return;
+      }
+    }
+
     if (user?.role === "seller" && location.pathname === "/") {
       navigate("/seller/products");
     }
@@ -131,6 +142,12 @@ const App = () => {
                   <Route path="logout" element={<LogoutPage />} />
                 </Route>
 
+                {/* Banned User Routes */}
+                <Route element={<ProtectedRoute />}>
+                  <Route path="/banned" element={<BannedPage />} />
+                  <Route path="/unban-request" element={<UnbanRequestPage />} />
+                </Route>
+
                 <Route element={<ProtectedRoute allowedRoles={["seller"]} />}>
                   <Route path="seller" element={<SellerLayout />}>
                     <Route path="products" element={<SellerProductsPage />} />
@@ -160,10 +177,19 @@ const App = () => {
                     <Route index element={<AdminDashboardPage />} />
                     <Route path="products/active" element={<AdminActiveProductsPage />} />
                     <Route path="products/ended" element={<AdminEndedProductsPage />} />
-                    <Route path="products/add" element={<AdminAddProductPage />} />
                     <Route
                       path="products/:id"
                       element={<AdminProductDetailsPage />}
+                    />
+                    <Route path="products/add" element={<AdminAddProductPage />} />
+                    <Route path="users" element={<AdminUsersPage />} />
+                    <Route
+                      path="users/:id"
+                      element={<AdminUserDetailsPage />}
+                    />
+                    <Route
+                      path="banned-users"
+                      element={<AdminBannedUsersPage />}
                     />
                     <Route path="orders" element={<AdminOrdersPage />} />
                     <Route
@@ -177,11 +203,6 @@ const App = () => {
                     <Route
                       path="categories/:id"
                       element={<AdminCategoryDetailsPage />}
-                    />
-                    <Route path="users" element={<AdminUsersPage />} />
-                    <Route
-                      path="users/:id"
-                      element={<AdminUserDetailsPage />}
                     />
                     <Route
                       path="upgrade-requests"

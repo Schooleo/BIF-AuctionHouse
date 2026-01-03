@@ -3,6 +3,7 @@ export interface User {
   name: string;
   email: string;
   role: "bidder" | "seller" | "admin";
+  status: "ACTIVE" | "BLOCKED";
   avatar?: string;
   address?: string;
   dateOfBirth?: string;
@@ -12,6 +13,10 @@ export interface User {
   positiveRatings?: number;
   negativeRatings?: number;
   googleId?: string;
+  isUpgradedAccount?: boolean;
+  linkedAccountId?: string;
+  blockReason?: string;
+  blockedAt?: string;
 }
 
 export interface AuthStore {
@@ -26,6 +31,7 @@ export interface AuthStore {
   register: (data: RegisterDto) => Promise<void>;
   logout: () => void;
   refreshUser: () => Promise<void>;
+  switchAccount: () => Promise<void>;
 }
 
 export interface RequestOtpDto {

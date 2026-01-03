@@ -1,10 +1,5 @@
 import { create } from "zustand";
-import type {
-  AuthStore,
-  AuthResponse,
-  LoginDto,
-  RegisterDto,
-} from "@interfaces/auth";
+import type { AuthStore, AuthResponse, LoginDto, RegisterDto } from "@interfaces/auth";
 import { authApi } from "@services/auth.api";
 
 export const useAuthStore = create<AuthStore>((set, get) => ({
@@ -45,12 +40,9 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     }
     try {
       console.log("Refreshing user with token:", token);
-      const res = await fetch(
-        `${import.meta.env.VITE_APP_API_URL}/api/auth/me`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      const res = await fetch(`${import.meta.env.VITE_APP_API_URL}/api/auth/me`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       console.log("Refresh user response status:", res.status);
       if (!res.ok) {
         throw new Error("Failed to fetch user");
@@ -63,6 +55,23 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       set({ user: null });
     } finally {
       set({ loading: false });
+    }
+  },
+
+  switchAccount: async () => {
+    const token = get().token;
+    if (!token) {
+      throw new Error("No token found");
+    }
+    try {
+      const res: AuthResponse = await authApi.switchAccount(token);
+      if (res.token && res.user) {
+        localStorage.setItem("token", res.token);
+        set({ token: res.token, user: res.user });
+      }
+    } catch (error) {
+      console.error("Switch account error:", error);
+      throw error;
     }
   },
 }));

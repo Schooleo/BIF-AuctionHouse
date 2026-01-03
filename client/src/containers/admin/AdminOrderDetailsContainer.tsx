@@ -1,19 +1,14 @@
 import React, { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
-import {
-  adminApi,
-  type IOrder,
-  type ChatMessage,
-} from "../../services/admin.api";
-import { useAlertStore } from "../../stores/useAlertStore";
+import { useParams, Link, useNavigate } from "react-router-dom";
+import { adminApi } from "@services/admin.api";
+import type { IOrder, ChatMessage, User } from "@interfaces/admin";
+import { useAlertStore } from "@stores/useAlertStore";
 import { ChevronLeft, Trash2 } from "lucide-react";
-import UserProfileSection, {
-  type SimpleUser,
-} from "../../components/admin/order-details/UserProfileSection";
-import OrderMainDetails from "../../components/admin/order-details/OrderMainDetails";
-import AdminChatBox from "../../components/admin/order-details/AdminChatBox";
-import Spinner from "../../components/ui/Spinner";
-import ConfirmationModal from "../../components/ui/ConfirmationModal";
+import UserProfileSection from "@components/admin/order-details/UserProfileSection";
+import OrderMainDetails from "@components/admin/order-details/OrderMainDetails";
+import AdminChatBox from "@components/admin/order-details/AdminChatBox";
+import Spinner from "@components/ui/Spinner";
+import ConfirmationModal from "@components/ui/ConfirmationModal";
 
 const AdminOrderDetailsContainer: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -23,6 +18,9 @@ const AdminOrderDetailsContainer: React.FC = () => {
 
   // Confirmation state
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchOrder = async () => {
@@ -54,6 +52,10 @@ const AdminOrderDetailsContainer: React.FC = () => {
     setIsCancelModalOpen(true);
   };
 
+  const handleDeleteClick = () => {
+    setIsDeleteModalOpen(true);
+  };
+
   const confirmCancel = async () => {
     if (!order) return;
     try {
@@ -69,6 +71,24 @@ const AdminOrderDetailsContainer: React.FC = () => {
       addAlert("error", msg);
     } finally {
       setIsCancelModalOpen(false);
+    }
+  };
+
+  const confirmDelete = async () => {
+    if (!order) return;
+    try {
+      await adminApi.deleteOrder(order._id);
+      addAlert("success", "Order deleted successfully");
+      navigate("/admin/orders");
+    } catch (error: unknown) {
+      const msg =
+        error instanceof Error
+          ? error.message
+          : (error as { message?: string })?.message ||
+            "Failed to delete order";
+      addAlert("error", msg);
+    } finally {
+      setIsDeleteModalOpen(false);
     }
   };
 
@@ -116,13 +136,21 @@ const AdminOrderDetailsContainer: React.FC = () => {
         </div>
 
         {/* Action Buttons */}
-        {order.status !== "CANCELLED" && order.status !== "COMPLETED" && (
+        {order.status !== "CANCELLED" && order.status !== "COMPLETED" ? (
           <button
             onClick={handleCancelClick}
             className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors font-medium text-sm"
           >
             <Trash2 size={18} />
             Cancel Order
+          </button>
+        ) : (
+          <button
+            onClick={handleDeleteClick}
+            className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors font-medium text-sm"
+          >
+            <Trash2 size={18} />
+            Delete Order
           </button>
         )}
       </div>
@@ -133,11 +161,13 @@ const AdminOrderDetailsContainer: React.FC = () => {
           {/* Profiles */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <UserProfileSection
-              user={order.sellerInfo || (order.seller as unknown as SimpleUser)}
+              user={
+                order.sellerInfo || (order.seller as unknown as User) || null
+              }
               role="Seller"
             />
             <UserProfileSection
-              user={order.buyerInfo || (order.buyer as unknown as SimpleUser)}
+              user={order.buyerInfo || (order.buyer as unknown as User) || null}
               role="Bidder"
             />
           </div>
@@ -150,6 +180,16 @@ const AdminOrderDetailsContainer: React.FC = () => {
         <div className="lg:col-span-1">
           <AdminChatBox
             orderId={order._id}
+            sellerId={
+              typeof order.seller === "string"
+                ? order.seller
+                : (order.seller as User)._id
+            }
+            buyerId={
+              typeof order.buyer === "string"
+                ? order.buyer
+                : (order.buyer as User)._id
+            }
             initialChat={order.chat}
             onChatUpdate={handleChatUpdate}
           />
@@ -164,6 +204,17 @@ const AdminOrderDetailsContainer: React.FC = () => {
         title="Cancel Order"
         message="Are you sure you want to cancel this order? This action cannot be undone."
         confirmText="Yes, Cancel Order"
+        type="danger"
+      />
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={confirmDelete}
+        title="Delete Order"
+        message="Are you sure you want to DELETE this order? This will remove the order and its chat history PERMANENTLY. This action cannot be undone."
+        confirmText="Yes, DELETE Order"
         type="danger"
       />
     </div>

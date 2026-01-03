@@ -8,6 +8,8 @@ export { default as AdminActiveProductsPage } from "./AdminActiveProductsPage";
 export { default as AdminEndedProductsPage } from "./AdminEndedProductsPage";
 export { default as AdminAddProductPage } from "./AdminAddProductPage";
 export { default as AdminProfilePage } from "./AdminProfilePage";
+export { default as AdminSystemConfigPage } from "./AdminSystemConfigPage";
 export { default as AdminUserDetailsPage } from "./AdminUserDetailsPage";
 export { default as AdminUsersPage } from "./AdminUsersPage";
+export { default as AdminBannedUsersPage } from "./AdminBannedUsersPage";
 export { default as AdminUpgradeRequestsPage } from "./UpgradeRequestsPage";

@@ -5,9 +5,11 @@ import { createServer } from "http";
 import { initSocket } from "./socket";
 
 import { startAuctionCron } from "./cron/auction.cron";
+import { startUpgradeRequestCron } from "./cron/upgradeRequest.cron";
 
 connectDB();
 startAuctionCron();
+startUpgradeRequestCron();
 
 const PORT = process.env.PORT || 3001;
 

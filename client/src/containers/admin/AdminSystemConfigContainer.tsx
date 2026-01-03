@@ -1,9 +1,10 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { adminApi, type SystemConfig } from "../../services/admin.api";
-import { useAlertStore } from "../../stores/useAlertStore";
+import { adminApi } from "@services/admin.api";
+import type { SystemConfig } from "@interfaces/admin";
+import { useAlertStore } from "@stores/useAlertStore";
 import { Settings, Clock, Timer, Gavel, RotateCcw } from "lucide-react";
-import Spinner from "../../components/ui/Spinner";
-import ConfirmationModal from "../../components/ui/ConfirmationModal";
+import Spinner from "@components/ui/Spinner";
+import ConfirmationModal from "@components/ui/ConfirmationModal";
 
 const DEFAULT_WINDOW = 5;
 const DEFAULT_TIME = 10;
@@ -17,15 +18,19 @@ const AdminSystemConfigContainer: React.FC = () => {
   const [extensionWindow, setExtensionWindow] = useState<string>("");
   const [extensionTime, setExtensionTime] = useState<string>("");
   const [autoBidDelay, setAutoBidDelay] = useState<string>("");
+  const [throttlingWindow, setThrottlingWindow] = useState<string>("");
+  const [cooldownHours, setCooldownHours] = useState<string>("");
 
   const [savingWindow, setSavingWindow] = useState(false);
   const [savingTime, setSavingTime] = useState(false);
   const [savingDelay, setSavingDelay] = useState(false);
+  const [savingThrottling, setSavingThrottling] = useState(false);
+  const [savingCooldown, setSavingCooldown] = useState(false);
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [pendingUpdate, setPendingUpdate] = useState<{
-    field: "window" | "time" | "delay";
+    field: "window" | "time" | "delay" | "throttling" | "cooldown";
     value: number;
     fieldName: string;
   } | null>(null);
@@ -38,6 +43,8 @@ const AdminSystemConfigContainer: React.FC = () => {
       setExtensionWindow(data.auctionExtensionWindow.toString());
       setExtensionTime(data.auctionExtensionTime.toString());
       setAutoBidDelay(data.autoBidDelay.toString());
+      setThrottlingWindow((data.bidEmailThrottlingWindow || 30).toString());
+      setCooldownHours((data.bidEmailCooldown || 6).toString());
     } catch (error) {
       console.error("Failed to load system configuration", error);
       addAlert("error", "Failed to load system configuration");
@@ -51,7 +58,7 @@ const AdminSystemConfigContainer: React.FC = () => {
   }, [fetchConfig]);
 
   const handleUpdateClick = (
-    field: "window" | "time" | "delay",
+    field: "window" | "time" | "delay" | "throttling" | "cooldown",
     value: number,
     fieldName: string
   ) => {
@@ -78,6 +85,12 @@ const AdminSystemConfigContainer: React.FC = () => {
     } else if (field === "delay") {
       setSavingDelay(true);
       payload = { autoBidDelay: value };
+    } else if (field === "throttling") {
+      setSavingThrottling(true);
+      payload = { bidEmailThrottlingWindow: value };
+    } else if (field === "cooldown") {
+      setSavingCooldown(true);
+      payload = { bidEmailCooldown: value };
     }
 
     try {
@@ -90,6 +103,10 @@ const AdminSystemConfigContainer: React.FC = () => {
       if (field === "time")
         setExtensionTime(updated.auctionExtensionTime.toString());
       if (field === "delay") setAutoBidDelay(updated.autoBidDelay.toString());
+      if (field === "throttling")
+        setThrottlingWindow(updated.bidEmailThrottlingWindow.toString());
+      if (field === "cooldown")
+        setCooldownHours(updated.bidEmailCooldown.toString());
     } catch (error) {
       console.error("Failed to update configuration", error);
       addAlert("error", "Failed to update configuration");
@@ -97,6 +114,8 @@ const AdminSystemConfigContainer: React.FC = () => {
       if (field === "window") setSavingWindow(false);
       if (field === "time") setSavingTime(false);
       if (field === "delay") setSavingDelay(false);
+      if (field === "throttling") setSavingThrottling(false);
+      if (field === "cooldown") setSavingCooldown(false);
       setPendingUpdate(null);
     }
   };
@@ -173,7 +192,7 @@ const AdminSystemConfigContainer: React.FC = () => {
               }
               className="w-full bg-primary-blue text-white py-3 mt-1 rounded-md text-sm font-medium hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:hover:translate-y-0 disabled:cursor-not-allowed"
             >
-              {savingWindow ? "Saving..." : "Update Window"}
+              {savingWindow ? "Saving..." : "Update Extension Window"}
             </button>
           </div>
         </div>
@@ -224,7 +243,7 @@ const AdminSystemConfigContainer: React.FC = () => {
               }
               className="w-full bg-primary-blue text-white py-3 mt-1 rounded-md text-sm font-medium hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:hover:translate-y-0 disabled:cursor-not-allowed"
             >
-              {savingTime ? "Saving..." : "Update Time"}
+              {savingTime ? "Saving..." : "Update Extension Time"}
             </button>
           </div>
         </div>
@@ -274,7 +293,110 @@ const AdminSystemConfigContainer: React.FC = () => {
               }
               className="w-full bg-primary-blue text-white py-3 mt-1 rounded-md text-sm font-medium hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:hover:translate-y-0 disabled:cursor-not-allowed"
             >
-              {savingDelay ? "Saving..." : "Update Delay"}
+              {savingDelay ? "Saving..." : "Update Bid Delay"}
+            </button>
+          </div>
+        </div>
+
+        {/* Bid Email Throttling */}
+        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 flex flex-col h-full">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-3 bg-orange-50 text-orange-600 rounded-lg">
+              <Clock size={24} />
+            </div>
+            <h3 className="font-semibold text-gray-800">Email Throttling</h3>
+          </div>
+          <p className="text-sm text-gray-500 mb-6 flex-1">
+            Wait time (in minutes) to accumulate bids before sending the first
+            batch of emails.
+          </p>
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-gray-700 w-24">
+                Minutes:
+              </span>
+              <input
+                type="number"
+                min="1"
+                value={throttlingWindow}
+                onChange={(e) => setThrottlingWindow(e.target.value)}
+                className="flex-1 border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-800"
+              />
+              <button
+                onClick={() => setThrottlingWindow("30")}
+                className="p-2 text-gray-500 hover:text-blue-800 hover:bg-blue-50 rounded-full transition-colors"
+                title="Revert to default (30)"
+              >
+                <RotateCcw size={16} />
+              </button>
+            </div>
+            <button
+              onClick={() =>
+                handleUpdateClick(
+                  "throttling",
+                  parseInt(throttlingWindow),
+                  "Email Throttling Window"
+                )
+              }
+              disabled={
+                savingThrottling ||
+                config?.bidEmailThrottlingWindow?.toString() ===
+                  throttlingWindow
+              }
+              className="w-full bg-primary-blue text-white py-3 mt-1 rounded-md text-sm font-medium hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:hover:translate-y-0 disabled:cursor-not-allowed"
+            >
+              {savingThrottling ? "Saving..." : "Update Throttling Window"}
+            </button>
+          </div>
+        </div>
+
+        {/* Bid Email Cooldown */}
+        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 flex flex-col h-full">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-3 bg-red-50 text-red-600 rounded-lg">
+              <Timer size={24} />
+            </div>
+            <h3 className="font-semibold text-gray-800">Email Cooldown</h3>
+          </div>
+          <p className="text-sm text-gray-500 mb-6 flex-1">
+            Minimum time (in hours) between sending subsequent email batches for
+            the same product.
+          </p>
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-gray-700 w-24">
+                Hours:
+              </span>
+              <input
+                type="number"
+                min="1"
+                value={cooldownHours}
+                onChange={(e) => setCooldownHours(e.target.value)}
+                className="flex-1 border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-800"
+              />
+              <button
+                onClick={() => setCooldownHours("6")}
+                className="p-2 text-gray-500 hover:text-blue-800 hover:bg-blue-50 rounded-full transition-colors"
+                title="Revert to default (6)"
+              >
+                <RotateCcw size={16} />
+              </button>
+            </div>
+            <button
+              onClick={() =>
+                handleUpdateClick(
+                  "cooldown",
+                  parseInt(cooldownHours),
+                  "Email Cooldown"
+                )
+              }
+              disabled={
+                savingCooldown ||
+                config?.bidEmailCooldown?.toString() === cooldownHours
+              }
+              className="w-full bg-primary-blue text-white py-3 mt-1 rounded-md text-sm font-medium hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:hover:translate-y-0 disabled:cursor-not-allowed"
+            >
+              {savingCooldown ? "Saving..." : "Update Email Cooldown"}
             </button>
           </div>
         </div>

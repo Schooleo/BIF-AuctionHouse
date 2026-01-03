@@ -230,7 +230,7 @@ const WatchlistContainer: React.FC = () => {
 
       <div className="flex flex-col md:flex-row gap-6">
         {/* Sidebar */}
-        <div className="w-full md:w-64 flex-shrink-0 space-y-4">
+        <div className="w-full md:w-64 shrink-0 space-y-4">
           <SidebarFilter
             title="Filter Status"
             options={filters}

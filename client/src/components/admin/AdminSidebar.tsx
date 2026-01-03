@@ -97,14 +97,24 @@ const AdminSideBar: React.FC = () => {
             item.path === "/admin/orders" &&
             location.pathname.startsWith("/admin/orders/") &&
             location.pathname !== "/admin/orders";
-          const isUsersDetails =
+
+          // Users section - show sub-menu when on any users-related page
+          const isUsersSection =
             item.path === "/admin/users" &&
-            location.pathname.startsWith("/admin/users/") &&
-            location.pathname !== "/admin/users";
+            (location.pathname === "/admin/users" ||
+              location.pathname.startsWith("/admin/users/") ||
+              location.pathname === "/admin/banned-users");
 
           const isActive = item.exact
             ? location.pathname === item.path
-            : location.pathname.startsWith(item.path);
+            : location.pathname.startsWith(item.path) ||
+              (item.path === "/admin/users" &&
+                location.pathname === "/admin/banned-users");
+
+          // For Users, we don't highlight the parent if we're on a sub-page
+          const isUsersParentActive =
+            item.path === "/admin/users" &&
+            location.pathname === "/admin/users";
 
           return (
             <React.Fragment key={item.path}>
@@ -152,6 +162,40 @@ const AdminSideBar: React.FC = () => {
                       })}
                     </div>
               )}
+              <Link
+                to={item.path}
+                className={classNames(
+                  "flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors duration-200",
+                  {
+                    "bg-primary-blue text-white shadow-md":
+                      item.path === "/admin/users"
+                        ? isUsersParentActive
+                        : isActive &&
+                          !isProductsDetails &&
+                          !isCategoriesDetails &&
+                          !isOrdersDetails,
+                    "text-gray-700 hover:bg-gray-100 hover:text-gray-900":
+                      item.path === "/admin/users"
+                        ? !isUsersParentActive
+                        : !(
+                            isActive &&
+                            !isProductsDetails &&
+                            !isCategoriesDetails &&
+                            !isOrdersDetails
+                          ),
+                  }
+                )}
+              >
+                <span className="mr-3">{item.icon}</span>
+                {item.label}
+              </Link>
+
+              {/* Dynamic Sub-items for Details pages */}
+              {isProductsDetails && (
+                <div className="ml-5 mt-2 space-y-1 border-l-2 border-gray-200 pl-3">
+                  <span className="block py-2 text-sm transition-colors duration-200 text-primary-blue font-semibold">
+                    Product Details
+                  </span>
                 </div>
               ) : (
                 <Link
@@ -187,11 +231,32 @@ const AdminSideBar: React.FC = () => {
                   </span>
                 </div>
               )}
-              {isUsersDetails && (
+
+              {/* Users Sub-menu - always visible when on users section */}
+              {isUsersSection && (
                 <div className="ml-5 mt-2 space-y-1 border-l-2 border-gray-200 pl-3">
-                  <span className="block py-2 text-sm transition-colors duration-200 text-primary-blue font-semibold">
-                    User Details
-                  </span>
+                  {/* User Details - only show when on detail page */}
+                  {location.pathname.startsWith("/admin/users/") &&
+                    location.pathname !== "/admin/users" && (
+                      <span className="block py-2 text-sm transition-colors duration-200 text-primary-blue font-semibold">
+                        User Details
+                      </span>
+                    )}
+                  {/* Banned Users - always show in users section */}
+                  <Link
+                    to="/admin/banned-users"
+                    className={classNames(
+                      "block py-2 text-sm transition-colors duration-200",
+                      {
+                        "text-primary-blue font-semibold":
+                          location.pathname === "/admin/banned-users",
+                        "text-gray-600 hover:text-primary-blue":
+                          location.pathname !== "/admin/banned-users",
+                      }
+                    )}
+                  >
+                    Banned Users
+                  </Link>
                 </div>
               )}
             </React.Fragment>

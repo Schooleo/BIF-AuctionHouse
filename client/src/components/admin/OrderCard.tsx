@@ -1,15 +1,16 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { type IOrder } from "../../services/admin.api";
-import { Trash2, Box } from "lucide-react";
+import { X, Trash2, Box } from "lucide-react";
 import { formatPrice } from "../../utils/product";
 
 interface OrderCardProps {
   order: IOrder;
   onCancel: (id: string) => void;
+  onDelete: (id: string) => void;
 }
 
-const OrderCard: React.FC<OrderCardProps> = ({ order, onCancel }) => {
+const OrderCard: React.FC<OrderCardProps> = ({ order, onCancel, onDelete }) => {
   const navigate = useNavigate();
 
   const getStatusColor = (status: string) => {
@@ -38,13 +39,13 @@ const OrderCard: React.FC<OrderCardProps> = ({ order, onCancel }) => {
 
   const sellerName =
     typeof order.seller === "string"
-      ? order.sellerInfo?.name || "Unknown"
-      : order.seller.name || "Unknown";
+      ? order.sellerInfo?.name || "Deleted User"
+      : order.seller?.name || "Deleted User";
 
   const buyerName =
     typeof order.buyer === "string"
-      ? order.buyerInfo?.name || "No Winner"
-      : order.buyer.name || "No Winner";
+      ? order.buyerInfo?.name || "Deleted User"
+      : order.buyer?.name || "Deleted User";
 
   const productObj =
     typeof order.product === "string" ? order.productInfo : order.product;
@@ -127,7 +128,7 @@ const OrderCard: React.FC<OrderCardProps> = ({ order, onCancel }) => {
           </div>
 
           <div className="flex items-center gap-2">
-            {order.status !== "CANCELLED" && order.status !== "COMPLETED" && (
+            {order.status !== "CANCELLED" && order.status !== "COMPLETED" ? (
               <button
                 onClick={(e) => {
                   e.stopPropagation(); // Prevent card navigation
@@ -138,6 +139,18 @@ const OrderCard: React.FC<OrderCardProps> = ({ order, onCancel }) => {
               >
                 <span className="text-xs font-bold">Cancel Order</span>
                 <Trash2 size={16} />
+              </button>
+            ) : (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete(order._id);
+                }}
+                className="flex items-center gap-2 px-2 py-1.5 text-red-500 bg-red-50 hover:bg-red-100 rounded-md transition-colors z-10"
+                title="Delete Order"
+              >
+                <span className="text-xs font-bold">Delete Order</span>
+                <X size={16} />
               </button>
             )}
           </div>

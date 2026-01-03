@@ -69,8 +69,9 @@ export interface AuctionItem extends Product {
 export interface UpgradeRequestStatus {
   _id: string;
   user: string;
-  status: "pending" | "approved" | "rejected";
-  reason?: string;
+  status: "pending" | "approved" | "rejected" | "expired";
+  title: string;
+  reasons: string;
   expiresAt?: string;
   rejectedAt?: string;
   reviewedBy?: {
@@ -84,7 +85,8 @@ export interface UpgradeRequestStatus {
 }
 
 export interface RequestSellerUpgradeDto {
-  reason: string;
+  title: string;
+  reasons: string;
 }
 
 export interface BidItem extends Product {
