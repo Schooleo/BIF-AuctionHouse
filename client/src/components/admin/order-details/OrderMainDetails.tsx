@@ -49,7 +49,7 @@ const OrderMainDetails: React.FC<OrderMainDetailsProps> = ({ order }) => {
           <div className="flex gap-4 mb-6">
             <div className="w-24 h-24 bg-gray-100 rounded-md overflow-hidden shrink-0">
               {productImg && (
-                <Link to={`/admin/products/${productId}`}>
+                <Link to={`/admin/products/details/${productId}`}>
                   <img
                     src={productImg}
                     alt={productName}
@@ -60,7 +60,7 @@ const OrderMainDetails: React.FC<OrderMainDetailsProps> = ({ order }) => {
             </div>
             <div className="flex flex-col justify-between">
               <Link
-                to={`/admin/products/${productId}`}
+                to={`/admin/products/details/${productId}`}
                 className="font-medium text-gray-900 text-lg hover:text-primary-blue hover:underline"
               >
                 {productName}

@@ -80,7 +80,7 @@ const AdminProductCard: React.FC<AdminProductCardProps> = ({
   const status = statusConfig[product.status] || statusConfig.ongoing;
 
   const handleClick = () => {
-    navigate(`/admin/products/${product._id}`);
+    navigate(`/admin/products/details/${product._id}`);
   };
 
   return (

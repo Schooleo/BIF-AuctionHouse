@@ -178,7 +178,7 @@ const App = () => {
                       element={<AdminProductsPage />}
                     />
                     <Route
-                      path="products/:id"
+                      path="products/details/:id"
                       element={<AdminProductDetailsPage />}
                     />
                     <Route

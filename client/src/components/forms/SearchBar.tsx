@@ -70,7 +70,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
         const section = path.split("/")[2];
         navigate(`/admin/${section}?${searchParams.toString()}`);
       } else {
-        navigate(`/admin/products?${searchParams.toString()}`);
+        navigate(`/admin/products/active?${searchParams.toString()}`);
       }
     } else {
       navigate(`/products?${searchParams.toString()}`);
