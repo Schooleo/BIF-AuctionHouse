@@ -1,10 +1,13 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import type { Product } from "@interfaces/product";
 import ProductImage from "./ProductImage";
 import { Link } from "react-router-dom";
 import { maskName, formatPrice } from "@utils/product";
 import { getTimeRemaining } from "@utils/time";
-import { X, User, Clock, Gavel, Calendar } from "lucide-react";
+import { X, User, Clock, Gavel, Calendar, Heart } from "lucide-react";
+import { useAuthStore } from "@stores/useAuthStore";
+import { useAlertStore } from "@stores/useAlertStore";
+import { bidderApi } from "@services/bidder.api";
 
 interface ProductCardProps {
   product: Product;
@@ -34,6 +37,11 @@ const ProductCard: React.FC<ProductCardProps> = ({
     endTime,
   } = product;
 
+  const { user, token } = useAuthStore();
+  const addAlert = useAlertStore((state) => state.addAlert);
+  const [isInWatchlist, setIsInWatchlist] = useState(false);
+  const [isTogglingWatchlist, setIsTogglingWatchlist] = useState(false);
+
   const checkRecentlyAdded = (startStr: string) => {
     const start = new Date(startStr).getTime();
     const now = Date.now();
@@ -57,6 +65,62 @@ const ProductCard: React.FC<ProductCardProps> = ({
     });
 
   const timeRemaining = getTimeRemaining(endTime);
+  const isAuctionEnded = timeRemaining.text === "Ended" || new Date() > new Date(endTime);
+  const isBidder = user?.role === "bidder";
+  const showWatchlistButton = isBidder && !isAuctionEnded && !showRemoveButton;
+
+  // Check watchlist status on mount
+  useEffect(() => {
+    const checkWatchlistStatus = async () => {
+      if (!isBidder || !token || isAuctionEnded) {
+        setIsInWatchlist(false);
+        return;
+      }
+
+      try {
+        const result = await bidderApi.checkInWatchlist(_id, token);
+        setIsInWatchlist(result.inWatchlist);
+      } catch (error) {
+        console.error("Failed to check watchlist status:", error);
+        setIsInWatchlist(false);
+      }
+    };
+
+    checkWatchlistStatus();
+  }, [_id, isBidder, token, isAuctionEnded]);
+
+  const handleToggleWatchlist = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!token) {
+      addAlert("error", "You must be logged in to manage watchlist.");
+      return;
+    }
+
+    setIsTogglingWatchlist(true);
+    try {
+      if (isInWatchlist) {
+        await bidderApi.removeFromWatchlist(_id, token);
+        setIsInWatchlist(false);
+        addAlert("success", "Removed from watchlist successfully!");
+      } else {
+        await bidderApi.addToWatchlist(_id, token);
+        setIsInWatchlist(true);
+        addAlert("success", "Added to watchlist successfully!");
+      }
+    } catch (error: any) {
+      const message = error?.message || "Failed to update watchlist.";
+      if (message.includes("already") || message.includes("exists")) {
+        setIsInWatchlist(true);
+        addAlert("warning", "Product is already in your watchlist.");
+      } else {
+        addAlert("error", message);
+      }
+    } finally {
+      setIsTogglingWatchlist(false);
+    }
+  };
 
   return (
     <div className="relative group h-full">
@@ -133,6 +197,36 @@ const ProductCard: React.FC<ProductCardProps> = ({
           </div>
         </div>
       </Link>
+
+      {showWatchlistButton && (
+        <button
+          onClick={handleToggleWatchlist}
+          disabled={isTogglingWatchlist}
+          className={`
+            absolute top-2 right-2 z-10
+            p-2 rounded-full
+            ${isInWatchlist ? "bg-red-500 hover:bg-red-600" : "bg-black/60 hover:bg-black/80"}
+            text-white
+            transition-all duration-200
+            opacity-0 group-hover:opacity-100
+            ${isTogglingWatchlist ? "cursor-not-allowed opacity-50" : "hover:scale-110"}
+          `}
+          title={isInWatchlist ? "Remove from watchlist" : "Add to watchlist"}
+        >
+          {isTogglingWatchlist ? (
+            <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              ></path>
+            </svg>
+          ) : (
+            <Heart className={`h-4 w-4 ${isInWatchlist ? "fill-current" : ""}`} />
+          )}
+        </button>
+      )}
 
       {showRemoveButton && (
         <button
