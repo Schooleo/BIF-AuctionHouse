@@ -1,5 +1,10 @@
 import { Router } from "express";
 import {
+  createProductSchema,
+  updateProductSchema,
+  extendEndTimeSchema,
+} from "../schemas/admin.schema";
+import {
   listCategories,
   createCategory,
   updateCategory,
@@ -26,6 +31,14 @@ import {
   deleteOrderMessage,
   getSystemConfig,
   updateSystemConfig,
+  getProducts,
+  getSellers,
+  createProductAsAdmin,
+  getProductDetails,
+  updateProduct,
+  extendProductEndTime,
+  deleteProduct,
+  deleteProductQuestion,
   // Extended user management
   getLinkedAccountProfile,
   getUserProducts,
@@ -41,6 +54,8 @@ import {
   changePassword,
 } from "../controllers/admin.controller";
 import { protect } from "../middleware/auth.middleware";
+import { validate } from "../middleware/validate";
+import { createProductSchema } from "../schemas/admin.schema";
 
 const router = Router();
 
@@ -48,12 +63,20 @@ const router = Router();
 router.use(protect(["admin"]));
 
 router.get("/dashboard-stats", getDashboardStats);
+
+router.get("/products", getProducts);
+router.get("/sellers", getSellers);
+router.post("/products", validate(createProductSchema, "body"), createProductAsAdmin);
+router.get("/products/:id", getProductDetails);
+router.patch("/products/:id", validate(updateProductSchema, "body"), updateProduct);
+router.post("/products/:id/extend", validate(extendEndTimeSchema, "body"), extendProductEndTime);
+router.delete("/products/:id", deleteProduct);
+router.delete("/products/:productId/questions/:questionId", deleteProductQuestion); // Add this
+
 router.get("/categories", listCategories);
 router.post("/categories", createCategory);
 router.patch("/categories/:id", updateCategory);
 router.delete("/categories/:id", deleteCategory);
-router.get("/products", listProducts);
-router.delete("/products/:id", removeProduct);
 
 // User Management Routes
 router.get("/users", getUsers);

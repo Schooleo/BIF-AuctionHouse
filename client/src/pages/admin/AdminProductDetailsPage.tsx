@@ -1,18 +1,19 @@
 import React from "react";
 import { useParams } from "react-router-dom";
+import AdminProductDetailsContainer from "@containers/admin/AdminProductDetailsContainer";
 
 const AdminProductDetailsPage: React.FC = () => {
-  const { id } = useParams();
-  return (
-    <div className="space-y-6">
-      <h1 className="text-3xl font-bold text-gray-800">
-        Product Details {id && `- ${id}`}
-      </h1>
-      <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
-        <p className="text-gray-500">To be implemented...</p>
+  const { id } = useParams<{ id: string }>();
+
+  if (!id) {
+    return (
+      <div className="text-center py-16">
+        <p className="text-gray-500">Product ID is required</p>
       </div>
-    </div>
-  );
+    );
+  }
+
+  return <AdminProductDetailsContainer id={id} />;
 };
 
 export default AdminProductDetailsPage;

@@ -5,6 +5,7 @@ import { Bid } from "../models/bid.model";
 import { AutoBid } from "../models/autoBid.model";
 import { Rating } from "../models/rating.model";
 import { Chat } from "../models/chat.model";
+import { Category } from "../models/category.model";
 import { SystemConfig } from "../models/systemConfig.model";
 import { Watchlist } from "../models/watchlist.model";
 import { UpgradeRequest } from "../models/upgradeRequest.model";
@@ -1210,7 +1211,409 @@ export const updateSystemConfig = async (data: {
   return config;
 };
 
-// --- Upgrade Request Management ---
+export const getProducts = async (options: {
+  page: number;
+  limit: number;
+  search: string;
+  sortBy: string;
+  sortOrder: "asc" | "desc";
+  status: "active" | "ended";
+  categories?: string;
+  minPrice?: number;
+  maxPrice?: number;
+}) => {
+  const { page, limit, search, sortBy, sortOrder, status, categories, minPrice, maxPrice } = options;
+
+  const query: any = {};
+
+  // Enhanced search: name, category, description (prioritized)
+  if (search) {
+    const searchRegex = new RegExp(search, "i");
+    
+    // Find categories matching the search term (including children and grandchildren)
+    const matchingCategories = await Category.find({
+      name: searchRegex
+    }).select("_id");
+    
+    let allCategoryIds = matchingCategories.map(c => c._id);
+    
+    // If categories were found, include their children and grandchildren
+    if (allCategoryIds.length > 0) {
+      // Find children of matching categories
+      const childCats = await Category.find({
+        parent: { $in: allCategoryIds },
+      }).select("_id");
+
+      // Find grandchildren (children of children)
+      const grandChildCats = await Category.find({
+        parent: { $in: childCats.map((c) => c._id) },
+      }).select("_id");
+
+      allCategoryIds = [
+        ...allCategoryIds,
+        ...childCats.map((c) => c._id),
+        ...grandChildCats.map((c) => c._id),
+      ];
+    }
+    
+    query.$or = [
+      { name: searchRegex }, // Priority 1: Product name
+      { category: { $in: allCategoryIds } }, // Priority 2: Category (including children)
+      { description: searchRegex }, // Priority 3: Description
+    ];
+  }
+
+  // Status filter
+  if (status === "active") {
+    query.endTime = { $gt: new Date() };
+  } else if (status === "ended") {
+    query.endTime = { $lte: new Date() };
+  }
+
+  // Category filter - includes child categories
+  if (categories) {
+    const categoryIds = categories
+      .split(",")
+      .map(id => id.trim())
+      .filter(id => mongoose.Types.ObjectId.isValid(id));
+
+    if (categoryIds.length > 0) {
+      // Find ALL children/grandchildren for these categories
+      const catObjectIds = categoryIds.map((id) => new mongoose.Types.ObjectId(id));
+
+      // Find children of selected categories
+      const childCats = await Category.find({
+        parent: { $in: catObjectIds },
+      }).select("_id");
+
+      // Find grandchildren (children of children)
+      const grandChildCats = await Category.find({
+        parent: { $in: childCats.map((c) => c._id) },
+      }).select("_id");
+
+      const allCategoryIds = [
+        ...catObjectIds,
+        ...childCats.map((c) => c._id),
+        ...grandChildCats.map((c) => c._id),
+      ];
+
+      query.category = { $in: allCategoryIds };
+    }
+  }
+
+  // Price filter
+  if (minPrice !== undefined || maxPrice !== undefined) {
+    query.currentPrice = {};
+    if (minPrice !== undefined) query.currentPrice.$gte = minPrice;
+    if (maxPrice !== undefined) query.currentPrice.$lte = maxPrice;
+  }
+
+  const skip = (page - 1) * limit;
+
+  // Build sort object
+  const sortField: string = sortBy || "createdAt";
+  const sortDirection = sortOrder === "asc" ? 1 : -1;
+  const sortObject: any = { [sortField]: sortDirection };
+
+  const [products, total] = await Promise.all([
+    Product.find(query)
+      .populate("seller", "name email rating")
+      .populate("category", "name")
+      .populate("currentBidder", "name rating")
+      .sort(sortObject)
+      .skip(skip)
+      .limit(limit)
+      .lean(),
+    Product.countDocuments(query),
+  ]);
+
+  return {
+    products,
+    total,
+    page,
+    totalPages: Math.ceil(total / limit),
+  };
+};
+
+export const getSellers = async () => {
+  const sellers = await User.find({ role: "seller" })
+    .select("_id name email")
+    .lean();
+
+  return sellers;
+};
+
+export const createProduct = async (productData: any) => {
+  const { sellerId, ...data } = productData;
+
+  // Verify seller exists
+  const seller = await User.findById(sellerId);
+  if (!seller || seller.role !== "seller") {
+    throw new Error("Invalid seller ID");
+  }
+
+  const product = new Product({
+    ...data,
+    seller: sellerId,
+    currentPrice: data.startingPrice,
+    bidCount: 0,
+  });
+
+  await product.save();
+  return product;
+};
+
+export const getProductDetails = async (productId: string) => {
+  if (!mongoose.Types.ObjectId.isValid(productId)) {
+    throw new Error("Invalid product ID");
+  }
+
+  const product = await Product.findById(productId)
+    .populate("seller", "name email rating")
+    .populate("category", "name parentCategoryId")
+    .populate("currentBidder", "name rating")
+    .populate({
+      path: "questions",
+      populate: [
+        { path: "questioner", select: "name email rating" },
+        { path: "answerer", select: "name email" },
+      ],
+    })
+    .lean();
+
+  if (!product) {
+    throw new Error("Product not found");
+  }
+
+  // Get bid history
+  const bids = await Bid.find({ product: productId })
+    .populate("bidder", "name rating")
+    .sort({ createdAt: -1 })
+    .limit(50)
+    .lean();
+
+  // Check if product has ended
+  const now = new Date();
+  const isEnded = new Date(product.endTime).getTime() <= now.getTime();
+
+  // Get order info if exists
+  let order = null;
+  if (isEnded && product.currentBidder) {
+    order = await Order.findOne({ product: productId })
+      .populate("buyer", "name email rating")
+      .lean();
+  }
+
+  return {
+    product,
+    bidHistory: bids,
+    isEnded,
+    order,
+  };
+};
+
+export const updateProduct = async (
+  productId: string,
+  updateData: {
+    name?: string;
+    category?: string;
+    mainImage?: string;
+    subImages?: string[];
+    description?: string;
+    endTime?: string;
+    startingPrice?: number;
+    stepPrice?: number;
+    buyNowPrice?: number;
+    autoExtends?: boolean;
+    allowUnratedBidders?: boolean;
+  }
+) => {
+  if (!mongoose.Types.ObjectId.isValid(productId)) {
+    throw new Error("Invalid product ID");
+  }
+
+  const product = await Product.findById(productId);
+  if (!product) {
+    throw new Error("Product not found");
+  }
+
+  // Check if auction has started
+  const now = new Date();
+  const hasStarted = new Date(product.startTime).getTime() <= now.getTime();
+
+  // Validate updates based on auction state
+  if (hasStarted && product.bidCount > 0) {
+    // If auction has bids, only allow certain updates
+    const allowedUpdates = [
+      "description",
+      "endTime",
+      "autoExtends",
+      "allowUnratedBidders",
+    ];
+    const attemptedUpdates = Object.keys(updateData);
+    const invalidUpdates = attemptedUpdates.filter(
+      (key) => !allowedUpdates.includes(key)
+    );
+
+    if (invalidUpdates.length > 0) {
+      throw new Error(
+        `Cannot update ${invalidUpdates.join(", ")} after auction has bids`
+      );
+    }
+  }
+
+  // Validate price changes
+  if (updateData.startingPrice && product.bidCount > 0) {
+    if (updateData.startingPrice > product.currentPrice) {
+      throw new Error("Starting price cannot be higher than current price");
+    }
+  }
+
+  if (updateData.buyNowPrice && product.currentPrice) {
+    if (updateData.buyNowPrice <= product.currentPrice) {
+      throw new Error("Buy now price must be higher than current price");
+    }
+  }
+
+  // Validate endTime extension
+  if (updateData.endTime) {
+    const newEndTime = new Date(updateData.endTime);
+    const currentEndTime = new Date(product.endTime);
+    
+    if (newEndTime <= currentEndTime) {
+      throw new Error("New end time must be later than current end time");
+    }
+
+    // Reset isEndedEmailSent if extending
+    product.isEndedEmailSent = false;
+  }
+
+  // Update description history if description changed
+  if (updateData.description && updateData.description !== product.description) {
+    product.descriptionHistory.push({
+      content: product.description,
+      updatedAt: new Date(),
+    });
+  }
+
+  // Apply updates
+  Object.assign(product, updateData);
+
+  await product.save();
+
+  return product.populate([
+    { path: "seller", select: "name email rating" },
+    { path: "category", select: "name" },
+    { path: "currentBidder", select: "name rating" },
+  ]);
+};
+
+export const extendProductEndTime = async (
+  productId: string,
+  newEndTime: string
+) => {
+  if (!mongoose.Types.ObjectId.isValid(productId)) {
+    throw new Error("Invalid product ID");
+  }
+
+  const product = await Product.findById(productId);
+  if (!product) {
+    throw new Error("Product not found");
+  }
+
+  const newEndTimeDate = new Date(newEndTime);
+  const currentEndTime = new Date(product.endTime);
+
+  if (newEndTimeDate <= currentEndTime) {
+    throw new Error("New end time must be later than current end time");
+  }
+
+  if (newEndTimeDate <= new Date()) {
+    throw new Error("New end time must be in the future");
+  }
+
+  product.endTime = newEndTimeDate;
+  product.isEndedEmailSent = false;
+
+  await product.save();
+
+  return product.populate([
+    { path: "seller", select: "name email rating" },
+    { path: "category", select: "name" },
+    { path: "currentBidder", select: "name rating" },
+  ]);
+};
+
+export const deleteProduct = async (productId: string) => {
+  if (!mongoose.Types.ObjectId.isValid(productId)) {
+    throw new Error("Invalid product ID");
+  }
+
+  const product = await Product.findById(productId);
+  if (!product) {
+    throw new Error("Product not found");
+  }
+
+  try {
+    // 1. Delete all bids for this product
+    await Bid.deleteMany({ product: productId });
+
+    // 2. Delete all auto-bids for this product
+    await AutoBid.deleteMany({ product: productId });
+
+    // 3. Remove from all watchlists
+    const Watchlist = (await import("../models/watchlist.model")).Watchlist;
+    await Watchlist.deleteMany({ product: productId });
+
+    // 4. Cancel any associated order
+    const Order = (await import("../models/order.model")).Order;
+    const order = await Order.findOne({ product: productId });
+    if (order && order.status !== "CANCELLED" && order.status !== "COMPLETED") {
+      order.status = "CANCELLED" as any;
+      await order.save();
+    }
+
+    // 5. Delete the product itself
+    await Product.findByIdAndDelete(productId);
+
+    return { message: "Product and all associated data deleted successfully" };
+  } catch (error) {
+    console.error("Error deleting product:", error);
+    throw new Error("Failed to delete product. Please try again.");
+  }
+};
+
+export const deleteProductQuestion = async (
+  productId: string,
+  questionId: string
+) => {
+  if (!mongoose.Types.ObjectId.isValid(productId)) {
+    throw new Error("Invalid product ID");
+  }
+
+  if (!mongoose.Types.ObjectId.isValid(questionId)) {
+    throw new Error("Invalid question ID");
+  }
+
+  const product = await Product.findById(productId);
+  if (!product) {
+    throw new Error("Product not found");
+  }
+
+  const questionIndex = product.questions.findIndex(
+    (q) => q._id?.toString() === questionId
+  );
+
+  if (questionIndex === -1) {
+    throw new Error("Question not found");
+  }
+
+  // Remove the question
+  product.questions.splice(questionIndex, 1);
+  await product.save();
+
+  return { message: "Question deleted successfully" };
+};
 
 /**
  * Get all upgrade requests with pagination
