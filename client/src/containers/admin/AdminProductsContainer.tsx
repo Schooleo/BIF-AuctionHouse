@@ -41,7 +41,7 @@ const SORT_OPTIONS = {
   ],
 };
 
-const limit = 10;
+const limit = 8;
 const SLIDER_MAX = 500000000;
 
 interface ProductQuery {
