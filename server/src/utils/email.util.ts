@@ -455,3 +455,53 @@ export const sendDescriptionUpdateEmail = async (
 
   await Promise.allSettled(emailPromises);
 };
+
+export const sendPasswordResetNotificationEmail = async (
+  to: string,
+  userName: string,
+  newPassword: string
+) => {
+  if (env.EMAIL_WEBHOOK_URL.length === 0) {
+    throw new Error("Email webhook URL is not configured");
+  }
+
+  const htmlBody = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <h2 style="color: #1e3a8a;">Password Reset Notification</h2>
+      <p>Hello <strong>${userName}</strong>,</p>
+      
+      <p>An administrator has reset your password for your BIF Auction House account.</p>
+      
+      <div style="background-color: #f3f4f6; border-left: 4px solid #3b82f6; padding: 15px; margin: 20px 0;">
+        <p style="margin: 0; font-size: 14px; color: #4b5563;">Your new password is:</p>
+        <p style="margin: 10px 0 0 0; font-size: 18px; font-weight: bold; color: #1e3a8a; font-family: 'Courier New', monospace;">
+          ${newPassword}
+        </p>
+      </div>
+
+      <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; margin: 20px 0;">
+        <p style="margin: 0; font-size: 14px; color: #92400e;">
+          <strong>Important:</strong> For security reasons, we strongly recommend changing this password after logging in.
+        </p>
+      </div>
+
+      <p>You can log in using your email and the new password above.</p>
+
+      <p>If you did not request this password reset, please contact our support team immediately.</p>
+
+      <p style="margin-top: 30px;">Best regards,<br/>The BIF Auction House Team</p>
+      
+      <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;" />
+      
+      <p style="font-size: 12px; color: #6b7280;">
+        This is an automated message. Please do not reply to this email.
+      </p>
+    </div>
+  `;
+
+  await axios.post(env.EMAIL_WEBHOOK_URL, {
+    to,
+    subject: "Your Password Has Been Reset - BIF Auction House",
+    htmlBody,
+  });
+};

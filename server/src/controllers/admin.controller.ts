@@ -859,3 +859,20 @@ export const denyUnbanRequest = async (req: Request, res: Response) => {
     res.status(400).json({ message: error.message });
   }
 };
+
+export const resetUserPassword = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { newPassword } = req.body;
+
+    if (!id || !newPassword) {
+      res.status(400).json({ message: "User ID and new password are required" });
+      return;
+    }
+
+    await AdminService.resetUserPassword(id, newPassword);
+    res.status(200).json({ message: "Password reset successfully" });
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
+};
