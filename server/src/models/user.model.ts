@@ -79,7 +79,9 @@ userSchema.pre<IUser>("save", async function (next) {
 });
 
 // So sánh mật khẩu candidate với mật khẩu đã hash
-userSchema.methods.comparePassword = async function (candidatePassword: string): Promise<boolean> {
+userSchema.methods.comparePassword = async function (
+  candidatePassword: string
+): Promise<boolean> {
   return await bcrypt.compare(candidatePassword, this.password);
 };
 
@@ -94,5 +96,11 @@ userSchema.methods.comparePassword = async function (candidatePassword: string):
 //   }
 //   return this.positiveRatings / totalRatings;
 // });
+
+// Virtual custom property for 5-star rating
+userSchema.virtual("rating").get(function (this: IUser) {
+  // reputationScore is 0-1, convert to 0-5
+  return (this.reputationScore || 0) * 5;
+});
 
 export const User = mongoose.model<IUser>("User", userSchema);

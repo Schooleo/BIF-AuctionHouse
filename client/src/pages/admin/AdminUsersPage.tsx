@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import type { User } from "../../services/admin.api";
-import { adminApi } from "../../services/admin.api";
-import ConfirmationModal from "../../components/ui/ConfirmationModal";
-import AddUserModal from "../../components/admin/AddUserModal";
-import { useAlertStore } from "../../stores/useAlertStore";
+import type { User } from "@interfaces/admin";
+import { adminApi } from "@services/admin.api";
+import ConfirmationModal from "@components/ui/ConfirmationModal";
+import AddUserModal from "@components/admin/AddUserModal";
+import { useAlertStore } from "@stores/useAlertStore";
 import {
   Trash2,
   ShieldCheck,
@@ -43,7 +43,7 @@ const AdminUsersPage: React.FC = () => {
   const [queryParams, setQueryParams] = useState<QueryParams>(() => ({
     page: Number(searchParams.get("page")) || DEFAULT_PARAMS.page,
     limit: Number(searchParams.get("limit")) || DEFAULT_PARAMS.limit,
-    search: searchParams.get("search") || DEFAULT_PARAMS.search,
+    search: searchParams.get("q") || DEFAULT_PARAMS.search,
     role: searchParams.get("role") || DEFAULT_PARAMS.role,
     status: searchParams.get("status") || DEFAULT_PARAMS.status,
     sortBy: searchParams.get("sortBy") || DEFAULT_PARAMS.sortBy,
@@ -89,7 +89,11 @@ const AdminUsersPage: React.FC = () => {
         value !== null &&
         value !== defaultValue
       ) {
-        urlParams.set(key, String(value));
+        if (key === "search") {
+          urlParams.set("q", String(value));
+        } else {
+          urlParams.set(key, String(value));
+        }
       }
     });
     setSearchParams(urlParams, { replace: true });

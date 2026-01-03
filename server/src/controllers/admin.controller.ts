@@ -8,12 +8,19 @@ import { CategoryService } from "../services/category.service";
 
 export const listCategories = async (req: Request, res: Response) => {
   try {
-    const page = req.query.page ? parseInt(req.query.page as string) : undefined;
+    const page = req.query.page
+      ? parseInt(req.query.page as string)
+      : undefined;
     const limit = req.query.limit ? parseInt(req.query.limit as string) : 8;
     const search = (req.query.q as string) || (req.query.search as string);
 
     if (page) {
-      const result = await CategoryService.listCategoriesPaginated(page, limit, true, search);
+      const result = await CategoryService.listCategoriesPaginated(
+        page,
+        limit,
+        true,
+        search
+      );
       res.status(200).json(result);
     } else {
       const categories = await CategoryService.listCategories(true); // includeStats = true
@@ -32,7 +39,11 @@ export const createCategory = async (req: Request, res: Response) => {
 
     if (subCategories && Array.isArray(subCategories)) {
       // If creating a main category with initial sub-categories
-      await CategoryService.updateCategory(category._id.toString(), name, subCategories);
+      await CategoryService.updateCategory(
+        category._id.toString(),
+        name,
+        subCategories
+      );
     }
 
     res.status(201).json(category);
@@ -51,7 +62,11 @@ export const updateCategory = async (req: Request, res: Response) => {
       return;
     }
 
-    const category = await CategoryService.updateCategory(id, name, subCategories);
+    const category = await CategoryService.updateCategory(
+      id,
+      name,
+      subCategories
+    );
     res.status(200).json(category);
   } catch (error) {
     res.status(500).json({ message: "Error updating category" });
@@ -545,8 +560,8 @@ export const getProducts = async (req: Request, res: Response) => {
       sortOrder: sortOrder as "asc" | "desc",
       status: status as "active" | "ended",
       categories: String(categories),
-      minPrice: parsedMinPrice,
-      maxPrice: parsedMaxPrice,
+      ...(parsedMinPrice !== undefined && { minPrice: parsedMinPrice }),
+      ...(parsedMaxPrice !== undefined && { maxPrice: parsedMaxPrice }),
     });
 
     res.status(200).json(result);
@@ -604,7 +619,9 @@ export const updateProduct = async (req: Request, res: Response) => {
     res.status(200).json(product);
   } catch (error: any) {
     console.error("Error updating product:", error);
-    res.status(400).json({ message: error.message || "Failed to update product" });
+    res
+      .status(400)
+      .json({ message: error.message || "Failed to update product" });
   }
 };
 
@@ -622,7 +639,9 @@ export const extendProductEndTime = async (req: Request, res: Response) => {
     res.status(200).json(product);
   } catch (error: any) {
     console.error("Error extending product end time:", error);
-    res.status(400).json({ message: error.message || "Failed to extend end time" });
+    res
+      .status(400)
+      .json({ message: error.message || "Failed to extend end time" });
   }
 };
 
@@ -638,7 +657,9 @@ export const deleteProduct = async (req: Request, res: Response) => {
     res.status(200).json(result);
   } catch (error: any) {
     console.error("Error deleting product:", error);
-    res.status(400).json({ message: error.message || "Failed to delete product" });
+    res
+      .status(400)
+      .json({ message: error.message || "Failed to delete product" });
   }
 };
 
@@ -646,10 +667,20 @@ export const deleteProductQuestion = async (req: Request, res: Response) => {
   try {
     const { productId, questionId } = req.params;
     if (!productId || !questionId) {
-      res.status(400).json({ message: "Product ID and Question ID are required" });
+      res
+        .status(400)
+        .json({ message: "Product ID and Question ID are required" });
       return;
     }
-    const result = await AdminService.deleteProductQuestion(productId, questionId);
+    const result = await AdminService.deleteProductQuestion(
+      productId,
+      questionId
+    );
+    res.status(200).json(result);
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
+};
 
 // Get linked account profile for upgraded accounts
 export const getLinkedAccountProfile = async (req: Request, res: Response) => {

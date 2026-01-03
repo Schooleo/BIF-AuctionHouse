@@ -88,6 +88,11 @@ const AdminSideBar: React.FC = () => {
           const isProductsDetails =
             item.path === "/admin/products" &&
             location.pathname.startsWith("/admin/products/") &&
+            ![
+              "/admin/products/active",
+              "/admin/products/ended",
+              "/admin/products/add",
+            ].includes(location.pathname) &&
             location.pathname !== "/admin/products";
           const isCategoriesDetails =
             item.path === "/admin/categories" &&
@@ -161,34 +166,37 @@ const AdminSideBar: React.FC = () => {
                         );
                       })}
                     </div>
-              )}
-              <Link
-                to={item.path}
-                className={classNames(
-                  "flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors duration-200",
-                  {
-                    "bg-primary-blue text-white shadow-md":
-                      item.path === "/admin/users"
-                        ? isUsersParentActive
-                        : isActive &&
-                          !isProductsDetails &&
-                          !isCategoriesDetails &&
-                          !isOrdersDetails,
-                    "text-gray-700 hover:bg-gray-100 hover:text-gray-900":
-                      item.path === "/admin/users"
-                        ? !isUsersParentActive
-                        : !(
-                            isActive &&
+                  )}
+                </div>
+              ) : (
+                <Link
+                  to={item.path}
+                  className={classNames(
+                    "flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors duration-200",
+                    {
+                      "bg-primary-blue text-white shadow-md":
+                        item.path === "/admin/users"
+                          ? isUsersParentActive
+                          : isActive &&
                             !isProductsDetails &&
                             !isCategoriesDetails &&
-                            !isOrdersDetails
-                          ),
-                  }
-                )}
-              >
-                <span className="mr-3">{item.icon}</span>
-                {item.label}
-              </Link>
+                            !isOrdersDetails,
+                      "text-gray-700 hover:bg-gray-100 hover:text-gray-900":
+                        item.path === "/admin/users"
+                          ? !isUsersParentActive
+                          : !(
+                              isActive &&
+                              !isProductsDetails &&
+                              !isCategoriesDetails &&
+                              !isOrdersDetails
+                            ),
+                    }
+                  )}
+                >
+                  <span className="mr-3">{item.icon}</span>
+                  {item.label}
+                </Link>
+              )}
 
               {/* Dynamic Sub-items for Details pages */}
               {isProductsDetails && (
@@ -197,25 +205,6 @@ const AdminSideBar: React.FC = () => {
                     Product Details
                   </span>
                 </div>
-              ) : (
-                <Link
-                  to={item.path}
-                  className={classNames(
-                    "flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200",
-                    {
-                      "bg-primary-blue text-white shadow-md":
-                        item.exact
-                          ? location.pathname === item.path
-                          : isActive,
-                      "text-gray-700 hover:bg-gray-100": !(item.exact
-                        ? location.pathname === item.path
-                        : isActive),
-                    }
-                  )}
-                >
-                  {item.icon}
-                  <span className="font-medium">{item.label}</span>
-                </Link>
               )}
               {isCategoriesDetails && (
                 <div className="ml-5 mt-2 space-y-1 border-l-2 border-gray-200 pl-3">

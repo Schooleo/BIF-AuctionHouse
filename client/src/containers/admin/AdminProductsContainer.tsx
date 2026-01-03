@@ -7,7 +7,6 @@ import AdminActiveProductCard from "@components/admin/ActiveProductCard";
 import { Filter, X, ChevronLeft, ChevronRight } from "lucide-react";
 import Spinner from "@components/ui/Spinner";
 import AdminProductFilterModal from "@components/admin/ProductFilterModal";
-import Pagination from "@components/pagination/Pagination";
 
 interface AdminProductsContainerProps {
   status: "active" | "ended";
@@ -86,7 +85,7 @@ const AdminProductsContainer: React.FC<AdminProductsContainerProps> = ({
     newParams.set("page", "1");
     setSearchParams(newParams, { replace: true });
     setPage(1);
-  }, [debouncedSearch]);
+  }, [debouncedSearch, searchParams, setSearchParams]);
 
   // Fetch products
   const fetchProducts = useCallback(async () => {
@@ -234,10 +233,7 @@ const AdminProductsContainer: React.FC<AdminProductsContainerProps> = ({
           {(minPrice !== undefined || maxPrice !== undefined) && (
             <span className="inline-flex items-center gap-1 text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
               Price:{" "}
-              {minPrice !== undefined
-                ? `${minPrice.toLocaleString()}`
-                : "0"}{" "}
-              -{" "}
+              {minPrice !== undefined ? `${minPrice.toLocaleString()}` : "0"} -{" "}
               {maxPrice !== undefined ? `${maxPrice.toLocaleString()}` : "∞"}
               <button
                 onClick={handleRemovePriceFilter}
@@ -272,7 +268,7 @@ const AdminProductsContainer: React.FC<AdminProductsContainerProps> = ({
         <div className="flex flex-wrap items-center gap-6 w-full md:w-auto">
           {/* Sort */}
           <div className="flex items-center gap-3">
-            <span className="text-sm font-medium text-gray-700">Sort by:</span>
+            <span className="text-sm font-medium text-gray-700">Sort:</span>
             <div className="relative">
               <select
                 id="sort"

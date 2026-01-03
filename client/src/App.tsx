@@ -52,7 +52,6 @@ import {
   AdminAddProductPage,
   AdminProductDetailsPage,
   AdminCategoriesPage,
-  AdminCategoryDetailsPage,
   AdminUsersPage,
   AdminUserDetailsPage,
   AdminOrdersPage,
@@ -175,13 +174,22 @@ const App = () => {
                 <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
                   <Route path="admin" element={<AdminLayout />}>
                     <Route index element={<AdminDashboardPage />} />
-                    <Route path="products/active" element={<AdminActiveProductsPage />} />
-                    <Route path="products/ended" element={<AdminEndedProductsPage />} />
+                    <Route
+                      path="products/active"
+                      element={<AdminActiveProductsPage />}
+                    />
+                    <Route
+                      path="products/ended"
+                      element={<AdminEndedProductsPage />}
+                    />
                     <Route
                       path="products/:id"
                       element={<AdminProductDetailsPage />}
                     />
-                    <Route path="products/add" element={<AdminAddProductPage />} />
+                    <Route
+                      path="products/add"
+                      element={<AdminAddProductPage />}
+                    />
                     <Route path="users" element={<AdminUsersPage />} />
                     <Route
                       path="users/:id"
@@ -199,10 +207,6 @@ const App = () => {
                     <Route
                       path="categories"
                       element={<AdminCategoriesPage />}
-                    />
-                    <Route
-                      path="categories/:id"
-                      element={<AdminCategoryDetailsPage />}
                     />
                     <Route
                       path="upgrade-requests"

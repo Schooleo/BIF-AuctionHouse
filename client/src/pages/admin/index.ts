@@ -1,5 +1,4 @@
 export { default as AdminCategoriesPage } from "./AdminCategoriesPage";
-export { default as AdminCategoryDetailsPage } from "./AdminCategoryDetailsPage";
 export { default as AdminDashboardPage } from "./AdminDashboardPage";
 export { default as AdminOrderDetailsPage } from "./AdminOrderDetailsPage";
 export { default as AdminOrdersPage } from "./AdminOrdersPage";
