@@ -56,7 +56,6 @@ import {
 } from "../controllers/admin.controller";
 import { protect } from "../middleware/auth.middleware";
 import { validate } from "../middleware/validate";
-import { createProductSchema } from "../schemas/admin.schema";
 
 const router = Router();
 
