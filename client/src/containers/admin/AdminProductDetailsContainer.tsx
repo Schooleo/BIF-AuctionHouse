@@ -112,7 +112,7 @@ const AdminProductDetailsContainer: React.FC<
       setActionLoading(true);
       await adminApi.deleteProduct(id);
       addAlert("success", "Product and all associated data deleted successfully");
-      navigate("/admin/products/active");
+      navigate(-1);
     } catch (err: any) {
       addAlert("error", err.message || "Failed to delete product");
     } finally {
