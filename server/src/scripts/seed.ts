@@ -914,21 +914,27 @@ const SAMPLE_COMMENTS = {
 
 const generateDescription = (name: string, category: string) => {
   return `
-${name}
+<h2><strong>${name}</strong></h2>
 
-Experience the ultimate in ${category} with the ${name}. Designed for performance and style, this item is a must-have for enthusiasts.
+<p>Experience the <em>ultimate</em> in <strong>${category}</strong> with the <strong>${name}</strong>. Designed for <u>performance</u> and <em>style</em>, this item is a must-have for enthusiasts.</p>
 
-Key Features:
-- Premium Build: Crafted with high-quality materials for durability and elegance.
-- High Performance: Optimized for the best user experience in its class.
-- Modern Design: Sleek and contemporary look that fits any setting.
-- Warranty: Comes with a standard 1-year manufacturer warranty.
+<h3>Key Features:</h3>
+<ul>
+  <li><strong>Premium Build:</strong> Crafted with high-quality materials for <em>durability</em> and <em>elegance</em>.</li>
+  <li><strong>High Performance:</strong> Optimized for the <u>best user experience</u> in its class.</li>
+  <li><strong>Modern Design:</strong> Sleek and contemporary look that fits any setting.</li>
+  <li><strong>Warranty:</strong> Comes with a standard <strong>1-year</strong> manufacturer warranty.</li>
+</ul>
 
-Condition:
-This item is in Like New condition. It has been inspected and tested to ensure full functionality. Original packaging and accessories are included.
+<h3>Condition:</h3>
+<p>This item is in <strong><em>Like New</em></strong> condition. It has been <u>inspected and tested</u> to ensure full functionality. Original packaging and accessories are included.</p>
 
-Shipping & Returns:
-Fast shipping available worldwide. 30-day return policy if the item does not match the description.
+<h3>Shipping & Returns:</h3>
+<p><strong>Fast shipping</strong> available worldwide. <em>30-day return policy</em> if the item does not match the description.</p>
+
+<blockquote>
+  <p>"Quality you can trust, service you can rely on."</p>
+</blockquote>
   `;
 };
 
@@ -972,6 +978,9 @@ const seed = async () => {
   const seller4Id = new mongoose.Types.ObjectId("64b0f1a9e1b9b1a2b3c4d5ea");
   const seller5Id = new mongoose.Types.ObjectId("64b0f1a9e1b9b1a2b3c4d5eb");
   const seller6Id = new mongoose.Types.ObjectId("64b0f1a9e1b9b1a2b3c4d5ec");
+  
+  // Low reputation bidder ID
+  const lowRepBidderId = new mongoose.Types.ObjectId("64b0f1a9e1b9b1a2b3c4d5f0");
 
   await User.create({
     _id: adminId,
@@ -1118,6 +1127,24 @@ const seed = async () => {
     });
     bidders.push(bidder);
   }
+
+  // --- CREATE LOW REPUTATION BIDDER ---
+  console.log("👎 Creating Low Reputation Bidder...");
+  const lowRepBidder = await User.create({
+    _id: lowRepBidderId,
+    name: "UnreliableBidder",
+    email: "lowreputation.bidder@gmail.com",
+    password: commonPassword,
+    role: "bidder",
+    address: "Low Rep Street, Problem City",
+    dateOfBirth: new Date("1995-06-15"),
+    contactEmail: "unreliable.contact@gmail.com",
+    positiveRatings: 2,
+    negativeRatings: 8,
+    reputationScore: 0.2, // 20% reputation (2 positive / 10 total)
+    status: "ACTIVE",
+  });
+  bidders.push(lowRepBidder);
 
   // --- GENERATE FILLER USERS FOR PAGINATION ---
   console.log("👥 Creating Filler Users for Pagination...");
@@ -1306,6 +1333,13 @@ const seed = async () => {
       const catKey = getRandomElement(catKeys);
       const item = getRandomElement(PRODUCT_CATALOG[catKey] ?? []);
 
+      const endTime = new Date(Date.now() - randomInt(10, 90) * 24 * 60 * 60 * 1000); // 10-90 days ago
+      const startTime = new Date(endTime.getTime() - randomInt(7, 14) * 24 * 60 * 60 * 1000); // 7-14 days before end
+
+      const startingPrice = item.price;
+      const stepPrice = Math.ceil((item.price * 0.05) / 1000) * 1000;
+      const finalPrice = startingPrice + randomInt(1, 5) * stepPrice;
+
       const product = await Product.create({
         name: `Historical: ${item.name} Number ${randomInt(1000, 9999)}`,
         category: catMap[catKey],
@@ -1315,32 +1349,58 @@ const seed = async () => {
           ? TECH_SUB_IMAGES
           : FASHION_SUB_IMAGES,
         description: "Historical item for rating generation.",
-        startTime: new Date(Date.now() - 100000000), // Long ago
-        endTime: new Date(Date.now() - 90000000),
-        startingPrice: item.price,
-        stepPrice: 50000,
-        currentPrice: item.price * 1.2,
+        startTime: startTime,
+        endTime: endTime,
+        startingPrice: startingPrice,
+        stepPrice: stepPrice,
+        currentPrice: finalPrice,
+        currentBidder: bidder._id,
+        bidCount: randomInt(3, 8),
         winnerConfirmed: true,
         transactionCompleted: true,
-        bidCount: 5,
+        descriptionHistory: [],
         rejectedBidders: [],
-        currentBidder: bidder._id, // Add this
-        highestBidder: bidder._id, // And this
+        allowUnratedBidders: true,
       });
+
+      // Create multiple bids to simulate auction activity
+      const numBids = product.bidCount;
+      let currentBidPrice = startingPrice;
+
+      for (let bidIndex = 0; bidIndex < numBids; bidIndex++) {
+        currentBidPrice += stepPrice;
+        const bidTime = new Date(
+          startTime.getTime() + 
+          ((endTime.getTime() - startTime.getTime()) / numBids) * (bidIndex + 1)
+        );
+
+        // Alternate between bidder and other dummy bidders for realistic history
+        const isFinalBid = bidIndex === numBids - 1;
+        const bidderForThisBid = isFinalBid 
+          ? bidder._id 
+          : (Math.random() > 0.5 ? bidder._id : getRandomElement(dummyPartners)._id);
+
+        await Bid.create({
+          product: product._id,
+          bidder: bidderForThisBid,
+          price: currentBidPrice,
+          createdAt: bidTime,
+        });
+      }
 
       // Create Order
       const order = await Order.create({
         product: product._id,
         seller: seller._id,
         buyer: bidder._id,
-        amount: product.currentPrice,
+        amount: finalPrice,
         status: OrderStatus.COMPLETED,
         step: 4,
-        createdAt: new Date(product.endTime.getTime() + 10000),
-        updatedAt: new Date(product.endTime.getTime() + 100000),
+        createdAt: new Date(endTime.getTime() + 10000),
+        updatedAt: new Date(endTime.getTime() + 100000),
       });
 
-      // Create Chat for this order (to prevent "Loading chat..." loop)
+      // Create Chat for this order
       const chat = await Chat.create({
         participants: [bidder._id, seller._id],
         product: product._id,
@@ -1349,12 +1409,12 @@ const seed = async () => {
           {
             sender: bidder._id,
             content: "I'm so happy I won this Item!",
-            timestamp: new Date(product.endTime.getTime() + 20000),
+            timestamp: new Date(endTime.getTime() + 20000),
           },
           {
             sender: seller._id,
             content: "Congratulations! I will ship it immediately.",
-            timestamp: new Date(product.endTime.getTime() + 100000),
+            timestamp: new Date(endTime.getTime() + 100000),
           },
         ],
       });
@@ -1741,8 +1801,7 @@ const seed = async () => {
           });
           chat.messages.push({
             sender: sellerId as any,
-            content:
-              "Confirmed! I've shipped your item. Tracking code: SHIPPING-CODE-123456",
+            content: "Confirmed! I've shipped your item. Tracking code: SHIPPING-CODE-123456",
             timestamp: new Date(lastBidTime.getTime() + 200000),
           });
           await chat.save();
