@@ -271,9 +271,6 @@ const SellerBidHistoryModal: React.FC<SellerBidHistoryModalProps> = ({
                                 >
                                   {row.bidderName}
                                 </button>
-                                {row.bidderRating !== undefined && (
-                                  <span className="text-xs text-gray-500">Rating: {row.bidderRating.toFixed(2)} ★</span>
-                                )}
                                 {isCurrentWinner && !bidderRejected && (
                                   <span
                                     className={`text-xs font-medium ${
