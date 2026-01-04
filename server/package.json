@@ -9,6 +9,7 @@
     "start": "node dist/server.js",
     "dev": "ts-node-dev --respawn --transpile-only --poll src/server.ts",
     "seed": "ts-node src/scripts/seed.ts",
+    "seed:prod": "node dist/scripts/seed.js",
     "stress": "ts-node src/scripts/stress_test_autobid.ts"
   },
   "keywords": [
