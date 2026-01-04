@@ -333,11 +333,9 @@ export class SellerService {
       status = "all",
     } = options;
 
-    const query: any = { seller: userId };
-
-    if (search) {
-      query.name = { $regex: search, $options: "i" };
-    }
+    // Parse pagination options to numbers to prevent MongoDB $limit errors
+    const pageNum = Number(page) || 1;
+    const limitNum = Number(limit) || 12;
 
     const Order = (await import("../models/order.model")).Order;
     const cancelledOrders = await Order.find({
@@ -346,24 +344,22 @@ export class SellerService {
     }).distinct("product");
 
     const now = new Date();
+
+    // 1. Build Base Match Logic (Filter by Status & Seller)
+    const matchStage: any = { seller: new Types.ObjectId(userId) };
+
     if (status === "ongoing") {
-      query.endTime = { $gt: now };
+      matchStage.endTime = { $gt: now };
     } else if (status === "ended") {
-      // Legacy "ended" - generic
-      query.endTime = { $lte: now };
-      query._id = { $nin: cancelledOrders };
+      matchStage.endTime = { $lte: now };
+      matchStage._id = { $nin: cancelledOrders };
     } else if (status === "awaiting") {
-      // Awaiting Confirmation: Ended + Bids + Not Confirmed
-      // EXCLUDE Cancelled transactions (they go to "Bid Winners")
-      query.endTime = { $lte: now };
-      query.bidCount = { $gt: 0 };
-      query.winnerConfirmed = { $ne: true };
-      query._id = { $nin: cancelledOrders };
-      query._id = { $nin: cancelledOrders };
+      matchStage.endTime = { $lte: now };
+      matchStage.bidCount = { $gt: 0 };
+      matchStage.winnerConfirmed = { $ne: true };
+      matchStage._id = { $nin: cancelledOrders };
     } else if (status === "bid_winner") {
-      // Confirm Winner / Active Transaction: Confirmed + Not Completed
-      // OR Cancelled Transaction (so it stays in list for resolution)
-      query.$or = [
+      matchStage.$or = [
         { winnerConfirmed: true, transactionCompleted: { $ne: true } },
         {
           _id: { $in: cancelledOrders },
@@ -372,38 +368,150 @@ export class SellerService {
         },
       ];
     } else if (status === "history") {
-      // History: Unsold (Ended + No Bids) OR Completed (Any Completed Transaction)
-      query.$or = [
-        { endTime: { $lte: now }, bidCount: 0 },
-        { transactionCompleted: true },
-      ];
-      // If it has 0 bids (e.g. all rejected), it should be in history.
-      query.$and = [
+      matchStage.$and = [
         {
           $or: [
-            { _id: { $nin: cancelledOrders } },
-            { bidCount: 0 },
-            { transactionCompleted: true },
+            { endTime: { $lte: now }, bidCount: 0 }, // Unsold
+            { transactionCompleted: true }, // Completed
+          ],
+        },
+        {
+          $or: [
+            { _id: { $nin: cancelledOrders } }, // Normal path
+            { bidCount: 0 }, // If cancelled but 0 bids (weird edge case, but safe)
+            { transactionCompleted: true }, // If completed
           ],
         },
       ];
     }
 
-    const skip = (page - 1) * limit;
+    const pipeline: any[] = [{ $match: matchStage }];
 
-    const [products, total] = await Promise.all([
-      Product.find(query)
-        .populate("currentBidder", "name positiveRatings negativeRatings")
-        .sort({ [sortBy]: sortOrder === "asc" ? 1 : -1 })
-        .skip(skip)
-        .limit(limit)
-        .lean(),
-      Product.countDocuments(query),
-    ]);
+    // 2. Search Logic with Prioritization
+    if (search && search.trim()) {
+      const searchRegex = new RegExp(search, "i");
 
-    const productIds = products.map((p) => p._id);
+      // Lookup Category for searching by category name
+      pipeline.push(
+        {
+          $lookup: {
+            from: "categories",
+            localField: "category",
+            foreignField: "_id",
+            as: "categoryInfo",
+          },
+        },
+        { $unwind: { path: "$categoryInfo", preserveNullAndEmptyArrays: true } }
+      );
 
-    // Fetch latest orders for context (e.g. cancelled transactions)
+      // Lookup Current Bidder for searching by winner name (if applicable)
+      pipeline.push(
+        {
+          $lookup: {
+            from: "users",
+            localField: "currentBidder",
+            foreignField: "_id",
+            as: "bidderInfo",
+          },
+        },
+        { $unwind: { path: "$bidderInfo", preserveNullAndEmptyArrays: true } }
+      );
+
+      // Calculate Priority Score
+      // Priority Rules:
+      // - Product Name Match: +10
+      // - Category/Winner Match: +5
+      pipeline.push({
+        $addFields: {
+          priorityScore: {
+            $add: [
+              {
+                $cond: [
+                  { $regexMatch: { input: "$name", regex: searchRegex } },
+                  10,
+                  0,
+                ],
+              },
+              {
+                $cond: [
+                  {
+                    $or: [
+                      // Match Category Name (for ongoing/ended)
+                      {
+                        $regexMatch: {
+                          input: "$categoryInfo.name",
+                          regex: searchRegex,
+                        },
+                      },
+                      // Match Bidder/Winner Name (for bid_winner)
+                      {
+                        $regexMatch: {
+                          input: "$bidderInfo.name",
+                          regex: searchRegex,
+                        },
+                      },
+                    ],
+                  },
+                  5,
+                  0,
+                ],
+              },
+            ],
+          },
+        },
+      });
+
+      // Filter out non-matching items (score > 0)
+      pipeline.push({ $match: { priorityScore: { $gt: 0 } } });
+
+      // Sort by Priority first, then by user's choice
+      const sortStage: any = { priorityScore: -1 }; // Descending score
+      sortStage[sortBy] = sortOrder === "asc" ? 1 : -1;
+      pipeline.push({ $sort: sortStage });
+    } else {
+      // No search - Standard Sort
+      // Default to sorting by user choice
+      pipeline.push({ $sort: { [sortBy]: sortOrder === "asc" ? 1 : -1 } });
+    }
+
+    // 3. Pagination Facet
+    const skip = (pageNum - 1) * limitNum;
+
+    pipeline.push({
+      $facet: {
+        metadata: [{ $count: "total" }],
+        data: [
+          { $skip: skip },
+          { $limit: limitNum },
+          {
+            $lookup: {
+              from: "users",
+              localField: "currentBidder",
+              foreignField: "_id",
+              as: "currentBidder",
+            },
+          },
+          {
+            $unwind: {
+              path: "$currentBidder",
+              preserveNullAndEmptyArrays: true,
+            },
+          },
+        ],
+      },
+    });
+
+    // Execute Pipeline
+    const result = await Product.aggregate(pipeline);
+
+    // Extract Results
+    const productsRaw = result[0].data;
+    const total = result[0].metadata[0]?.total || 0;
+
+    // 4. Enrichment (Orders & Ratings) - Same as before
+    const productIds = productsRaw.map((p: any) => p._id);
+
+    // Fetch latest orders for context
     const orders = await Order.find({ product: { $in: productIds } })
       .sort({ createdAt: -1 })
       .populate("buyer", "name email rating positiveRatings negativeRatings")
@@ -417,7 +525,7 @@ export class SellerService {
       rater: userId,
     });
 
-    const productsWithRating = products.map((product) => {
+    const productsWithRating = productsRaw.map((product: any) => {
       const isRated = ratings.some(
         (r) => r.product?.toString() === product._id.toString()
       );
@@ -433,7 +541,6 @@ export class SellerService {
       const productOrders = orders.filter(
         (o) => o.product.toString() === product._id.toString()
       );
-      // Sort in memory just in case (though DB sort helps)
       productOrders.sort(
         (a: any, b: any) =>
           new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
@@ -452,7 +559,7 @@ export class SellerService {
         (latestOrder.buyer as any).rating = calculatedRating;
       }
 
-      // Calculate bidder rating manually since lean() drops virtuals
+      // Calculate bidder rating manually
       let bidderWithRating = product.currentBidder;
       if (product.currentBidder && (product.currentBidder as any).name) {
         const bidder = product.currentBidder as any;
@@ -471,6 +578,10 @@ export class SellerService {
 
       return {
         ...product,
+        // Since we did $unwind on categoryInfo earlier if search was on,
+        // we might have categoryInfo attached, but frontend might expect 'category' to be ID or Object?
+        // Original code populated 'category' but didn't seem to use it heavily.
+        // Let's ensure basic fields are there.
         isRatedBySeller: isRated,
         sellerRating: ratingObject
           ? { score: ratingObject.score, comment: ratingObject.comment }
@@ -483,8 +594,8 @@ export class SellerService {
     return {
       products: productsWithRating,
       total,
-      page,
-      totalPages: Math.ceil(total / limit),
+      page: pageNum,
+      totalPages: Math.ceil(total / limitNum),
     };
   }
 

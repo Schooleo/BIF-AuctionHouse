@@ -25,6 +25,10 @@ export interface IUser extends Document {
 
   // Methods
   comparePassword(candidatePassword: string): Promise<boolean>;
+
+  // Timestamps
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 const userSchema = new Schema<IUser>(
@@ -84,18 +88,6 @@ userSchema.methods.comparePassword = async function (
 ): Promise<boolean> {
   return await bcrypt.compare(candidatePassword, this.password);
 };
-
-// Thuộc tính ảo để tính điểm đánh giá
-// Thuộc tính ảo để tính điểm đánh giá
-// Note: reputationScore converted to stored field for querying
-// userSchema.virtual("reputationScore").get(function (this: IUser) {
-//   const totalRatings = this.positiveRatings + this.negativeRatings;
-//   if (totalRatings === 0) {
-//     // Trường hợp chưa được đánh giá
-//     return 1.0;
-//   }
-//   return this.positiveRatings / totalRatings;
-// });
 
 // Virtual custom property for 5-star rating
 userSchema.virtual("rating").get(function (this: IUser) {

@@ -96,18 +96,39 @@ const AdminProductsContainer: React.FC<AdminProductsContainerProps> = ({
     return () => clearTimeout(timer);
   }, [localSearch]);
 
-  // Update URL when debounced search changes
+  // Sync state FROM URL (e.g. Navbar search)
   useEffect(() => {
-    const newParams = new URLSearchParams(searchParams);
-    if (debouncedSearch) {
-      newParams.set("q", debouncedSearch);
-    } else {
-      newParams.delete("q");
+    const urlSearch = searchParams.get("q") || "";
+    // Only update if URL differs from local state
+    if (urlSearch !== debouncedSearch) {
+      setLocalSearch(urlSearch);
+      setDebouncedSearch(urlSearch);
     }
-    newParams.set("page", "1");
-    setSearchParams(newParams, { replace: true });
-    setPage(1);
-  }, [debouncedSearch, searchParams, setSearchParams]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams.get("q")]); // Depend on the string value, not the object
+
+  // Sync state TO URL (when user types locally)
+  useEffect(() => {
+    const currentUrlSearch = searchParams.get("q") || "";
+    // Only update URL if debounced state differs from current URL
+    if (debouncedSearch !== currentUrlSearch) {
+      setSearchParams(
+        (prev) => {
+          const newParams = new URLSearchParams(prev);
+          if (debouncedSearch) {
+            newParams.set("q", debouncedSearch);
+          } else {
+            newParams.delete("q");
+          }
+          newParams.set("page", "1");
+          return newParams;
+        },
+        { replace: true }
+      );
+      setPage(1);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedSearch]); // Only run when debounced search updates
 
   // Fetch products
   const fetchProducts = useCallback(async () => {

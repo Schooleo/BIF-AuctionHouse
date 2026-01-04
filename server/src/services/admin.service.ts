@@ -1701,8 +1701,8 @@ export const getAllUpgradeRequests = async (params: {
 
         if (requestObj.user && requestObj.user._id) {
           const [positiveRatings, negativeRatings] = await Promise.all([
-            Rating.countDocuments({ receiver: requestObj.user._id, score: 1 }),
-            Rating.countDocuments({ receiver: requestObj.user._id, score: -1 }),
+            Rating.countDocuments({ ratee: requestObj.user._id, score: 1 }),
+            Rating.countDocuments({ ratee: requestObj.user._id, score: -1 }),
           ]);
 
           const rejectedCount = await UpgradeRequest.countDocuments({
@@ -1774,8 +1774,8 @@ export const getAllUpgradeRequests = async (params: {
 
         if (requestObj.user && requestObj.user._id) {
           const [positiveRatings, negativeRatings] = await Promise.all([
-            Rating.countDocuments({ receiver: requestObj.user._id, score: 1 }),
-            Rating.countDocuments({ receiver: requestObj.user._id, score: -1 }),
+            Rating.countDocuments({ ratee: requestObj.user._id, score: 1 }),
+            Rating.countDocuments({ ratee: requestObj.user._id, score: -1 }),
           ]);
 
           const rejectedCount = await UpgradeRequest.countDocuments({
@@ -1828,8 +1828,8 @@ export const getAllUpgradeRequests = async (params: {
       if (requestObj.user && requestObj.user._id) {
         // Get user rating
         const [positiveRatings, negativeRatings] = await Promise.all([
-          Rating.countDocuments({ receiver: requestObj.user._id, score: 1 }),
-          Rating.countDocuments({ receiver: requestObj.user._id, score: -1 }),
+          Rating.countDocuments({ ratee: requestObj.user._id, score: 1 }),
+          Rating.countDocuments({ ratee: requestObj.user._id, score: -1 }),
         ]);
 
         // Get rejected requests count
@@ -2290,7 +2290,10 @@ export const changePassword = async (
   return true;
 };
 
-export const resetUserPassword = async (userId: string, newPassword: string) => {
+export const resetUserPassword = async (
+  userId: string,
+  newPassword: string
+) => {
   const user = await User.findById(userId);
   if (!user) {
     throw new Error("User not found");
@@ -2313,11 +2316,7 @@ export const resetUserPassword = async (userId: string, newPassword: string) => 
   await user.save();
 
   // Send email notification to user
-  await sendPasswordResetNotificationEmail(
-    user.email,
-    user.name,
-    newPassword
-  );
+  await sendPasswordResetNotificationEmail(user.email, user.name, newPassword);
 
   return { message: "Password reset successfully and notification sent" };
 };

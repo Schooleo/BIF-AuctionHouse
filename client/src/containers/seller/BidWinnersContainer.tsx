@@ -22,6 +22,7 @@ const BidWinnersContainer: React.FC = () => {
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     setSearch(params.get("q") || "");
+    setPage(1); // Reset page on new search
   }, [location.search]);
 
   useEffect(() => {

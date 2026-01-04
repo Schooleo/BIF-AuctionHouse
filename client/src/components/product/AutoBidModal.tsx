@@ -42,10 +42,11 @@ const AutoBidModal: React.FC<AutoBidModalProps> = ({
   const user = useAuthStore((state) => state.user);
 
   // Calculate user reputation
-  const userReputation = user ? 
-    (user.positiveRatings || 0) + (user.negativeRatings || 0) === 0 
+  const userReputation = user
+    ? (user.positiveRatings || 0) + (user.negativeRatings || 0) === 0
       ? 1 // No ratings = 100% reputation
-      : (user.positiveRatings || 0) / ((user.positiveRatings || 0) + (user.negativeRatings || 0))
+      : (user.positiveRatings || 0) /
+        ((user.positiveRatings || 0) + (user.negativeRatings || 0))
     : 1;
   const hasLowReputation = userReputation < 0.5; // Below 50% is considered low
 
@@ -89,9 +90,18 @@ const AutoBidModal: React.FC<AutoBidModalProps> = ({
     setError("");
 
     const newStepPrice = currentStepPrice + baseStepPrice;
-    if (newStepPrice + currentPrice >= parseInt(maxPrice)) {
-      setMaxPrice((currentPrice + newStepPrice).toString());
+    let newMaxPrice = parseInt(maxPrice);
+
+    if (newStepPrice + currentPrice >= newMaxPrice) {
+      newMaxPrice = currentPrice + newStepPrice;
     }
+
+    if (buyNowPrice && newMaxPrice > buyNowPrice) {
+      newMaxPrice = buyNowPrice;
+      setWarning("You're currently setting the Highest Amount possible");
+    }
+
+    setMaxPrice(newMaxPrice.toString());
   };
 
   const handleDecrementStep = () => {
@@ -233,7 +243,7 @@ const AutoBidModal: React.FC<AutoBidModalProps> = ({
         <div className="space-y-6">
           <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-lg">
             <div className="flex items-start gap-3">
-              <AlertCircle className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+              <AlertCircle className="w-5 h-5 text-blue-600 mt-0.5 shrink-0" />
               <div className="flex-1">
                 <h3 className="text-sm font-semibold text-blue-900 mb-1">
                   Review Your Auto Bid
@@ -288,9 +298,9 @@ const AutoBidModal: React.FC<AutoBidModalProps> = ({
           </div>
 
           {/* How It Works */}
-          <div className="bg-gradient-to-br from-indigo-50 to-blue-50 border border-indigo-200 rounded-lg p-4">
+          <div className="bg-linear-to-br from-indigo-50 to-blue-50 border border-indigo-200 rounded-lg p-4">
             <div className="flex items-start gap-3">
-              <CheckCircle className="w-5 h-5 text-indigo-600 mt-0.5 flex-shrink-0" />
+              <CheckCircle className="w-5 h-5 text-indigo-600 mt-0.5 shrink-0" />
               <div className="flex-1">
                 <h4 className="font-semibold text-indigo-900 mb-2 text-sm">
                   How Auto Bidding Works
@@ -331,14 +341,15 @@ const AutoBidModal: React.FC<AutoBidModalProps> = ({
           {hasLowReputation && (
             <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-lg">
               <div className="flex items-start gap-3">
-                <AlertCircle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
+                <AlertCircle className="w-5 h-5 text-red-600 mt-0.5 shrink-0" />
                 <div className="flex-1">
                   <h3 className="text-sm font-semibold text-red-900 mb-1">
                     Low Reputation Score
                   </h3>
                   <p className="text-sm text-red-800">
-                    Your reputation score is below 80% ({Math.round(userReputation * 100)}%). 
-                    Auto bidding is disabled to protect sellers. Please improve your reputation 
+                    Your reputation score is below 80% (
+                    {Math.round(userReputation * 100)}%). Auto bidding is
+                    disabled to protect sellers. Please improve your reputation
                     by completing transactions successfully to use this feature.
                   </p>
                 </div>

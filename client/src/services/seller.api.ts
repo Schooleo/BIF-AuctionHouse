@@ -136,7 +136,7 @@ export const sellerApi = {
     const query = new URLSearchParams();
     if (params.page) query.append("page", params.page.toString());
     if (params.limit) query.append("limit", params.limit.toString());
-    if (params.search) query.append("search", params.search);
+    if (params.search) query.append("q", params.search);
     if (params.sortBy) query.append("sortBy", params.sortBy);
     if (params.sortOrder) query.append("sortOrder", params.sortOrder);
     if (params.status) query.append("status", params.status);
