@@ -85,7 +85,7 @@ const SellerBidHistoryModal: React.FC<SellerBidHistoryModalProps> = ({
       return items.map((item) => ({
         entryId: item._id,
         bidderId: item.bidder?._id ?? "",
-        bidderName: maskName(item.bidder?.name ?? "Unknown bidder"),
+        bidderName: item.bidder?.name ?? "Unknown bidder",
         bidderRating: item.bidder?.rating,
         bidAmount: item.price,
         createdAt: item.createdAt,

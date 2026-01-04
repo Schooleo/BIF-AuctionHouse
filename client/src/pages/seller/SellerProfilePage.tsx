@@ -8,11 +8,7 @@ import ProfileInfoForm from "@components/forms/ProfileInfoForm";
 import ProfilePasswordForm from "@components/forms/ProfilePasswordForm";
 import SellerRatingList from "@components/seller/SellerRatingList";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import type {
-  UpdateSellerProfileDto,
-  ChangeSellerPasswordDto,
-  SellerStats,
-} from "@interfaces/seller";
+import type { UpdateSellerProfileDto, ChangeSellerPasswordDto, SellerStats } from "@interfaces/seller";
 import SellerOverviewTab from "@components/seller/SellerOverviewTab";
 
 type TabType = "overview" | "info" | "ratings";
@@ -35,6 +31,7 @@ const SellerProfilePage: React.FC = () => {
       setUser({
         ...response.profile,
         id: response.profile._id,
+        status: response.profile.status ?? "ACTIVE",
       });
       setStats(response.stats);
     } catch (err) {
@@ -59,8 +56,7 @@ const SellerProfilePage: React.FC = () => {
       });
       addAlert("success", "Profile updated successfully!");
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Unable to update profile";
+      const message = err instanceof Error ? err.message : "Unable to update profile";
       addAlert("error", message);
       throw new Error(message);
     } finally {
@@ -72,16 +68,12 @@ const SellerProfilePage: React.FC = () => {
     try {
       setLoading(true);
       await sellerApi.changePassword(data);
-      addAlert(
-        "success",
-        "Password changed successfully! Redirecting to login page..."
-      );
+      addAlert("success", "Password changed successfully! Redirecting to login page...");
       setTimeout(() => {
         navigate("/auth/logout?next=/auth/login");
       }, 2000);
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Unable to change password";
+      const message = err instanceof Error ? err.message : "Unable to change password";
       addAlert("error", message);
       throw new Error(message);
     } finally {
@@ -102,13 +94,9 @@ const SellerProfilePage: React.FC = () => {
             onImageUpdate={(newUrl) => setUser({ ...user, avatar: newUrl })}
           />
           <div>
-            <h1 className="text-2xl font-bold text-gray-800">
-              Seller: {user.name}
-            </h1>
+            <h1 className="text-2xl font-bold text-gray-800">Seller: {user.name}</h1>
             {user.contactEmail ? (
-              <p className="text-gray-500 truncate">
-                Contact: {user.contactEmail}
-              </p>
+              <p className="text-gray-500 truncate">Contact: {user.contactEmail}</p>
             ) : (
               <p className="text-gray-500 truncate">Email: {user.email}</p>
             )}
@@ -137,10 +125,7 @@ const SellerProfilePage: React.FC = () => {
                 <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
                   <Lock size={20} /> Change Password
                 </h3>
-                <ProfilePasswordForm
-                  onSubmit={handleChangePassword}
-                  loading={loading}
-                />
+                <ProfilePasswordForm onSubmit={handleChangePassword} loading={loading} />
               </div>
             </div>
           )}
