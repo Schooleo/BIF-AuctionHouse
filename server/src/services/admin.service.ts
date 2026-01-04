@@ -14,6 +14,7 @@ import { BlacklistedEmail } from "../models/blacklistedEmail.model";
 import mongoose from "mongoose";
 import * as bcrypt from "bcrypt";
 import { UpdateProfileDto, ChangePasswordDto } from "../types/admin.types";
+import { sendPasswordResetNotificationEmail } from "../utils/email.util";
 
 // Enum for bid status from admin perspective
 enum BidStatus {
@@ -2287,4 +2288,36 @@ export const changePassword = async (
   await user.save();
 
   return true;
+};
+
+export const resetUserPassword = async (userId: string, newPassword: string) => {
+  const user = await User.findById(userId);
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  if (user.role === "admin") {
+    throw new Error("Cannot reset admin account password");
+  }
+
+  // Validate password format
+  const passwordRegex = /^(?=.*[A-Z])(?=.*[!@#$%^&*(),.?":{}|<>]).{8,}$/;
+  if (!passwordRegex.test(newPassword)) {
+    throw new Error(
+      "Password must be at least 8 characters with 1 uppercase letter and 1 special character"
+    );
+  }
+
+  // Update password (pre-save hook will hash it)
+  user.password = newPassword;
+  await user.save();
+
+  // Send email notification to user
+  await sendPasswordResetNotificationEmail(
+    user.email,
+    user.name,
+    newPassword
+  );
+
+  return { message: "Password reset successfully and notification sent" };
 };

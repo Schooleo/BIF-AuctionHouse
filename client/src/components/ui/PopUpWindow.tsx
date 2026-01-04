@@ -15,6 +15,7 @@ interface PopUpWindowProps {
   submitText?: string;
   cancelText?: string;
   isLoading?: boolean;
+  isDisabled?: boolean;
   hideSubmitButton?: boolean;
   hideCancelButton?: boolean;
   hideFooter?: boolean;
@@ -36,6 +37,7 @@ const PopUpWindow: React.FC<PopUpWindowProps> = ({
   submitText = "Submit",
   cancelText = "Cancel",
   isLoading = false,
+  isDisabled = false,
   hideSubmitButton = false,
   hideCancelButton = false,
   hideFooter = false,
@@ -162,10 +164,10 @@ const PopUpWindow: React.FC<PopUpWindowProps> = ({
               {!hideSubmitButton && (
                 <button
                   type="submit"
-                  disabled={isLoading}
+                  disabled={isLoading || isDisabled}
                   className={`px-6 py-2.5 text-sm font-semibold text-white rounded-full transition-colors shadow-md min-w-[100px] hover:scale-105 ${
                     submitButtonColor || "bg-primary-blue"
-                  } ${isLoading ? "opacity-75 cursor-not-allowed" : ""}`}
+                  } ${isLoading || isDisabled ? "opacity-75 cursor-not-allowed" : ""}`}
                 >
                   {isLoading ? (
                     <div className="flex items-center justify-center gap-2">

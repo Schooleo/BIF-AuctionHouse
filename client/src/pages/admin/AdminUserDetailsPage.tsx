@@ -15,6 +15,7 @@ import AdminProductCard from "@components/admin/user/AdminProductCard";
 import EditProfileModal, {
   type ProfileData,
 } from "@components/admin/user/EditProfileModal";
+import ResetPasswordModal from "@components/admin/user/ResetPasswordModal";
 import {
   ArrowLeftRight,
   ShieldCheck,
@@ -37,6 +38,7 @@ import {
   Truck,
   CreditCard,
   PackageCheck,
+  Key,
 } from "lucide-react";
 import { StarRating } from "@components/ui/StarRating";
 
@@ -80,6 +82,8 @@ const AdminUserDetailsPage: React.FC = () => {
   const [isUnblockModalOpen, setIsUnblockModalOpen] = useState(false);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isResetPasswordModalOpen, setIsResetPasswordModalOpen] = useState(false);
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
 
   // Fetch main user data
   const fetchUserData = useCallback(
@@ -271,6 +275,23 @@ const AdminUserDetailsPage: React.FC = () => {
     addAlert("success", "Profile updated successfully");
   };
 
+  const handleResetPassword = async (newPassword: string) => {
+    if (!currentProfileId) return;
+    setIsResettingPassword(true);
+    try {
+      await adminApi.resetUserPassword(currentProfileId, newPassword);
+      addAlert("success", "Password reset successfully and email sent to user");
+      setIsResetPasswordModalOpen(false);
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : "Failed to reset password";
+      addAlert("error", message);
+      throw error;
+    } finally {
+      setIsResettingPassword(false);
+    }
+  };
+
   // Review handlers
   const handleEditReview = async (reviewId: string, newComment: string) => {
     await adminApiExtended.updateReview(reviewId, newComment);
@@ -440,7 +461,7 @@ const AdminUserDetailsPage: React.FC = () => {
               </div>
 
               {/* Stats Grid */}
-              <div className="grid grid-cols-2 gap-3 w-full mt-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full mt-4">
                 <div className="flex items-center gap-3 p-3 bg-white border border-gray-200 rounded-xl">
                   <div className="p-2 rounded-lg bg-gray-50">
                     <ThumbsUp size={16} className="text-green-500" />
@@ -522,13 +543,21 @@ const AdminUserDetailsPage: React.FC = () => {
 
               {profile.role !== "admin" && (
                 <>
-                  {/* Edit Button */}
-                  <button
-                    onClick={() => setIsEditModalOpen(true)}
-                    className="w-full py-2.5 rounded-lg font-semibold text-sm bg-primary-blue text-white hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 ease-in-out flex items-center justify-center gap-2"
-                  >
-                    <Edit size={16} /> Edit Profile
-                  </button>
+                  {/* Edit & Reset Password */}
+                  <div className="grid md:grid-cols-1 grid-cols-2 gap-3">
+                    <button
+                      onClick={() => setIsEditModalOpen(true)}
+                      className="py-2.5 rounded-lg font-semibold text-sm bg-primary-blue text-white hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 ease-in-out flex items-center justify-center gap-2"
+                    >
+                      <Edit size={16} /> Edit Profile
+                    </button>
+                    <button
+                      onClick={() => setIsResetPasswordModalOpen(true)}
+                      className="py-2.5 rounded-lg font-semibold text-sm bg-indigo-600 text-white hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 ease-in-out flex items-center justify-center gap-2"
+                    >
+                      <Key size={16} /> Reset Password
+                    </button>
+                  </div>
 
                   {/* Block/Unblock */}
                   <button
@@ -848,6 +877,15 @@ const AdminUserDetailsPage: React.FC = () => {
           contactEmail: profile.contactEmail,
           dateOfBirth: profile.dateOfBirth,
         }}
+      />
+
+      <ResetPasswordModal
+        isOpen={isResetPasswordModalOpen}
+        onClose={() => setIsResetPasswordModalOpen(false)}
+        onConfirm={handleResetPassword}
+        userName={profile.name}
+        userEmail={profile.email}
+        isLoading={isResettingPassword}
       />
     </div>
   );

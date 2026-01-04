@@ -184,7 +184,29 @@ const SellerBidHistoryModal: React.FC<SellerBidHistoryModalProps> = ({
 
         {!loading && tableError && <ErrorMessage text={tableError} />}
 
-        {!loading && !tableError && rows.length === 0 && <EmptyMessage text="No bids placed for this product yet." />}
+        {!loading && !tableError && rows.length === 0 && !showOnlyRejected && (
+          <EmptyMessage text="No bids placed for this product yet." />
+        )}
+
+        {!loading && !tableError && rows.length === 0 && showOnlyRejected && (
+          <div className="space-y-4">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between text-sm text-gray-500">
+              <div>Rejected bidders: 0</div>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowOnlyRejected(false);
+                  setCurrentPage(1);
+                }}
+                className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-semibold rounded-lg border border-gray-300 hover:bg-gray-100 transition"
+              >
+                <ShieldX className="w-3.5 h-3.5" />
+                Show bid history
+              </button>
+            </div>
+            <EmptyMessage text="No rejected bidders yet." />
+          </div>
+        )}
 
         {!loading && !tableError && rows.length > 0 && (
           <div className="space-y-4">

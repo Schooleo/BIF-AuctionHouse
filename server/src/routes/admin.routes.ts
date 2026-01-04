@@ -52,10 +52,10 @@ import {
   denyUnbanRequest,
   updateProfile,
   changePassword,
+  resetUserPassword,
 } from "../controllers/admin.controller";
 import { protect } from "../middleware/auth.middleware";
 import { validate } from "../middleware/validate";
-import { createProductSchema } from "../schemas/admin.schema";
 
 const router = Router();
 
@@ -71,7 +71,7 @@ router.get("/products/:id", getProductDetails);
 router.patch("/products/:id", validate(updateProductSchema, "body"), updateProduct);
 router.post("/products/:id/extend", validate(extendEndTimeSchema, "body"), extendProductEndTime);
 router.delete("/products/:id", deleteProduct);
-router.delete("/products/:productId/questions/:questionId", deleteProductQuestion); // Add this
+router.delete("/products/:productId/questions/:questionId", deleteProductQuestion); 
 
 router.get("/categories", listCategories);
 router.post("/categories", createCategory);
@@ -123,5 +123,8 @@ router.get("/banned-users", getBannedUsers);
 router.get("/banned-users/:userId/unban-request", getUnbanRequest);
 router.post("/unban-requests/:id/approve", approveUnbanRequest);
 router.post("/unban-requests/:id/deny", denyUnbanRequest);
+
+// Reset user password
+router.post("/users/:id/reset-password", resetUserPassword);
 
 export default router;

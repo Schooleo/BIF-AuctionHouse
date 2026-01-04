@@ -502,6 +502,18 @@ export const adminApi = {
     });
     return handleResponse(response);
   },
+
+  resetUserPassword: async (userId: string, newPassword: string) => {
+    const response = await fetch(
+      `${API_BASE}/api/admin/users/${userId}/reset-password`,
+      {
+        method: "POST",
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ newPassword }),
+      }
+    );
+    return handleResponse(response);
+  },
 };
 
 // Add new methods to adminApi
