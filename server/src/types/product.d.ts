@@ -89,8 +89,13 @@ export interface Bid {
 export type ProductSortOption =
   | "default"
   | "endingSoon"
+  | "endingLatest"
   | "mostBidOn"
-  | "highestPriced";
+  | "leastBidOn"
+  | "highestPriced"
+  | "lowestPriced"
+  | "newest"
+  | "oldest";
 
 export interface SearchParams {
   q: string;

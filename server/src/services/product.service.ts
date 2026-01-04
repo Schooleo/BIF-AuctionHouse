@@ -308,11 +308,26 @@ export const ProductService = {
         case "endingSoon":
           sortStage.timeRemainingMs = 1;
           break;
+        case "endingLatest":
+          sortStage.timeRemainingMs = -1;
+          break;
         case "mostBidOn":
           sortStage.bidCount = -1;
           break;
+        case "leastBidOn":
+          sortStage.bidCount = 1;
+          break;
         case "highestPriced":
           sortStage.currentPrice = -1;
+          break;
+        case "lowestPriced":
+          sortStage.currentPrice = 1;
+          break;
+        case "newest":
+          sortStage.startTime = -1;
+          break;
+        case "oldest":
+          sortStage.startTime = 1;
           break;
         case "default":
         default:

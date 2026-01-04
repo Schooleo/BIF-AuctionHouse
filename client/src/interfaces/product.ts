@@ -99,8 +99,13 @@ export interface ProductDetails {
 export type ProductSortOption =
   | "default"
   | "endingSoon"
+  | "endingLatest"
   | "mostBidOn"
-  | "highestPriced";
+  | "leastBidOn"
+  | "highestPriced"
+  | "lowestPriced"
+  | "newest"
+  | "oldest";
 
 export interface Category {
   _id: string;
