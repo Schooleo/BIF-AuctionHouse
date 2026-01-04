@@ -22,6 +22,7 @@ import {
   sendBidConfirmationToBidder,
   sendOutbidNotificationToBidders,
 } from "../utils/email.util";
+import { maskBidderName } from "../utils/mask.util";
 import { getIO } from "../socket";
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -1229,29 +1230,7 @@ export const bidderService = {
   },
 };
 
-// Hàm để mask tên bidder
-function maskBidderName(fullName: string): string {
-  const nameParts = fullName.trim().split(" ");
-
-  if (nameParts.length === 1) {
-    // Chỉ có 1 từ → mask một nửa
-    const name = nameParts[0]!;
-    const maskLength = Math.ceil(name.length / 2);
-    return "*".repeat(maskLength) + name.slice(maskLength);
-  }
-
-  // Lấy tên cuối cùng (phần tử cuối mảng)
-  const lastName = nameParts[nameParts.length - 1];
-
-  // Mask phần họ và tên đệm (tất cả trừ tên cuối)
-  const firstNames = nameParts.slice(0, -1);
-  const totalMaskLength = firstNames.reduce(
-    (sum, part) => sum + part.length,
-    0
-  );
-
-  return "*".repeat(totalMaskLength + firstNames.length - 1) + " " + lastName;
-}
+// Local maskBidderName removed, using import from ../utils/mask.util
 
 /**
  * Submit unban request

@@ -11,6 +11,7 @@ import type {
   SearchParams,
   Category as ProductCategory,
 } from "../types/product";
+import { maskBidderName } from "../utils/mask.util";
 
 type RelatedProductDoc = IProduct & {
   _id: Types.ObjectId;
@@ -78,7 +79,7 @@ const normalizeCategory = (category: any): ProductCategory => {
 };
 
 export const ProductService = {
-  listHomeData: async function listHomeData() {
+  listHomeData: async function listHomeData(isAuthenticated: boolean = false) {
     const now = new Date();
 
     // Helper pipeline to lookup top bid and bidder info
@@ -169,13 +170,27 @@ export const ProductService = {
       ...topBidPipeline,
     ]);
 
-    return { endingSoon, mostBids, highestPrice };
+    const maskProductBidder = (p: any) => {
+      if (!isAuthenticated && p.highestBidder && p.highestBidder.name) {
+        p.highestBidder.name = maskBidderName(p.highestBidder.name);
+      }
+      return p;
+    };
+
+    return {
+      endingSoon: endingSoon.map(maskProductBidder),
+      mostBids: mostBids.map(maskProductBidder),
+      highestPrice: highestPrice.map(maskProductBidder),
+    };
   },
 
   /**
    * Search products with full-text search, filters, sorting, and pagination
    */
-  searchProducts: async function searchProducts(params: SearchParams) {
+  searchProducts: async function searchProducts(
+    params: SearchParams,
+    isAuthenticated: boolean = false
+  ) {
     const {
       q = "",
       category = "",
@@ -381,8 +396,15 @@ export const ProductService = {
         : filter;
     const total = await Product.countDocuments(countFilter);
 
+    const maskedResults = results.map((p: any) => {
+      if (!isAuthenticated && p.highestBidder && p.highestBidder.name) {
+        p.highestBidder.name = maskBidderName(p.highestBidder.name);
+      }
+      return p;
+    });
+
     return {
-      data: results,
+      data: maskedResults,
       pagination: {
         page: safePage,
         limit: safeLimit,

@@ -23,9 +23,14 @@ const router = Router();
 // Public routes
 router.get("/categories", listCategories);
 
-router.get("/home", viewHome);
+router.get("/home", optionalProtect, viewHome);
 
-router.get("/products", validate(viewProductsSchema, "query"), viewProducts);
+router.get(
+  "/products",
+  optionalProtect,
+  validate(viewProductsSchema, "query"),
+  viewProducts
+);
 
 router.get(
   "/product/:id",
