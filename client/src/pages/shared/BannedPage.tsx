@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { AlertTriangle, Clock } from "lucide-react";
+import { AlertTriangle, Clock, LogOut } from "lucide-react";
 import { useAuthStore } from "@stores/useAuthStore";
 import { bidderApi } from "@services/bidder.api";
 
 const BannedPage: React.FC = () => {
-  const { user } = useAuthStore();
+  const { user, logout } = useAuthStore();
   const navigate = useNavigate();
   const [hasUnbanRequest, setHasUnbanRequest] = useState(false);
   const [unbanRequestStatus, setUnbanRequestStatus] = useState<"PENDING" | "APPROVED" | "DENIED" | null>(null);
@@ -20,6 +20,7 @@ const BannedPage: React.FC = () => {
           setUnbanRequestStatus(data.request.status);
         }
       } catch (error) {
+        // Silent catch - user might be logging out or token expired
         console.error("Failed to fetch unban request status:", error);
       }
     };
@@ -87,6 +88,23 @@ const BannedPage: React.FC = () => {
             <span className="font-bold text-red-600">30 days</span>
           </p>
         </div> */}
+
+        {/* Logout Button */}
+        <div className="mt-6 text-center">
+          <button
+            onClick={() => {
+              logout();
+              // Use setTimeout to ensure logout completes before navigation
+              setTimeout(() => {
+                navigate("/auth/login", { replace: true });
+              }, 0);
+            }}
+            className="inline-flex items-center gap-2 px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
+          >
+            <LogOut className="w-5 h-5" />
+            Logout
+          </button>
+        </div>
       </div>
     </div>
   );
