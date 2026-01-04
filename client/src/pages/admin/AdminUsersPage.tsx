@@ -99,6 +99,26 @@ const AdminUsersPage: React.FC = () => {
     setSearchParams(urlParams, { replace: true });
   };
 
+  // Sync state with URL params change
+  useEffect(() => {
+    const newParams: QueryParams = {
+      page: Number(searchParams.get("page")) || DEFAULT_PARAMS.page,
+      limit: Number(searchParams.get("limit")) || DEFAULT_PARAMS.limit,
+      search: searchParams.get("q") || DEFAULT_PARAMS.search,
+      role: searchParams.get("role") || DEFAULT_PARAMS.role,
+      status: searchParams.get("status") || DEFAULT_PARAMS.status,
+      sortBy: searchParams.get("sortBy") || DEFAULT_PARAMS.sortBy,
+      sortOrder:
+        (searchParams.get("sortOrder") as "asc" | "desc") ||
+        DEFAULT_PARAMS.sortOrder,
+    };
+
+    // Only update if actual changes to avoid loops
+    if (JSON.stringify(newParams) !== JSON.stringify(queryParams)) {
+      setQueryParams(newParams);
+    }
+  }, [searchParams, queryParams]);
+
   // Fetch users with debouncing and abort controller
   useEffect(() => {
     const abortController = new AbortController();

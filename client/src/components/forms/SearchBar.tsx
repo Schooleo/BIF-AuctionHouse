@@ -52,9 +52,14 @@ const SearchBar: React.FC<SearchBarProps> = ({
     if (category) searchParams.set("category", category);
 
     if (location.pathname.startsWith("/seller")) {
-      if (location.pathname.includes("ended-products")) {
-        navigate(`/seller/ended-products?${searchParams.toString()}`);
+      const path = location.pathname;
+      const section = path.split("/")[2]; // e.g. 'products', 'ended-products', 'bid-winners'
+
+      // If we are on a specific list page, stay there
+      if (["products", "ended-products", "bid-winners"].includes(section)) {
+        navigate(`/seller/${section}?${searchParams.toString()}`);
       } else {
+        // Default fallback
         navigate(`/seller/products?${searchParams.toString()}`);
       }
     } else if (location.pathname.startsWith("/admin")) {

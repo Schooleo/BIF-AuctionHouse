@@ -103,14 +103,14 @@ export const removeProduct = async (req: Request, res: Response) => {
 // Get users with filtering and pagination
 export const getUsers = async (req: Request, res: Response) => {
   try {
-    const { page, limit, search, role, status, sortBy, sortOrder, viewTrash } =
+    const { page, limit, q, role, status, sortBy, sortOrder, viewTrash } =
       req.query;
 
     // Build params object
     const params: UserSearchParams = {
       page: page ? Number(page) : 1,
       limit: limit ? Number(limit) : 10,
-      ...(search && { search: String(search) }),
+      ...(q && { search: String(q) }),
       ...(role && { role: String(role) }),
       ...(status && { status: String(status) }),
       ...(sortBy && { sortBy: String(sortBy) }),

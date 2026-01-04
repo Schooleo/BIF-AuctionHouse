@@ -437,7 +437,7 @@ export const adminApi = {
       page: page.toString(),
       limit: limit.toString(),
       ...(status && { status }),
-      ...(search && { search }),
+      ...(search && { q: search }),
       ...(sortBy && { sortBy }),
     });
     const response = await fetch(
