@@ -5,6 +5,7 @@ import {
   sendAuctionEndedNoBuyerEmail,
   sendAuctionWonEmail,
 } from "../utils/email.util";
+import { maskBidderName } from "../utils/mask.util";
 
 /**
  * Run every minute to check for ended auctions that haven't sent emails yet
@@ -245,19 +246,4 @@ export const startAuctionCron = () => {
   });
 };
 
-// Helper: Mask Bidder Name
-function maskBidderName(fullName: string): string {
-  const nameParts = fullName.trim().split(" ");
-  if (nameParts.length === 1) {
-    const name = nameParts[0]!;
-    const maskLength = Math.ceil(name.length / 2);
-    return "*".repeat(maskLength) + name.slice(maskLength);
-  }
-  const lastName = nameParts[nameParts.length - 1];
-  const firstNames = nameParts.slice(0, -1);
-  const totalMaskLength = firstNames.reduce(
-    (sum, part) => sum + part.length,
-    0
-  );
-  return "*".repeat(totalMaskLength + firstNames.length - 1) + " " + lastName;
-}
+// Local maskBidderName removed, using import from ../utils/mask.util

@@ -8,8 +8,17 @@ import type {
 } from "@interfaces/product";
 import type { IPaginatedResponse } from "@interfaces/ui";
 import { handleResponse } from "@utils/handleResponse";
+import { useAuthStore } from "@stores/useAuthStore";
 
 const API_BASE = import.meta.env.VITE_APP_API_URL || "";
+
+const getAuthHeaders = () => {
+  const token = useAuthStore.getState().token;
+  return {
+    "Content-Type": "application/json",
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+};
 
 export const productApi = {
   fetchHomeData: async (): Promise<HomeDataResponse> => {
@@ -17,7 +26,7 @@ export const productApi = {
 
     const res = await fetch(url, {
       method: "GET",
-      headers: { "Content-Type": "application/json" },
+      headers: getAuthHeaders(),
     });
 
     return handleResponse(res);
@@ -57,13 +66,15 @@ export const productApi = {
 
     const res = await fetch(url, {
       method: "GET",
-      headers: { "Content-Type": "application/json" },
+      headers: getAuthHeaders(),
     });
 
     return handleResponse(res);
   },
 
-  fetchProductDetails: async ({ id }: FetchProductDetailsDto): Promise<ProductDetails> => {
+  fetchProductDetails: async ({
+    id,
+  }: FetchProductDetailsDto): Promise<ProductDetails> => {
     const params = new URLSearchParams();
 
     const paramString = params.toString() ? `?${params.toString()}` : "";
@@ -72,7 +83,7 @@ export const productApi = {
 
     const res = await fetch(url, {
       method: "GET",
-      headers: { "Content-Type": "application/json" },
+      headers: getAuthHeaders(),
     });
 
     return handleResponse(res);
@@ -122,7 +133,7 @@ export const productApi = {
 
     const res = await fetch(url, {
       method: "GET",
-      headers: { "Content-Type": "application/json" },
+      headers: getAuthHeaders(),
     });
 
     return handleResponse(res);

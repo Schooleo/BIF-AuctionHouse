@@ -4,11 +4,16 @@ import { ProductService } from "../services/product.service";
 import { CategoryService } from "../services/category.service";
 import { viewProductsSchema } from "../schemas/guest/viewProducts.schema";
 
-import { viewProductDetailParamsSchema, viewProductDetailQuerySchema } from "../schemas/guest/viewProductDetail.schema";
+import {
+  viewProductDetailParamsSchema,
+  viewProductDetailQuerySchema,
+} from "../schemas/guest/viewProductDetail.schema";
 
 const handleError = (res: Response, error: any, status = 500) => {
   console.error(error);
-  return res.status(status).json({ message: error?.message || "Internal server error" });
+  return res
+    .status(status)
+    .json({ message: error?.message || "Internal server error" });
 };
 
 // ------------------ Controllers ------------------
@@ -26,7 +31,8 @@ export const listCategories = async (req: Request, res: Response) => {
 // GET /home
 export const viewHome = async (req: Request, res: Response) => {
   try {
-    const homeData = await ProductService.listHomeData();
+    const isAuthenticated = !!(req as any).user;
+    const homeData = await ProductService.listHomeData(isAuthenticated);
     return res.status(200).json(homeData);
   } catch (err) {
     return handleError(res, err);
@@ -38,15 +44,20 @@ export const viewProducts = async (req: Request, res: Response) => {
   try {
     const query = viewProductsSchema.parse(req.query);
 
-    const results = await ProductService.searchProducts({
-      q: query.q ?? "",
-      category: query.category,
-      page: query.page,
-      limit: query.limit,
-      sort: query.sort,
-      min_price: query.min_price,
-      max_price: query.max_price,
-    });
+    const isAuthenticated = !!(req as any).user;
+
+    const results = await ProductService.searchProducts(
+      {
+        q: query.q ?? "",
+        category: query.category,
+        page: query.page,
+        limit: query.limit,
+        sort: query.sort,
+        min_price: query.min_price,
+        max_price: query.max_price,
+      },
+      isAuthenticated
+    );
 
     return res.status(200).json(results);
   } catch (err) {
@@ -100,7 +111,9 @@ export const getUserRatings = async (req: Request, res: Response) => {
     const { Rating } = await import("../models/rating.model");
 
     // Check if user exists
-    const user = await User.findById(userId).select("name positiveRatings negativeRatings reputationScore");
+    const user = await User.findById(userId).select(
+      "name positiveRatings negativeRatings reputationScore"
+    );
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
@@ -114,7 +127,11 @@ export const getUserRatings = async (req: Request, res: Response) => {
 
     // Fetch ratings and total count
     const [ratings, total] = await Promise.all([
-      Rating.find(query).populate("rater", "name").sort({ createdAt: -1 }).skip(skip).limit(limit),
+      Rating.find(query)
+        .populate("rater", "name")
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit),
       Rating.countDocuments(query),
     ]);
 
