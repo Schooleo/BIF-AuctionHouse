@@ -59,10 +59,17 @@ const SearchBar: React.FC<SearchBarProps> = ({
       }
     } else if (location.pathname.startsWith("/admin")) {
       const path = location.pathname;
-      if (
-        path.startsWith("/admin/products") ||
+
+      if (path.startsWith("/admin/products")) {
+        if (path.includes("/ended")) {
+          navigate(`/admin/products/ended?${searchParams.toString()}`);
+        } else {
+          navigate(`/admin/products/active?${searchParams.toString()}`);
+        }
+      } else if (
         path.startsWith("/admin/categories") ||
         path.startsWith("/admin/users") ||
+        path.startsWith("/admin/banned-users") ||
         path.startsWith("/admin/orders") ||
         path.startsWith("/admin/upgrade-requests")
       ) {

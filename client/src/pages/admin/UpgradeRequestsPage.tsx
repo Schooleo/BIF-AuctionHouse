@@ -57,6 +57,7 @@ const UpgradeRequestsPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [requests, setRequests] = useState<UpgradeRequest[]>([]);
   const [loading, setLoading] = useState(true);
+  const searchQuery = searchParams.get("q") || "";
 
   // Get initial values from URL or defaults
   const [filter, setFilter] = useState<
@@ -87,16 +88,30 @@ const UpgradeRequestsPage: React.FC = () => {
 
   // Update URL params whenever filters change
   const updateURLParams = React.useCallback(() => {
-    const params = new URLSearchParams();
+    const params = new URLSearchParams(searchParams);
     if (filter !== "default") params.set("status", filter);
+    else params.delete("status");
+
     if (page !== 1) params.set("page", page.toString());
+    else params.delete("page");
+
     if (sortBy !== "newest") params.set("sort", sortBy);
+    else params.delete("sort");
+
+    if (searchQuery) params.set("q", searchQuery);
+    else params.delete("q");
+
     setSearchParams(params, { replace: true });
-  }, [filter, page, sortBy, setSearchParams]);
+  }, [filter, page, sortBy, searchQuery, searchParams, setSearchParams]);
 
   useEffect(() => {
     updateURLParams();
   }, [updateURLParams]);
+
+  // Reset page when search changes
+  useEffect(() => {
+    setPage(1);
+  }, [searchQuery]);
 
   const fetchRequests = React.useCallback(async () => {
     try {
@@ -109,7 +124,7 @@ const UpgradeRequestsPage: React.FC = () => {
         page,
         10,
         statusFilter,
-        undefined,
+        searchQuery,
         sortBy
       );
       setRequests(response.requests as UpgradeRequest[]);
@@ -124,7 +139,7 @@ const UpgradeRequestsPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [filter, page, sortBy, addAlert]);
+  }, [filter, page, sortBy, searchQuery, addAlert]);
 
   useEffect(() => {
     fetchRequests();

@@ -17,6 +17,7 @@ const AdminBannedUsersPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { addAlert } = useAlertStore();
+  const searchQuery = searchParams.get("q") || "";
 
   // State
   const [users, setUsers] = useState<BannedUser[]>([]);
@@ -37,7 +38,7 @@ const AdminBannedUsersPage: React.FC = () => {
   const fetchBannedUsers = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await bannedUsersApi.getBannedUsers(page, 10);
+      const data = await bannedUsersApi.getBannedUsers(page, 10, searchQuery);
       setUsers(data.users);
       setTotalPages(data.totalPages);
       setTotal(data.total);
@@ -47,7 +48,7 @@ const AdminBannedUsersPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [page, addAlert]);
+  }, [page, searchQuery, addAlert]);
 
   useEffect(() => {
     fetchBannedUsers();
@@ -55,10 +56,19 @@ const AdminBannedUsersPage: React.FC = () => {
 
   // Sync URL params
   useEffect(() => {
-    const params = new URLSearchParams();
-    if (page > 1) params.set("page", page.toString());
+    const params = new URLSearchParams(searchParams);
+    if (page > 1) {
+      params.set("page", page.toString());
+    } else {
+      params.delete("page");
+    }
     setSearchParams(params, { replace: true });
-  }, [page, setSearchParams]);
+  }, [page, searchParams, setSearchParams]);
+
+  // Reset page when search changes
+  useEffect(() => {
+    setPage(1);
+  }, [searchQuery]);
 
   // Handle row click - open modal
   const handleRowClick = async (user: BannedUser) => {

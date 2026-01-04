@@ -61,7 +61,7 @@ export const adminApi = {
     });
 
     if (search && search.trim() !== "") {
-      cleanParams.search = search.trim();
+      cleanParams.q = search.trim();
     }
 
     const query = new URLSearchParams(cleanParams);
@@ -100,7 +100,7 @@ export const adminApi = {
 
     // Add search param if provided
     if (q && q.trim() !== "") {
-      cleanParams.search = q.trim();
+      cleanParams.q = q.trim();
     }
 
     const query = new URLSearchParams(cleanParams);
@@ -597,7 +597,7 @@ export const bannedUsersApi = {
       page: page.toString(),
       limit: limit.toString(),
     });
-    if (search) params.append("search", search);
+    if (search) params.append("q", search);
 
     const response = await fetch(
       `${API_BASE}/api/admin/banned-users?${params}`,
