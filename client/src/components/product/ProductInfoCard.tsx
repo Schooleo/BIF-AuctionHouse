@@ -1,6 +1,11 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import type { Product } from "@interfaces/product";
-import { formatPostedTime, timeRemaining, formatPrice, maskName } from "@utils/product";
+import {
+  formatPostedTime,
+  timeRemaining,
+  formatPrice,
+  maskName,
+} from "@utils/product";
 import { Heart, Star, ArrowRight, ShieldX } from "lucide-react";
 import { orderApi } from "@services/order.api";
 import Spinner from "@components/ui/Spinner";
@@ -28,7 +33,13 @@ interface BidUpdateData {
   endTime: string;
 }
 
-const ExpandableText = ({ content, maxHeight = 200 }: { content: string; maxHeight?: number }) => {
+const ExpandableText = ({
+  content,
+  maxHeight = 200,
+}: {
+  content: string;
+  maxHeight?: number;
+}) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [shouldShowButton, setShouldShowButton] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -66,7 +77,11 @@ const ExpandableText = ({ content, maxHeight = 200 }: { content: string; maxHeig
   );
 };
 
-const ProductInfoCard: React.FC<ProductInfoCardProps> = ({ product: initialProduct, isGuest, onUpdateProduct }) => {
+const ProductInfoCard: React.FC<ProductInfoCardProps> = ({
+  product: initialProduct,
+  isGuest,
+  onUpdateProduct,
+}) => {
   const [product, setProduct] = useState(initialProduct);
   const [isAutoBidModalOpen, setIsAutoBidModalOpen] = useState(false);
   const [isInWatchlist, setIsInWatchlist] = useState(false);
@@ -168,7 +183,15 @@ const ProductInfoCard: React.FC<ProductInfoCardProps> = ({ product: initialProdu
         }
       };
     }
-  }, [product._id, socket, joinProductRoom, leaveProductRoom, isBidHistoryOpen, currentUserId, addAlert]);
+  }, [
+    product._id,
+    socket,
+    joinProductRoom,
+    leaveProductRoom,
+    isBidHistoryOpen,
+    currentUserId,
+    addAlert,
+  ]);
 
   const handleCompleteOrder = async () => {
     setIsCreatingOrder(true);
@@ -186,7 +209,9 @@ const ProductInfoCard: React.FC<ProductInfoCardProps> = ({ product: initialProdu
   // Compute auction state
   const now = new Date();
   const endTime = new Date(product.endTime);
-  const isBuyNowReached = !!product.buyNowPrice && Math.round(product.currentPrice) >= Math.round(product.buyNowPrice);
+  const isBuyNowReached =
+    !!product.buyNowPrice &&
+    Math.round(product.currentPrice) >= Math.round(product.buyNowPrice);
   const isAuctionEnded = now > endTime || isBuyNowReached;
   const isWinnerConfirmed = product.winnerConfirmed === true;
   const winnerId = product.currentBidder?._id || product.highestBidder?._id;
@@ -244,7 +269,10 @@ const ProductInfoCard: React.FC<ProductInfoCardProps> = ({ product: initialProdu
         return;
       }
 
-      await bidderApi.addToWatchlist(product._id, useAuthStore.getState().token || "");
+      await bidderApi.addToWatchlist(
+        product._id,
+        useAuthStore.getState().token || ""
+      );
       setIsInWatchlist(true);
       addAlert("success", "Added to watchlist successfully!");
     } catch (error: unknown) {
@@ -275,7 +303,10 @@ const ProductInfoCard: React.FC<ProductInfoCardProps> = ({ product: initialProdu
 
       addAlert("success", "Removed from watchlist successfully!");
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : "Failed to remove from watchlist.";
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Failed to remove from watchlist.";
       addAlert("error", message);
     } finally {
       setIsAddingToWatchlist(false);
@@ -285,9 +316,13 @@ const ProductInfoCard: React.FC<ProductInfoCardProps> = ({ product: initialProdu
   return (
     <div className="flex flex-col gap-4 max-w-full md:max-w-xl mx-auto md:mx-0">
       <h1 className="text-2xl md:text-3xl font-bold">{product.name}</h1>
-      <p className="text-gray-500 text-sm md:text-base">Posted Time: {formatPostedTime(product.startTime)}</p>
+      <p className="text-gray-500 text-sm md:text-base">
+        Posted Time: {formatPostedTime(product.startTime)}
+      </p>
       {isAuctionEnded ? (
-        <p className="text-gray-600 text-sm">{timeRemaining(product.endTime)}</p>
+        <p className="text-gray-600 text-sm">
+          {timeRemaining(product.endTime)}
+        </p>
       ) : (
         <p className="text-red-600 font-semibold text-base md:text-lg">
           Time Remaining: {timeRemaining(product.endTime)}
@@ -295,7 +330,8 @@ const ProductInfoCard: React.FC<ProductInfoCardProps> = ({ product: initialProdu
       )}
       <div className="flex flex-wrap items-center gap-2">
         <p className="text-lg md:text-xl font-semibold">
-          {isAuctionEnded ? "Final Price" : "Current Price"}: {formatPrice(product.currentPrice)}
+          {isAuctionEnded ? "Final Price" : "Current Price"}:{" "}
+          {formatPrice(product.currentPrice)}
         </p>
         {newBidsCount > 0 && (
           <span
@@ -307,16 +343,22 @@ const ProductInfoCard: React.FC<ProductInfoCardProps> = ({ product: initialProdu
       </div>
 
       {product.buyNowPrice && (
-        <p className="text-lg text-green-600">Buy Now Price: {formatPrice(product.buyNowPrice)}</p>
+        <p className="text-lg text-green-600">
+          Buy Now Price: {formatPrice(product.buyNowPrice)}
+        </p>
       )}
       <div className="flex items-center gap-2 flex-wrap">
         <p className="text-gray-700">
           Seller - {product.seller?.name || "Seller"} •{" "}
           <span className="text-yellow-500 inline-flex items-center gap-0.5">
-            {Array.from({ length: Math.round(product.seller?.rating || 0) }).map((_, i) => (
+            {Array.from({
+              length: Math.round(product.seller?.rating || 0),
+            }).map((_, i) => (
               <Star key={i} className="w-4 h-4 fill-yellow-500" />
             ))}{" "}
-            <span className="ml-1">{product.seller?.rating?.toFixed(1) || "N/A"}</span>
+            <span className="ml-1">
+              {product.seller?.rating?.toFixed(1) || "N/A"}
+            </span>
           </span>
         </p>
         {!isGuest && product.seller?._id && (
@@ -337,8 +379,12 @@ const ProductInfoCard: React.FC<ProductInfoCardProps> = ({ product: initialProdu
           {isWinnerConfirmed ? (
             isCurrentUserWinner ? (
               <div>
-                <p className="text-green-700 font-bold text-lg">Congratulations! You won this auction!</p>
-                <p className="text-green-600 text-sm mt-1">Please proceed to checkout to complete your purchase.</p>
+                <p className="text-green-700 font-bold text-lg">
+                  Congratulations! You won this auction!
+                </p>
+                <p className="text-green-600 text-sm mt-1">
+                  Please proceed to checkout to complete your purchase.
+                </p>
               </div>
             ) : (
               <div>
@@ -346,12 +392,20 @@ const ProductInfoCard: React.FC<ProductInfoCardProps> = ({ product: initialProdu
                   <p className="text-green-700 font-semibold">
                     Winner:{" "}
                     {isGuest ? (
-                      maskName(product.currentBidder?.name || product.highestBidder?.name || "Anonymous")
+                      maskName(
+                        product.currentBidder?.name ||
+                          product.highestBidder?.name ||
+                          "Anonymous"
+                      )
                     ) : user?.role === "seller" ? (
                       <button
                         onClick={() => {
-                          const bidderId = product.currentBidder?._id || product.highestBidder?._id;
-                          const bidderName = product.currentBidder?.name || product.highestBidder?.name;
+                          const bidderId =
+                            product.currentBidder?._id ||
+                            product.highestBidder?._id;
+                          const bidderName =
+                            product.currentBidder?.name ||
+                            product.highestBidder?.name;
                           if (bidderId) {
                             setSelectedUserId(bidderId);
                             setSelectedUserName(bidderName || null);
@@ -360,24 +414,36 @@ const ProductInfoCard: React.FC<ProductInfoCardProps> = ({ product: initialProdu
                         }}
                         className="text-green-700 hover:underline hover:scale-105 transition-transform inline-block font-semibold"
                       >
-                        {product.currentBidder?.name || product.highestBidder?.name || "Anonymous"}
+                        {product.currentBidder?.name ||
+                          product.highestBidder?.name ||
+                          "Anonymous"}
                       </button>
                     ) : (
                       <span className="text-green-700 font-semibold">
-                        {product.currentBidder?.name || product.highestBidder?.name || "Anonymous"}
+                        {product.currentBidder?.name ||
+                          product.highestBidder?.name ||
+                          "Anonymous"}
                       </span>
                     )}
                   </p>
                 </div>
-                {(product.currentBidder?.rating || product.highestBidder?.rating) && (
+                {(product.currentBidder?.rating ||
+                  product.highestBidder?.rating) && (
                   <span className="text-yellow-500 text-sm inline-flex items-center gap-0.5">
                     {Array.from({
-                      length: Math.round(product.currentBidder?.rating || product.highestBidder?.rating || 0),
+                      length: Math.round(
+                        product.currentBidder?.rating ||
+                          product.highestBidder?.rating ||
+                          0
+                      ),
                     }).map((_, i) => (
                       <Star key={i} className="w-3.5 h-3.5 fill-yellow-500" />
                     ))}{" "}
                     <span className="ml-1">
-                      {(product.currentBidder?.rating || product.highestBidder?.rating)?.toFixed(1)}
+                      {(
+                        product.currentBidder?.rating ||
+                        product.highestBidder?.rating
+                      )?.toFixed(1)}
                     </span>
                   </span>
                 )}
@@ -385,9 +451,12 @@ const ProductInfoCard: React.FC<ProductInfoCardProps> = ({ product: initialProdu
             )
           ) : (
             <div>
-              <p className="text-orange-700 font-semibold">Awaiting winner confirmation...</p>
+              <p className="text-orange-700 font-semibold">
+                Awaiting winner confirmation...
+              </p>
               <p className="text-orange-600 text-sm mt-1">
-                The seller is reviewing the final bid. This usually takes 1-2 business days.
+                The seller is reviewing the final bid. This usually takes 1-2
+                business days.
               </p>
             </div>
           )}
@@ -398,12 +467,19 @@ const ProductInfoCard: React.FC<ProductInfoCardProps> = ({ product: initialProdu
           {product.bidCount > 0 ? (
             <>
               {isGuest ? (
-                maskName(product.highestBidder?.name || product.currentBidder?.name || "Anonymous")
+                maskName(
+                  product.highestBidder?.name ||
+                    product.currentBidder?.name ||
+                    "Anonymous"
+                )
               ) : user?.role === "seller" ? (
                 <button
                   onClick={() => {
-                    const bidderId = product.currentBidder?._id || product.highestBidder?._id;
-                    const bidderName = product.currentBidder?.name || product.highestBidder?.name;
+                    const bidderId =
+                      product.currentBidder?._id || product.highestBidder?._id;
+                    const bidderName =
+                      product.currentBidder?.name ||
+                      product.highestBidder?.name;
                     if (bidderId) {
                       setSelectedUserId(bidderId);
                       setSelectedUserName(bidderName || null);
@@ -412,22 +488,34 @@ const ProductInfoCard: React.FC<ProductInfoCardProps> = ({ product: initialProdu
                   }}
                   className="text-gray-700 hover:underline hover:scale-105 transition-transform inline-block hover:text-primary-blue"
                 >
-                  {product.highestBidder?.name || product.currentBidder?.name || "Anonymous"}
+                  {product.highestBidder?.name ||
+                    product.currentBidder?.name ||
+                    "Anonymous"}
                 </button>
               ) : (
                 <span className="text-gray-700">
-                  {product.highestBidder?.name || product.currentBidder?.name || "Anonymous"}
+                  {product.highestBidder?.name ||
+                    product.currentBidder?.name ||
+                    "Anonymous"}
                 </span>
               )}{" "}
               •{" "}
               <span className="text-yellow-500 inline-flex items-center gap-0.5">
                 {Array.from({
-                  length: Math.round(product.highestBidder?.rating || product.currentBidder?.rating || 0),
+                  length: Math.round(
+                    product.highestBidder?.rating ||
+                      product.currentBidder?.rating ||
+                      0
+                  ),
                 }).map((_, i) => (
                   <Star key={i} className="w-4 h-4 fill-yellow-500" />
                 ))}{" "}
                 <span className="ml-1">
-                  {(product.highestBidder?.rating || product.currentBidder?.rating || 0).toFixed(1)}
+                  {(
+                    product.highestBidder?.rating ||
+                    product.currentBidder?.rating ||
+                    0
+                  ).toFixed(1)}
                 </span>
               </span>
             </>
@@ -456,7 +544,9 @@ const ProductInfoCard: React.FC<ProductInfoCardProps> = ({ product: initialProdu
 
                 // Update Server (Auto Bidder)
                 if (token && myAutoBidMax) {
-                  bidderApi.acknowledgeAutoBid(product._id, token).catch(console.error);
+                  bidderApi
+                    .acknowledgeAutoBid(product._id, token)
+                    .catch(console.error);
                 }
               }}
               className="relative bg-primary-blue rounded-2xl hover:scale-105 transition-transform duration-150 px-4 py-2 hover:cursor-pointer text-sm font-medium"
@@ -473,7 +563,9 @@ const ProductInfoCard: React.FC<ProductInfoCardProps> = ({ product: initialProdu
             {/* Add to Watchlist Link (Xử lý API) */}
             <button
               type="button"
-              onClick={isInWatchlist ? handleRemoveFromWatchlist : handleAddToWatchlist}
+              onClick={
+                isInWatchlist ? handleRemoveFromWatchlist : handleAddToWatchlist
+              }
               disabled={isAuctionEnded}
               className={`${
                 isAuctionEnded
@@ -482,17 +574,21 @@ const ProductInfoCard: React.FC<ProductInfoCardProps> = ({ product: initialProdu
                     ? "bg-gray-600 hover:scale-105"
                     : "bg-red-500 hover:scale-105"
               } rounded-2xl transition-transform duration-150 px-4 py-2 flex items-center gap-2 text-sm font-medium`}
-              title={isAuctionEnded ? "Cannot modify watchlist for ended auctions" : ""}
+              title={
+                isAuctionEnded
+                  ? "Cannot modify watchlist for ended auctions"
+                  : ""
+              }
             >
               {isAddingToWatchlist ? (
                 <>
-                  <Spinner />
+                  <Spinner size={16} />
                   <span>Adding...</span>
                 </>
               ) : isInWatchlist ? (
                 <>
                   <Heart className="w-4 h-4" />
-                  <span>Remove Watchlist</span>
+                  <span>Remove from Watchlist</span>
                 </>
               ) : (
                 <>
@@ -548,7 +644,8 @@ const ProductInfoCard: React.FC<ProductInfoCardProps> = ({ product: initialProdu
             className={`text-xl font-semibold w-full px-6 py-3 rounded-2xl shadow-md ${
               product.rejectedBidders?.includes(currentUserId)
                 ? "bg-red-500 cursor-not-allowed opacity-80"
-                : myAutoBidMax && Math.round(myAutoBidMax) > Math.round(product.currentPrice)
+                : myAutoBidMax &&
+                    Math.round(myAutoBidMax) > Math.round(product.currentPrice)
                   ? "bg-green-600 hover:bg-green-700 hover:cursor-pointer"
                   : "bg-primary-blue hover:scale-105 hover:cursor-pointer"
             } text-white transition-all duration-200 flex items-center justify-center gap-2`}
@@ -558,7 +655,8 @@ const ProductInfoCard: React.FC<ProductInfoCardProps> = ({ product: initialProdu
                 <ShieldX className="w-5 h-5" />
                 Rejected by Seller
               </>
-            ) : myAutoBidMax && Math.round(myAutoBidMax) > Math.round(product.currentPrice) ? (
+            ) : myAutoBidMax &&
+              Math.round(myAutoBidMax) > Math.round(product.currentPrice) ? (
               "Auto Bidding..."
             ) : (
               "Set Auto Bid"
@@ -608,8 +706,13 @@ const ProductInfoCard: React.FC<ProductInfoCardProps> = ({ product: initialProdu
         <div className="mt-4 space-y-3">
           <h3 className="text-lg font-semibold text-primary-blue">Updates</h3>
           {product.descriptionHistory.map((hist, index) => (
-            <div key={index} className="bg-gray-50 p-3 rounded-lg border border-gray-200">
-              <p className="text-xs text-gray-500 mb-1 font-medium">{new Date(hist.updatedAt).toLocaleString()}</p>
+            <div
+              key={index}
+              className="bg-gray-50 p-3 rounded-lg border border-gray-200"
+            >
+              <p className="text-xs text-gray-500 mb-1 font-medium">
+                {new Date(hist.updatedAt).toLocaleString()}
+              </p>
               <div className="text-gray-700 text-sm p-0 prose prose-sm max-w-none wrap-break-word overflow-hidden">
                 <ExpandableText content={hist.content} maxHeight={100} />
               </div>
