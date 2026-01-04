@@ -59,8 +59,11 @@ export interface SellerProfileResponse {
     name: string;
     email: string;
     role: "seller";
+    status: "ACTIVE" | "BLOCKED";
     avatar?: string;
     address?: string;
+    contactEmail?: string;
+    dateOfBirth?: string;
     createdAt: string;
     updatedAt: string;
   };

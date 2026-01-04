@@ -99,18 +99,14 @@ const BiddingProductCard: React.FC<BiddingProductCardProps> = ({ bid }) => {
             {/* Current Price - LUÔN HIỂN THỊ */}
             <div className="flex items-center gap-2">
               <span className="text-gray-600 font-medium">Current:</span>
-              <span className="text-blue-600 font-bold text-base">
-                {currentPrice.toLocaleString()}₫
-              </span>
+              <span className="text-blue-600 font-bold text-base">{currentPrice.toLocaleString()}₫</span>
             </div>
 
             {/* Buy Now Price - NẾU CÓ */}
             {buyNowPrice && (
               <div className="flex items-center gap-2">
                 <span className="text-gray-600 font-medium">Buy Now:</span>
-                <span className="text-orange-600 font-bold">
-                  {buyNowPrice.toLocaleString()}₫
-                </span>
+                <span className="text-orange-600 font-bold">{buyNowPrice.toLocaleString()}₫</span>
               </div>
             )}
 
@@ -118,9 +114,7 @@ const BiddingProductCard: React.FC<BiddingProductCardProps> = ({ bid }) => {
             {!isWinning && !awaitingConfirmation && currentBidder?.name && (
               <div className="flex items-center gap-2">
                 <span className="text-gray-600 font-medium">Top Bidder:</span>
-                <span className="text-red-600 font-semibold">
-                  {maskName(currentBidder.name)}
-                </span>
+                <span className="text-red-600 font-semibold">{currentBidder.name}</span>
               </div>
             )}
 
@@ -128,9 +122,7 @@ const BiddingProductCard: React.FC<BiddingProductCardProps> = ({ bid }) => {
             {(awaitingConfirmation || inProcessing) && seller?.name && (
               <div className="flex items-center gap-2">
                 <span className="text-gray-600 font-medium">Seller:</span>
-                <span className="text-gray-800 font-semibold">
-                  {seller.name}
-                </span>
+                <span className="text-gray-800 font-semibold">{seller.name}</span>
               </div>
             )}
 
@@ -147,9 +139,7 @@ const BiddingProductCard: React.FC<BiddingProductCardProps> = ({ bid }) => {
           {/* Time Remaining */}
           <div className={`text-right ${timeColor}`}>
             <div className="text-xs text-gray-500 mb-1">Time Left</div>
-            <div
-              className={`text-lg font-bold ${timeRemaining.isUrgent ? "animate-pulse" : ""}`}
-            >
+            <div className={`text-lg font-bold ${timeRemaining.isUrgent ? "animate-pulse" : ""}`}>
               {timeRemaining.text}
             </div>
           </div>
@@ -169,10 +159,7 @@ const BiddingProductCard: React.FC<BiddingProductCardProps> = ({ bid }) => {
         <div className="border-t border-gray-200 bg-amber-50 px-4 py-3">
           <p className="text-sm text-amber-800 text-center">
             The auction has ended. Waiting for{" "}
-            <span className="font-semibold">
-              {seller?.name ? seller.name : "seller"}
-            </span>{" "}
-            to confirm the winner.
+            <span className="font-semibold">{seller?.name ? seller.name : "seller"}</span> to confirm the winner.
           </p>
         </div>
       )}
@@ -182,9 +169,7 @@ const BiddingProductCard: React.FC<BiddingProductCardProps> = ({ bid }) => {
         <div className="border-t border-gray-200 bg-green-50 px-4 py-3">
           <p className="text-sm text-green-800 text-center">
             Congratulations! You won this auction.{" "}
-            <span className="font-semibold">
-              Payment and delivery in progress.
-            </span>
+            <span className="font-semibold">Payment and delivery in progress.</span>
           </p>
         </div>
       )}
