@@ -176,7 +176,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
               <div className="flex items-center gap-1.5">
                 <User className="w-3.5 h-3.5 mt-0.5 shrink-0" />
                 {currentTopBidderName ? (
-                  <span className="font-medium truncate">{maskName(currentTopBidderName)}</span>
+                  <span className="font-medium truncate">{currentTopBidderName}</span>
                 ) : (
                   <span className="text-gray-500">None</span>
                 )}
