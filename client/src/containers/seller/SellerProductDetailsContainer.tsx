@@ -15,11 +15,7 @@ import { orderApi } from "@services/order.api";
 import { useAlertStore } from "@stores/useAlertStore";
 import { checkRecentlyAdded, formatPrice, maskName } from "@utils/product";
 import { formatBidTime } from "@utils/time";
-import type {
-  Product,
-  ProductDetails,
-  QuestionAnswer,
-} from "@interfaces/product";
+import type { Product, ProductDetails, QuestionAnswer } from "@interfaces/product";
 import { Loader2 } from "lucide-react";
 import AppendDescriptionModal from "@components/seller/AppendDescriptionModal";
 import { useSocket } from "@contexts/SocketContext";
@@ -36,9 +32,7 @@ interface BidUpdateData {
   endTime: string;
 }
 
-const SellerProductDetailsContainer: React.FC<
-  SellerProductDetailsContainerProps
-> = ({ id }) => {
+const SellerProductDetailsContainer: React.FC<SellerProductDetailsContainerProps> = ({ id }) => {
   const addAlert = useAlertStore((state) => state.addAlert);
   const navigate = useNavigate();
   const [details, setDetails] = useState<ProductDetails | null>(null);
@@ -49,15 +43,11 @@ const SellerProductDetailsContainer: React.FC<
   const [isBidHistoryOpen, setIsBidHistoryOpen] = useState(false);
   const [isConfirmWinnerOpen, setIsConfirmWinnerOpen] = useState(false);
   const [confirmingWinner, setConfirmingWinner] = useState(false);
-  const [activeQuestion, setActiveQuestion] = useState<QuestionAnswer | null>(
-    null
-  );
+  const [activeQuestion, setActiveQuestion] = useState<QuestionAnswer | null>(null);
   const [answerDraft, setAnswerDraft] = useState("");
   const [answerError, setAnswerError] = useState<string | null>(null);
   const [isSubmittingAnswer, setIsSubmittingAnswer] = useState(false);
-  const [rejectingBidderId, setRejectingBidderId] = useState<string | null>(
-    null
-  );
+  const [rejectingBidderId, setRejectingBidderId] = useState<string | null>(null);
 
   const [isAppendModalOpen, setIsAppendModalOpen] = useState(false);
 
@@ -84,9 +74,7 @@ const SellerProductDetailsContainer: React.FC<
         setDetails(data);
         setError(null);
       } catch (err: unknown) {
-        const message =
-          (err as { message?: string })?.message ||
-          "Failed to load product details. Please try again.";
+        const message = (err as { message?: string })?.message || "Failed to load product details. Please try again.";
         setError(message);
         if (!withLoader) {
           addAlert("error", message);
@@ -154,10 +142,7 @@ const SellerProductDetailsContainer: React.FC<
 
   const allImages = useMemo(() => {
     if (!product) return [];
-    const images = [
-      product.mainImage,
-      ...(product.subImages ? product.subImages : []),
-    ].filter(Boolean) as string[];
+    const images = [product.mainImage, ...(product.subImages ? product.subImages : [])].filter(Boolean) as string[];
 
     if (images.length === 0) {
       return ["/product/placeholder.png"];
@@ -236,11 +221,7 @@ const SellerProductDetailsContainer: React.FC<
 
     try {
       setIsSubmittingAnswer(true);
-      const response = await sellerApi.answerQuestion(
-        product._id,
-        activeQuestion._id,
-        trimmed
-      );
+      const response = await sellerApi.answerQuestion(product._id, activeQuestion._id, trimmed);
 
       if (response?.message) {
         addAlert("success", response.message);
@@ -251,9 +232,7 @@ const SellerProductDetailsContainer: React.FC<
       await fetchDetails(false);
       closeAnswerModal();
     } catch (err: unknown) {
-      const message =
-        (err as { message?: string })?.message ||
-        "Failed to submit answer. Please try again.";
+      const message = (err as { message?: string })?.message || "Failed to submit answer. Please try again.";
       addAlert("error", message);
     } finally {
       setIsSubmittingAnswer(false);
@@ -281,9 +260,7 @@ const SellerProductDetailsContainer: React.FC<
       // Reopen modal with fresh data
       setTimeout(() => setIsBidHistoryOpen(true), 100);
     } catch (err: unknown) {
-      const message =
-        (err as { message?: string })?.message ||
-        "Failed to reject bidder. Please try again.";
+      const message = (err as { message?: string })?.message || "Failed to reject bidder. Please try again.";
       addAlert("error", message);
       throw err;
     } finally {
@@ -310,9 +287,7 @@ const SellerProductDetailsContainer: React.FC<
       await fetchDetails(false);
       setIsConfirmWinnerOpen(false);
     } catch (err: unknown) {
-      const message =
-        (err as { message?: string })?.message ||
-        "Failed to confirm winner. Please try again.";
+      const message = (err as { message?: string })?.message || "Failed to confirm winner. Please try again.";
       addAlert("error", message);
     } finally {
       setConfirmingWinner(false);
@@ -384,10 +359,7 @@ const SellerProductDetailsContainer: React.FC<
 
         <div className="flex flex-col md:flex-row gap-10">
           <div className="w-full md:w-5/12 shrink-0">
-            <ProductImageCard
-              images={allImages}
-              recentlyAdded={checkRecentlyAdded(product.startTime)}
-            />
+            <ProductImageCard images={allImages} recentlyAdded={checkRecentlyAdded(product.startTime)} />
           </div>
 
           <div className="flex-1">
@@ -408,50 +380,34 @@ const SellerProductDetailsContainer: React.FC<
 
         <div className="mt-8 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
-            <p className="text-sm text-gray-500 font-semibold">
-              Starting Price
-            </p>
-            <p className="text-xl font-semibold text-gray-900">
-              {formatPrice(product.startingPrice)}
-            </p>
+            <p className="text-sm text-gray-500 font-semibold">Starting Price</p>
+            <p className="text-xl font-semibold text-gray-900">{formatPrice(product.startingPrice)}</p>
           </div>
           <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
             <p className="text-sm text-gray-500 font-semibold">Buy Now Price</p>
             <p className="text-xl font-semibold text-yellow-600">
-              {product.buyNowPrice
-                ? formatPrice(product.buyNowPrice)
-                : "Not set"}
+              {product.buyNowPrice ? formatPrice(product.buyNowPrice) : "Not set"}
             </p>
           </div>
           <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
             <div className="flex justify-between items-center">
               <div>
-                <p className="text-sm text-gray-500 font-semibold">
-                  Highest Bidder / Bids
-                </p>
+                <p className="text-sm text-gray-500 font-semibold">Highest Bidder / Bids</p>
                 <p className="text-xl font-semibold text-gray-900 flex items-center gap-2">
                   <span>{product.bidCount} bids</span>
                   {product.currentBidder && (
-                    <span className="text-sm text-gray-600 font-normal">
-                      (by {maskName(product.currentBidder.name)})
-                    </span>
+                    <span className="text-sm text-gray-600 font-normal">(by {product.currentBidder.name})</span>
                   )}
                 </p>
               </div>
             </div>
           </div>
           <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
-            <p className="text-sm text-gray-500 font-semibold">
-              Rejected Bidders
-            </p>
-            <p className="text-xl font-semibold text-gray-900">
-              {product.rejectedBidders?.length}
-            </p>
+            <p className="text-sm text-gray-500 font-semibold">Rejected Bidders</p>
+            <p className="text-xl font-semibold text-gray-900">{product.rejectedBidders?.length}</p>
           </div>
           <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
-            <p className="text-sm text-gray-500 font-semibold">
-              Allow Unrated Bidders
-            </p>
+            <p className="text-sm text-gray-500 font-semibold">Allow Unrated Bidders</p>
             <p
               className={
                 product.allowUnratedBidders
@@ -466,9 +422,7 @@ const SellerProductDetailsContainer: React.FC<
             <p className="text-sm text-gray-500 font-semibold">Auto-Extend</p>
             <p
               className={
-                product.autoExtends
-                  ? "text-xl font-semibold text-green-700"
-                  : "text-xl font-semibold text-red-700"
+                product.autoExtends ? "text-xl font-semibold text-green-700" : "text-xl font-semibold text-red-700"
               }
             >
               {product.autoExtends ? "Enabled" : "Disabled"}
@@ -478,9 +432,7 @@ const SellerProductDetailsContainer: React.FC<
 
         <div className="mt-10 bg-white border border-gray-200 rounded-xl shadow-sm p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-2xl font-semibold text-gray-900">
-              Product Description
-            </h2>
+            <h2 className="text-2xl font-semibold text-gray-900">Product Description</h2>
             <button
               type="button"
               onClick={() => setIsAppendModalOpen(true)}
@@ -497,18 +449,11 @@ const SellerProductDetailsContainer: React.FC<
 
         {descriptionHistory.length > 0 && (
           <div className="mt-6 bg-white border border-gray-200 rounded-xl shadow-sm p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              Description Update History
-            </h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Description Update History</h3>
             <div className="space-y-4">
               {descriptionHistory.map((entry) => (
-                <div
-                  key={entry.updatedAt}
-                  className="border border-gray-100 rounded-lg p-4 bg-gray-50"
-                >
-                  <p className="text-xs text-gray-500 mb-2">
-                    Updated {formatBidTime(entry.updatedAt)}
-                  </p>
+                <div key={entry.updatedAt} className="border border-gray-100 rounded-lg p-4 bg-gray-50">
+                  <p className="text-xs text-gray-500 mb-2">Updated {formatBidTime(entry.updatedAt)}</p>
                   <div
                     className="text-gray-700 prose prose-sm max-w-none break-all"
                     dangerouslySetInnerHTML={{
@@ -567,9 +512,7 @@ const SellerProductDetailsContainer: React.FC<
       >
         <div className="space-y-4">
           <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-            <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">
-              Question
-            </p>
+            <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Question</p>
             <p className="text-sm text-gray-800">{activeQuestion?.question}</p>
             <p className="text-xs text-gray-500 mt-2">
               Asked by {activeQuestion?.questioner.name ?? "Unknown bidder"} on{" "}
@@ -578,10 +521,7 @@ const SellerProductDetailsContainer: React.FC<
           </div>
 
           <div>
-            <label
-              htmlFor="answer"
-              className="block text-sm font-medium text-gray-700 mb-2"
-            >
+            <label htmlFor="answer" className="block text-sm font-medium text-gray-700 mb-2">
               Your Answer
             </label>
             <textarea
@@ -595,12 +535,8 @@ const SellerProductDetailsContainer: React.FC<
               placeholder="Provide a detailed answer to help the bidder."
               maxLength={2000}
             />
-            {answerError && (
-              <p className="text-xs text-red-500 mt-2">{answerError}</p>
-            )}
-            <p className="text-xs text-gray-400 mt-2">
-              {answerDraft.trim().length} / 2000 characters
-            </p>
+            {answerError && <p className="text-xs text-red-500 mt-2">{answerError}</p>}
+            <p className="text-xs text-gray-400 mt-2">{answerDraft.trim().length} / 2000 characters</p>
           </div>
         </div>
       </PopUpWindow>
@@ -609,51 +545,28 @@ const SellerProductDetailsContainer: React.FC<
         isOpen={isConfirmWinnerOpen}
         onClose={() => setIsConfirmWinnerOpen(false)}
         title="Confirm Auction Winner"
-        submitText={
-          confirmDisabled
-            ? "Close"
-            : winnerConfirmed
-              ? "Close"
-              : "Confirm Winner"
-        }
-        onSubmit={
-          confirmDisabled || winnerConfirmed
-            ? () => setIsConfirmWinnerOpen(false)
-            : handleConfirmWinner
-        }
+        submitText={confirmDisabled ? "Close" : winnerConfirmed ? "Close" : "Confirm Winner"}
+        onSubmit={confirmDisabled || winnerConfirmed ? () => setIsConfirmWinnerOpen(false) : handleConfirmWinner}
         isLoading={confirmingWinner}
       >
         <div className="space-y-4 text-sm text-gray-700">
           <p className="text-base">
-            Current highest bidder:{" "}
-            <span className="font-semibold">
-              {maskName(product.highestBidder?.name ?? "")}
-            </span>
+            Current highest bidder: <span className="font-semibold">{product.highestBidder?.name ?? ""}</span>
           </p>
           <p className="text-blue-600 text-base">
-            Final bid amount:{" "}
-            <span className="font-semibold">
-              {formatPrice(highestBidAmount)}
-            </span>
+            Final bid amount: <span className="font-semibold">{formatPrice(highestBidAmount)}</span>
           </p>
           {product.highestBidder?.rating !== undefined && (
-            <p className="text-yellow-600 text-base">
-              Bidder rating: {product.highestBidder.rating.toFixed(2)} ★
-            </p>
+            <p className="text-yellow-600 text-base">Bidder rating: {product.highestBidder.rating.toFixed(2)} ★</p>
           )}
           {winnerConfirmed ? (
-            <p className="text-green-600 font-medium">
-              You have already confirmed this winner.
-            </p>
+            <p className="text-green-600 font-medium">You have already confirmed this winner.</p>
           ) : confirmDisabled ? (
-            <p className="text-yellow-600">
-              You cannot confirm a winner until there is an active highest bid.
-            </p>
+            <p className="text-yellow-600">You cannot confirm a winner until there is an active highest bid.</p>
           ) : (
             <p className="text-red-700">
-              Confirming the winner will finalize this auction. If you do not
-              wish to award the product to the current highest bidder, reject
-              them first from the bid history list to recalculate the winner.
+              Confirming the winner will finalize this auction. If you do not wish to award the product to the current
+              highest bidder, reject them first from the bid history list to recalculate the winner.
             </p>
           )}
         </div>

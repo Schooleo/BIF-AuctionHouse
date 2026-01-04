@@ -345,7 +345,9 @@ const ProductInfoCard: React.FC<ProductInfoCardProps> = ({ product: initialProdu
                 <div className="flex items-center gap-2">
                   <p className="text-green-700 font-semibold">
                     Winner:{" "}
-                    {product.currentBidder?._id || product.highestBidder?._id ? (
+                    {isGuest ? (
+                      maskName(product.currentBidder?.name || product.highestBidder?.name || "Anonymous")
+                    ) : user?.role === "seller" ? (
                       <button
                         onClick={() => {
                           const bidderId = product.currentBidder?._id || product.highestBidder?._id;
@@ -356,12 +358,14 @@ const ProductInfoCard: React.FC<ProductInfoCardProps> = ({ product: initialProdu
                             setIsRatingModalOpen(true);
                           }
                         }}
-                        className="text-green-700 hover:underline hover:scale-150 transition-transform inline-block font-semibold"
+                        className="text-green-700 hover:underline hover:scale-105 transition-transform inline-block font-semibold"
                       >
                         {product.currentBidder?.name || product.highestBidder?.name || "Anonymous"}
                       </button>
                     ) : (
-                      maskName(product.currentBidder?.name || product.highestBidder?.name || "Anonymous")
+                      <span className="text-green-700 font-semibold">
+                        {product.currentBidder?.name || product.highestBidder?.name || "Anonymous"}
+                      </span>
                     )}
                   </p>
                 </div>
@@ -393,7 +397,9 @@ const ProductInfoCard: React.FC<ProductInfoCardProps> = ({ product: initialProdu
           Current Highest Bidder -{" "}
           {product.bidCount > 0 ? (
             <>
-              {product.currentBidder?._id || product.highestBidder?._id ? (
+              {isGuest ? (
+                maskName(product.highestBidder?.name || product.currentBidder?.name || "Anonymous")
+              ) : user?.role === "seller" ? (
                 <button
                   onClick={() => {
                     const bidderId = product.currentBidder?._id || product.highestBidder?._id;
@@ -404,12 +410,14 @@ const ProductInfoCard: React.FC<ProductInfoCardProps> = ({ product: initialProdu
                       setIsRatingModalOpen(true);
                     }
                   }}
-                  className="text-gray-700 hover:underline hover:scale-150 transition-transform inline-block hover:text-primary-blue font-medium"
+                  className="text-gray-700 hover:underline hover:scale-105 transition-transform inline-block hover:text-primary-blue"
                 >
                   {product.highestBidder?.name || product.currentBidder?.name || "Anonymous"}
                 </button>
               ) : (
-                maskName(product.highestBidder?.name || product.currentBidder?.name || "Anonymous")
+                <span className="text-gray-700">
+                  {product.highestBidder?.name || product.currentBidder?.name || "Anonymous"}
+                </span>
               )}{" "}
               •{" "}
               <span className="text-yellow-500 inline-flex items-center gap-0.5">

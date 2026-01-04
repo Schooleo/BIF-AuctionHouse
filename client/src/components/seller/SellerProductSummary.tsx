@@ -43,7 +43,7 @@ const SellerProductSummary: React.FC<SellerProductSummaryProps> = ({
   // Use currentBidder as the primary source, fallback to highestBidder
   const effectiveBidder = product.currentBidder || product.highestBidder;
 
-  const highestBidderDisplay = effectiveBidder?.name ? maskName(effectiveBidder.name) : "No active bids";
+  const highestBidderDisplay = effectiveBidder?.name ? effectiveBidder.name : "No active bids";
 
   const highestBidderRating = effectiveBidder?.rating;
 
