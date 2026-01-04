@@ -16,7 +16,12 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({
   const [socket, setSocket] = useState<Socket | null>(null);
 
   useEffect(() => {
-    const socketInstance = io("http://localhost:3001", {
+    const socketUrl =
+      import.meta.env.VITE_APP_SOCKET_URL ||
+      import.meta.env.VITE_APP_API_URL ||
+      "http://localhost:3001";
+
+    const socketInstance = io(socketUrl, {
       transports: ["websocket"],
       autoConnect: true,
     });
