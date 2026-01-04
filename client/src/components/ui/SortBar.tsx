@@ -12,6 +12,7 @@ const SortBar: React.FC<SortBarProps> = ({ sort, setSort }) => {
   const handleSortChange = (value: ProductSortOption) => {
     setSort(value);
     searchParams.set("sort", value);
+    searchParams.set("page", "1"); 
     setSearchParams(searchParams);
   };
 
@@ -28,10 +29,14 @@ const SortBar: React.FC<SortBarProps> = ({ sort, setSort }) => {
         onChange={(e) => handleSortChange(e.target.value as ProductSortOption)}
         className="px-3 py-2 border rounded-md custom-select"
       >
-        <option value="default">Default</option>
-        <option value="endingSoon">Ending Soon</option>
+        <option value="default">Newest First (Default)</option>
+        <option value="oldest">Oldest First</option>
+        <option value="endingSoon">Ending Soonest</option>
+        <option value="endingLatest">Ending Latest</option>
         <option value="mostBidOn">Most Bid-On</option>
-        <option value="highestPriced">Highest Priced</option>
+        <option value="leastBidOn">Least Bid-On</option>
+        <option value="highestPriced">Highest Price</option>
+        <option value="lowestPriced">Lowest Price</option>
       </select>
     </div>
   );

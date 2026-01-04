@@ -8,7 +8,17 @@ export const viewProductsSchema = paginationSchema.extend({
   max_price: z.coerce.number().min(0).optional(),
 
   sort: z
-    .enum(["default", "endingSoon", "mostBidOn", "highestPriced"])
+    .enum([
+      "default",
+      "endingSoon",
+      "endingLatest",
+      "mostBidOn",
+      "leastBidOn",
+      "highestPriced",
+      "lowestPriced",
+      "newest",
+      "oldest"
+    ])
     .optional()
     .default("default"),
 
