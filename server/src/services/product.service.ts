@@ -34,8 +34,7 @@ const normalizeUser = (user: any): UserSummary => {
   if (user.name) name = user.name;
   else if (user.displayName) name = user.displayName;
   else if (user.username) name = user.username;
-  else if (user.firstName)
-    name = `${user.firstName} ${user.lastName || ""}`.trim();
+  else if (user.firstName) name = `${user.firstName} ${user.lastName || ""}`.trim();
   else if (user.email) name = user.email.split("@")[0];
 
   let calculatedRating = 0;
@@ -71,9 +70,7 @@ const normalizeCategory = (category: any): ProductCategory => {
   return {
     _id: category._id?.toString() ?? "",
     name: category.name ?? "Unknown Category",
-    parentCategoryId: category.parentCategoryId
-      ? category.parentCategoryId.toString()
-      : undefined,
+    parentCategoryId: category.parentCategoryId ? category.parentCategoryId.toString() : undefined,
   };
 };
 
@@ -213,25 +210,16 @@ export const ProductService = {
           parent: { $in: childCats.map((c) => c._id) },
         }).select("_id");
 
-        const allCategoryIds = [
-          ...catObjectIds,
-          ...childCats.map((c) => c._id),
-          ...grandChildCats.map((c) => c._id),
-        ];
+        const allCategoryIds = [...catObjectIds, ...childCats.map((c) => c._id), ...grandChildCats.map((c) => c._id)];
 
         filter.category = { $in: allCategoryIds };
       }
     }
 
-    if (
-      (min_price !== undefined && !isNaN(min_price)) ||
-      (max_price !== undefined && !isNaN(max_price))
-    ) {
+    if ((min_price !== undefined && !isNaN(min_price)) || (max_price !== undefined && !isNaN(max_price))) {
       filter.currentPrice = {};
-      if (min_price !== undefined && !isNaN(min_price))
-        filter.currentPrice.$gte = min_price;
-      if (max_price !== undefined && !isNaN(max_price))
-        filter.currentPrice.$lte = max_price;
+      if (min_price !== undefined && !isNaN(min_price)) filter.currentPrice.$gte = min_price;
+      if (max_price !== undefined && !isNaN(max_price)) filter.currentPrice.$lte = max_price;
     }
 
     console.log("Search params received:", { min_price, max_price });
@@ -283,10 +271,7 @@ export const ProductService = {
         $lookup: {
           from: "bids",
           let: { pid: "$_id" },
-          pipeline: [
-            { $match: { $expr: { $eq: ["$product", "$$pid"] } } },
-            { $count: "count" },
-          ],
+          pipeline: [{ $match: { $expr: { $eq: ["$product", "$$pid"] } } }, { $count: "count" }],
           as: "bidCounts",
         },
       },
@@ -348,8 +333,7 @@ export const ProductService = {
     const results = await Product.aggregate(pipeline).allowDiskUse(true).exec();
 
     // Total count (remains the same)
-    const countFilter =
-      q.trim().length > 0 ? { $text: { $search: q }, ...filter } : filter;
+    const countFilter = q.trim().length > 0 ? { $text: { $search: q }, ...filter } : filter;
     const total = await Product.countDocuments(countFilter);
 
     return {
@@ -370,13 +354,11 @@ export const ProductService = {
     productId: string,
     opts?: { bidHistoryPage?: number; bidHistoryLimit?: number }
   ): Promise<ProductDetails | null> {
-    if (!Types.ObjectId.isValid(productId))
-      throw new Error("Invalid product id");
+    if (!Types.ObjectId.isValid(productId)) throw new Error("Invalid product id");
     const pid = new Types.ObjectId(productId);
 
     // Common fields to populate for users (Includes 'name' for seed data)
-    const userFields =
-      "name username displayName positiveRatings negativeRatings rating email";
+    const userFields = "name username displayName positiveRatings negativeRatings rating email";
 
     // 1. Fetch product with seller, currentBidder, questions populated
     const productDoc = await Product.findById(pid)
@@ -405,9 +387,7 @@ export const ProductService = {
     const seller = normalizeUser(productDoc.seller);
     const category = normalizeCategory(productDoc.category);
 
-    const currentBidder = productDoc.currentBidder
-      ? normalizeUser(productDoc.currentBidder)
-      : null;
+    const currentBidder = productDoc.currentBidder ? normalizeUser(productDoc.currentBidder) : null;
 
     const rejectedBidderIds = Array.isArray(productDoc.rejectedBidders)
       ? productDoc.rejectedBidders.map((id: any) => id.toString())
@@ -441,10 +421,7 @@ export const ProductService = {
 
     // 5. Normalize bid history
     const bidHistoryPage = Math.max(1, opts?.bidHistoryPage ?? 1);
-    const bidHistoryLimit = Math.min(
-      200,
-      Math.max(1, opts?.bidHistoryLimit ?? 20)
-    );
+    const bidHistoryLimit = Math.min(200, Math.max(1, opts?.bidHistoryLimit ?? 20));
     const bidHistorySkip = (bidHistoryPage - 1) * bidHistoryLimit;
 
     const bidHistoryDocs = await Bid.find({ product: pid })
@@ -462,22 +439,24 @@ export const ProductService = {
     }));
 
     // 6. Normalize questions
-    const questions: QuestionAnswer[] = (productDoc.questions || []).map(
-      (q) => ({
-        _id: q._id.toString(),
-        question: q.question,
-        questioner: normalizeUser(q.questioner),
-        askedAt: q.askedAt.toISOString(),
-        answer: q.answer ?? "",
-        answeredAt: q.answeredAt?.toISOString() ?? "",
-        answerer: normalizeUser(q.answerer),
-      })
-    );
+    const questions: QuestionAnswer[] = (productDoc.questions || []).map((q) => ({
+      _id: q._id.toString(),
+      question: q.question,
+      questioner: normalizeUser(q.questioner),
+      askedAt: q.askedAt.toISOString(),
+      answer: q.answer ?? "",
+      answeredAt: q.answeredAt?.toISOString() ?? "",
+      answerer: normalizeUser(q.answerer),
+    }));
 
-    // 7. Related products
-    const relatedDocs = await Product.find({
+    // 7. Related products (prioritize active auctions)
+    const currentTime = new Date();
+
+    // First, try to get active (not ended) products
+    const activeRelated = await Product.find({
       category: productDoc.category,
       _id: { $ne: pid },
+      endTime: { $gt: currentTime },
     })
       .sort({ startTime: -1 })
       .limit(5)
@@ -485,6 +464,24 @@ export const ProductService = {
       .populate("category", "name")
       .select("-questions -bidders -descriptionHistory")
       .lean<RelatedProductDoc[]>();
+
+    // If we have fewer than 5 active products, fill with ended products
+    let relatedDocs = activeRelated;
+    if (activeRelated.length < 5) {
+      const endedRelated = await Product.find({
+        category: productDoc.category,
+        _id: { $ne: pid },
+        endTime: { $lte: currentTime },
+      })
+        .sort({ endTime: -1 })
+        .limit(5 - activeRelated.length)
+        .populate("seller", userFields)
+        .populate("category", "name")
+        .select("-questions -bidders -descriptionHistory")
+        .lean<RelatedProductDoc[]>();
+
+      relatedDocs = [...activeRelated, ...endedRelated];
+    }
 
     const related = relatedDocs.map((p: RelatedProductDoc) => ({
       // Explicitly map all fields to ensure 'Product' interface compliance
@@ -520,12 +517,9 @@ export const ProductService = {
 
     // 8. Time-related flags
     const now = Date.now();
-    const timeRemainingMs = productDoc.endTime
-      ? new Date(productDoc.endTime).getTime() - now
-      : 0;
+    const timeRemainingMs = productDoc.endTime ? new Date(productDoc.endTime).getTime() - now : 0;
     const isEndingSoon = timeRemainingMs <= 3 * 24 * 60 * 60 * 1000;
-    const isNew =
-      now - new Date(productDoc.startTime).getTime() <= 60 * 60 * 1000;
+    const isNew = now - new Date(productDoc.startTime).getTime() <= 60 * 60 * 1000;
 
     // 9. Return normalized ProductDetails
     return {

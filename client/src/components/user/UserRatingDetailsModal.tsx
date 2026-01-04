@@ -113,7 +113,7 @@ const UserRatingDetailsModal: React.FC<UserRatingDetailsModalProps> = ({ isOpen,
 
               {/* User Details */}
               <div className="flex-1">
-                <h3 className="text-xl font-semibold text-gray-800">{maskName(userName || userInfo.name)}</h3>
+                <h3 className="text-xl font-semibold text-gray-800">{userName || userInfo.name}</h3>
                 <div className="flex items-center gap-4 mt-2">
                   <div className="text-sm text-gray-600">
                     <span className="font-medium">Rating Score:</span>{" "}
@@ -191,7 +191,7 @@ const UserRatingDetailsModal: React.FC<UserRatingDetailsModalProps> = ({ isOpen,
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-2">
-                        <span className="font-medium text-gray-800">{maskName(rating.rater.name)}</span>
+                        <span className="font-medium text-gray-800">{rating.rater.name}</span>
                         {rating.score === 1 ? (
                           <span className="inline-flex items-center gap-1 bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-medium">
                             <ThumbsUp size={12} />
