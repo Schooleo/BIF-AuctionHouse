@@ -16,12 +16,34 @@ export const protect = (roles?: UserRole[]) => {
       const user = req.user as { role: UserRole };
 
       if (!user || !roles.includes(user.role)) {
-        return res.status(403).json({ message: "Forbidden: insufficient permissions" });
+        return res
+          .status(403)
+          .json({ message: "Forbidden: insufficient permissions" });
       }
 
       next();
     },
   ];
+};
+
+export const optionalProtect = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  passport.authenticate(
+    "jwt",
+    { session: false },
+    (err: any, user: any, info: any) => {
+      // If error or no user, just proceed without populating req.user
+      // We don't return 401/403 here because it's optional
+      if (err || !user) {
+        return next();
+      }
+      req.user = user;
+      next();
+    }
+  )(req, res, next);
 };
 
 export const googleAuthMiddleware = (

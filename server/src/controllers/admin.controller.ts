@@ -12,7 +12,7 @@ export const listCategories = async (req: Request, res: Response) => {
       ? parseInt(req.query.page as string)
       : undefined;
     const limit = req.query.limit ? parseInt(req.query.limit as string) : 8;
-    const search = (req.query.q as string) || (req.query.search as string);
+    const search = req.query.q as string;
 
     if (page) {
       const result = await CategoryService.listCategoriesPaginated(
@@ -103,14 +103,14 @@ export const removeProduct = async (req: Request, res: Response) => {
 // Get users with filtering and pagination
 export const getUsers = async (req: Request, res: Response) => {
   try {
-    const { page, limit, search, role, status, sortBy, sortOrder, viewTrash } =
+    const { page, limit, q, role, status, sortBy, sortOrder, viewTrash } =
       req.query;
 
     // Build params object
     const params: UserSearchParams = {
       page: page ? Number(page) : 1,
       limit: limit ? Number(limit) : 10,
-      ...(search && { search: String(search) }),
+      ...(q && { search: String(q) }),
       ...(role && { role: String(role) }),
       ...(status && { status: String(status) }),
       ...(sortBy && { sortBy: String(sortBy) }),
@@ -312,7 +312,7 @@ export const manageUserUpgradeRequests = async (
   res: Response
 ) => {
   try {
-    const { page, limit, status, search, sortBy } = req.query;
+    const { page, limit, status, q, sortBy } = req.query;
 
     const params = {
       page: page ? Number(page) : 1,
@@ -320,7 +320,7 @@ export const manageUserUpgradeRequests = async (
       ...(status && {
         status: String(status) as "pending" | "approved" | "rejected",
       }),
-      ...(search && { search: String(search) }),
+      ...(q && { search: String(q) }),
       ...(sortBy && { sortBy: String(sortBy) as "newest" | "oldest" }),
     };
 
@@ -388,7 +388,7 @@ export const listOrders = async (req: Request, res: Response) => {
     const limit = parseInt((req.query.limit as string) || "10");
     const filter = (req.query.filter as string) || "all";
     const sort = (req.query.sort as string) || "newest";
-    const search = (req.query.q as string) || (req.query.search as string);
+    const search = req.query.q as string;
 
     const result = await AdminService.listOrdersPaginated(
       page,
@@ -522,7 +522,7 @@ export const getProducts = async (req: Request, res: Response) => {
     const {
       page = 1,
       limit = 12,
-      search = "",
+      q = "",
       sortBy = "createdAt",
       sortOrder = "desc",
       status = "active",
@@ -555,7 +555,7 @@ export const getProducts = async (req: Request, res: Response) => {
     const result = await AdminService.getProducts({
       page: Number(page),
       limit: Number(limit),
-      search: String(search),
+      search: String(q),
       sortBy: String(sortBy),
       sortOrder: sortOrder as "asc" | "desc",
       status: status as "active" | "ended",
@@ -786,7 +786,7 @@ export const getBannedUsers = async (req: Request, res: Response) => {
   try {
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
-    const search = req.query.search as string;
+    const search = req.query.q as string;
 
     const result = await AdminService.getBannedUsers({
       page,
@@ -866,7 +866,9 @@ export const resetUserPassword = async (req: Request, res: Response) => {
     const { newPassword } = req.body;
 
     if (!id || !newPassword) {
-      res.status(400).json({ message: "User ID and new password are required" });
+      res
+        .status(400)
+        .json({ message: "User ID and new password are required" });
       return;
     }
 

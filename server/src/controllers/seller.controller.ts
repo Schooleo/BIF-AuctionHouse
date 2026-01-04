@@ -178,12 +178,12 @@ export const viewSellerProducts = async (req: Request, res: Response) => {
     }
 
     // Query params are validated and coerced by middleware
-    const { page, limit, search, sortBy, sortOrder, status } = req.query as any;
+    const { page, limit, q, sortBy, sortOrder, status } = req.query as any;
 
     const result = await SellerService.getSellerProducts(String(userId), {
       page,
       limit,
-      search,
+      search: q,
       sortBy,
       sortOrder,
       status,

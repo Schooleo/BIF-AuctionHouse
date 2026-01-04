@@ -489,7 +489,12 @@ export const bidderService = {
     }
   },
 
-  async getBidHistory(productId: string, page: number = 1, limit: number = 20) {
+  async getBidHistory(
+    productId: string,
+    page: number = 1,
+    limit: number = 20,
+    isAuthenticated: boolean = false
+  ) {
     // Kiểm tra sản phẩm tồn tại
     const product = await Product.findById(productId);
     if (!product) {
@@ -509,7 +514,9 @@ export const bidderService = {
     const totalPages = Math.ceil(totalBids / limit);
 
     const bidHistory = bids.map((bid) => ({
-      bidder: maskBidderName((bid.bidder as any).name),
+      bidder: isAuthenticated
+        ? (bid.bidder as any).name
+        : maskBidderName((bid.bidder as any).name),
       price: bid.price,
       time: bid.createdAt,
     }));

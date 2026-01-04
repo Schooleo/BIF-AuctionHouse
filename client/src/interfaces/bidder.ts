@@ -1,4 +1,4 @@
-import type { Product } from "./product";
+import type { Product, BidHistoryItem } from "./product";
 
 export interface BidderProfile {
   profile: {
@@ -97,6 +97,24 @@ export interface BidItem extends Product {
   inProcessing: boolean;
 }
 
+export interface UnbanRequest {
+  _id: string;
+  user: string;
+  title: string;
+  details: string;
+  status: "PENDING" | "APPROVED" | "DENIED";
+  adminNote?: string;
+  processedBy?: string;
+  processedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateUnbanRequestDto {
+  title: string;
+  details: string;
+}
+
 export interface GetMyBidsResponse {
   bids: BidItem[];
   pagination: {
@@ -109,5 +127,71 @@ export interface GetMyBidsResponse {
     awaitingTotal: number;
     activeTotal: number;
     processingTotal: number;
+  };
+}
+
+export interface SuggestedPriceResponse {
+  suggestedPrice: number;
+  currentPrice: number;
+  stepPrice: number;
+  buyNowPrice?: number;
+  myAutoBidMaxPrice?: number;
+  myAutoBidStepPrice?: number;
+  myAutoBidLastViewedBidCount?: number;
+}
+
+export interface PlaceBidResponse {
+  message: string;
+  data: {
+    bid: {
+      _id?: string;
+      product?: string;
+      bidder?: string;
+      price: number;
+      createdAt?: string;
+    };
+    product: {
+      currentPrice: number;
+      currentBidder: {
+        _id: string;
+        name: string;
+        rating: number;
+      };
+      bidCount: number;
+    };
+  };
+}
+
+export interface AddToWatchlistResponse {
+  message: string;
+  data: {
+    _id: string;
+    user: string;
+    product: string;
+    createdAt: string;
+    updatedAt: string;
+  };
+}
+
+export interface BidHistoryResponse {
+  bidHistory: BidHistoryItem[];
+  pagination: {
+    currentPage: number;
+    totalPages: number;
+    totalBids: number;
+    limit: number;
+  };
+}
+
+export interface AskQuestionResponse {
+  message: string;
+  question: {
+    _id: string;
+    question: string;
+    questioner: {
+      _id: string;
+      name: string;
+    };
+    askedAt: string;
   };
 }

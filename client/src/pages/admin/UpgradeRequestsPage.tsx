@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, ThumbsUp, ThumbsDown } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import { adminApi } from "@services/admin.api";
 import { useAlertStore } from "@stores/useAlertStore";
@@ -57,6 +57,7 @@ const UpgradeRequestsPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [requests, setRequests] = useState<UpgradeRequest[]>([]);
   const [loading, setLoading] = useState(true);
+  const searchQuery = searchParams.get("q") || "";
 
   // Get initial values from URL or defaults
   const [filter, setFilter] = useState<
@@ -87,16 +88,30 @@ const UpgradeRequestsPage: React.FC = () => {
 
   // Update URL params whenever filters change
   const updateURLParams = React.useCallback(() => {
-    const params = new URLSearchParams();
+    const params = new URLSearchParams(searchParams);
     if (filter !== "default") params.set("status", filter);
+    else params.delete("status");
+
     if (page !== 1) params.set("page", page.toString());
+    else params.delete("page");
+
     if (sortBy !== "newest") params.set("sort", sortBy);
+    else params.delete("sort");
+
+    if (searchQuery) params.set("q", searchQuery);
+    else params.delete("q");
+
     setSearchParams(params, { replace: true });
-  }, [filter, page, sortBy, setSearchParams]);
+  }, [filter, page, sortBy, searchQuery, searchParams, setSearchParams]);
 
   useEffect(() => {
     updateURLParams();
   }, [updateURLParams]);
+
+  // Reset page when search changes
+  useEffect(() => {
+    setPage(1);
+  }, [searchQuery]);
 
   const fetchRequests = React.useCallback(async () => {
     try {
@@ -109,7 +124,7 @@ const UpgradeRequestsPage: React.FC = () => {
         page,
         10,
         statusFilter,
-        undefined,
+        searchQuery,
         sortBy
       );
       setRequests(response.requests as UpgradeRequest[]);
@@ -124,7 +139,7 @@ const UpgradeRequestsPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [filter, page, sortBy, addAlert]);
+  }, [filter, page, sortBy, searchQuery, addAlert]);
 
   useEffect(() => {
     fetchRequests();
@@ -583,15 +598,33 @@ const UpgradeRequestsPage: React.FC = () => {
                     {selectedRequest.user.rating && (
                       <div className="flex items-center gap-2 text-sm">
                         <span className="font-medium text-gray-700">
-                          Rating:
+                          Reputation:
                         </span>
                         <div className="flex items-center gap-3">
-                          <span className="inline-flex items-center px-2 py-1 rounded-md bg-green-100 text-green-700 text-xs font-semibold">
-                            👍 {selectedRequest.user.rating.positive}
+                          <span className="font-semibold text-blue-600">
+                            {selectedRequest.user.rating.positive +
+                              selectedRequest.user.rating.negative >
+                            0
+                              ? Math.round(
+                                  (selectedRequest.user.rating.positive /
+                                    (selectedRequest.user.rating.positive +
+                                      selectedRequest.user.rating.negative)) *
+                                    100
+                                )
+                              : 0}
+                            %
                           </span>
-                          <span className="inline-flex items-center px-2 py-1 rounded-md bg-red-100 text-red-700 text-xs font-semibold">
-                            👎 {selectedRequest.user.rating.negative}
-                          </span>
+                          <span className="text-gray-300">|</span>
+                          <div className="flex items-center gap-2">
+                            <span className="inline-flex items-center gap-1 text-green-600 font-medium">
+                              <ThumbsUp className="w-4 h-4" />
+                              {selectedRequest.user.rating.positive}
+                            </span>
+                            <span className="inline-flex items-center gap-1 text-red-600 font-medium">
+                              <ThumbsDown className="w-4 h-4" />
+                              {selectedRequest.user.rating.negative}
+                            </span>
+                          </div>
                         </div>
                       </div>
                     )}
