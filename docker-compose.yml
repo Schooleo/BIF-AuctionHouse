@@ -24,19 +24,30 @@ services:
       - ./server:/app
       - /app/node_modules
     environment:
-      - MONGO_URI=mongodb://mongo:27017/auction_db
+      - MONGO_URI=mongodb://root:example@bif_db:27017/bif-auction-db?authSource=admin
       - JWT_SECRET=your_jwt_secret
       - NODE_ENV=development
     depends_on:
       - mongo
 
   mongo:
-    image: mongo:7
-    container_name: mongo
+    image: mongo:latest
+    container_name: bif_db
     ports:
       - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: example
     volumes:
       - mongo_data:/data/db
+
+  seeder:
+    build: ./db
+    container_name: bif_seeder
+    depends_on:
+      - mongo
+    environment:
+      MONGO_URI: mongodb://root:example@bif_db:27017/bif-auction-db?authSource=admin
 
 volumes:
   mongo_data:
