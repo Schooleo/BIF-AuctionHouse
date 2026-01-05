@@ -1,18 +1,27 @@
 import mongoose from "mongoose";
 import dotenv from "dotenv";
-import { User } from "../models/user.model";
-import { Category } from "../models/category.model";
-import { Product } from "../models/product.model";
-import { Bid } from "../models/bid.model";
-import { Rating } from "../models/rating.model";
-import { SystemConfig } from "../models/systemConfig.model";
-import { Order, OrderStatus } from "../models/order.model";
-import { Chat } from "../models/chat.model";
-import { AutoBid } from "../models/autoBid.model";
-import { connectDB } from "../config/db";
-import { Watchlist } from "../models/watchlist.model";
+import { User } from "./models/user.model";
+import { Category } from "./models/category.model";
+import { Product } from "./models/product.model";
+import { Bid } from "./models/bid.model";
+import { Rating } from "./models/rating.model";
+import { SystemConfig } from "./models/systemConfig.model";
+import { Order, OrderStatus } from "./models/order.model";
+import { Chat } from "./models/chat.model";
+import { AutoBid } from "./models/autoBid.model";
+import { Watchlist } from "./models/watchlist.model";
 
 dotenv.config();
+
+const connectDB = async (): Promise<void> => {
+  try {
+    await mongoose.connect(process.env.MONGO_URI);
+    console.log("Connected to MongoDB successfully");
+  } catch (error) {
+    console.error("MongoDB connection error:", error);
+    process.exit(1);
+  }
+};
 
 // --- CẤU HÌNH ---
 const NUM_BIDDERS = 5;
