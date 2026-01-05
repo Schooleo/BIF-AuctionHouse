@@ -14,10 +14,10 @@ import { Watchlist } from "../models/watchlist.model";
 
 dotenv.config();
 
-// --- CONFIGURATION ---
+// --- CẤU HÌNH ---
 const NUM_BIDDERS = 5;
 
-// --- DATA SETS ---
+// --- BỘ DỮ LIỆU ---
 const TECH_SUB_IMAGES = [
   "https://images.unsplash.com/photo-1550009158-9ebf69173e03?w=800&q=80",
   "https://picsum.photos/id/0/500/333",
@@ -910,7 +910,7 @@ const SAMPLE_COMMENTS = {
   ],
 };
 
-// --- HELPER FUNCTIONS ---
+// --- HÀM HỖ TRỢ ---
 
 const generateDescription = (name: string, category: string) => {
   return `
@@ -978,14 +978,16 @@ const seed = async () => {
   const seller4Id = new mongoose.Types.ObjectId("64b0f1a9e1b9b1a2b3c4d5ea");
   const seller5Id = new mongoose.Types.ObjectId("64b0f1a9e1b9b1a2b3c4d5eb");
   const seller6Id = new mongoose.Types.ObjectId("64b0f1a9e1b9b1a2b3c4d5ec");
-  
-  // Low reputation bidder ID
-  const lowRepBidderId = new mongoose.Types.ObjectId("64b0f1a9e1b9b1a2b3c4d5f0");
+
+  // ID của bidder uy tín thấp
+  const lowRepBidderId = new mongoose.Types.ObjectId(
+    "64b0f1a9e1b9b1a2b3c4d5f0"
+  );
 
   await User.create({
     _id: adminId,
     name: "SystemAdmin",
-    email: "admin@gmail.com",
+    email: "admin1@gmail.com",
     password: commonPassword,
     role: "admin",
     address: "Admin HQ",
@@ -994,7 +996,7 @@ const seed = async () => {
     status: "ACTIVE",
   });
 
-  // Additional Admins
+  // Admin bổ sung
   const admin2Id = new mongoose.Types.ObjectId("64b0f1a9e1b9b1a2b3c4d5e1");
   const admin3Id = new mongoose.Types.ObjectId("64b0f1a9e1b9b1a2b3c4d5e2");
 
@@ -1105,7 +1107,7 @@ const seed = async () => {
     status: "ACTIVE",
   });
 
-  // Tạo Bidders (Existing 5 bidders)
+  // Tạo Bidders (5 bidder hiện có)
   let bidders: any[] = [];
   for (let i = 1; i <= NUM_BIDDERS; i++) {
     const hex = `64b0f1a9e1b9b1a2b3c4d5f${i}`;
@@ -1128,7 +1130,7 @@ const seed = async () => {
     bidders.push(bidder);
   }
 
-  // --- CREATE LOW REPUTATION BIDDER ---
+  // --- TẠO BIDDER UY TÍN THẤP ---
   console.log("👎 Creating Low Reputation Bidder...");
   const lowRepBidder = await User.create({
     _id: lowRepBidderId,
@@ -1146,13 +1148,13 @@ const seed = async () => {
   });
   bidders.push(lowRepBidder);
 
-  // --- GENERATE FILLER USERS FOR PAGINATION ---
+  // --- TẠO USER LẤP ĐẦY ĐỂ PHÂN TRANG ---
   console.log("👥 Creating Filler Users for Pagination...");
   const FILLER_COUNT = 30;
   for (let i = 1; i <= FILLER_COUNT; i++) {
-    const isSeller = i % 5 === 0; // Every 5th user is a seller
+    const isSeller = i % 5 === 0; // Mỗi user thứ 5 là người bán
     const role = isSeller ? "seller" : "bidder";
-    const isBlocked = Math.random() < 0.1; // 10% chance of being blocked
+    const isBlocked = Math.random() < 0.1; // 10% cơ hội bị khóa
 
     const user = await User.create({
       name: `AutoBidder${i}`,
@@ -1168,7 +1170,7 @@ const seed = async () => {
     }
   }
 
-  // --- DUMMY USERS FOR HISTORY ---
+  // --- USER GIẢ LẬP CHO LỊCH SỬ ---
   console.log("👤 Creating Dummy Users for History...");
   const dummyPartners: any[] = [];
   for (let i = 1; i <= 20; i++) {
@@ -1182,9 +1184,9 @@ const seed = async () => {
     dummyPartners.push(dummy);
   }
 
-  // --- CREATE RATINGS FOR LOW REPUTATION BIDDER ---
+  // --- TẠO ĐÁNH GIÁ CHO BIDDER UY TÍN THẤP ---
   console.log("⭐ Creating ratings for Low Reputation Bidder...");
-  // Create 2 positive ratings
+  // Tạo 2 đánh giá tích cực
   for (let i = 0; i < 2; i++) {
     const seller = dummyPartners[i];
     await Rating.create({
@@ -1196,9 +1198,9 @@ const seed = async () => {
       comment: SAMPLE_COMMENTS.positive[i % SAMPLE_COMMENTS.positive.length],
     });
   }
-  // Create 8 negative ratings
+  // Tạo 8 đánh giá tiêu cực
   for (let i = 0; i < 8; i++) {
-    const seller = dummyPartners[i + 2]; // Use different partners
+    const seller = dummyPartners[i + 2]; // Sử dụng đối tác khác
     await Rating.create({
       type: "bidder",
       rater: seller._id,
@@ -1210,7 +1212,7 @@ const seed = async () => {
   }
 
   console.log("📂 Creating Categories...");
-  // Level 1
+  // Cấp 1
   const electronics = await Category.create({ name: "Electronics" });
   const fashion = await Category.create({ name: "Fashion" });
   const home = await Category.create({ name: "Home & Living" });
@@ -1218,8 +1220,8 @@ const seed = async () => {
   const art = await Category.create({ name: "Art" });
   const collectibles = await Category.create({ name: "Collectibles" });
 
-  // Level 2
-  // Electronics
+  // Cấp 2
+  // Đồ điện tử
   const phones = await Category.create({
     name: "Mobile Phones",
     parent: electronics._id,
@@ -1249,7 +1251,7 @@ const seed = async () => {
     parent: electronics._id,
   });
 
-  // Fashion
+  // Thời trang
   const shoes = await Category.create({ name: "Shoes", parent: fashion._id });
   const watches = await Category.create({
     name: "Watches",
@@ -1269,14 +1271,14 @@ const seed = async () => {
   });
   const beauty = await Category.create({ name: "Beauty", parent: fashion._id });
 
-  // Home
+  // Nhà cửa
   const furniture = await Category.create({
     name: "Furniture",
     parent: home._id,
   });
   const decor = await Category.create({ name: "Decor", parent: home._id });
 
-  // Collectibles
+  // Sưu tầm
   const comics = await Category.create({
     name: "Comics & Books",
     parent: collectibles._id,
@@ -1298,15 +1300,15 @@ const seed = async () => {
     parent: collectibles._id,
   });
 
-  // Art (Direct mapping or subcats) - Let's use direct if needed, or subcats.
-  // For consistency with catalog keys which map to IDs:
+  // Nghệ thuật (Ánh xạ trực tiếp hoặc danh mục con) - Sử dụng trực tiếp nếu cần, hoặc danh mục con.
+  // Để nhất quán với các key catalog ánh xạ tới IDs:
   const paintings = await Category.create({
     name: "Paintings",
     parent: art._id,
   });
   const fineArt = await Category.create({ name: "Fine Art", parent: art._id });
 
-  // Sports
+  // Thể thao
   const sportsMemorabilia = await Category.create({
     name: "Sports Memorabilia",
     parent: sports._id,
@@ -1341,27 +1343,31 @@ const seed = async () => {
     SportsMemorabilia: sportsMemorabilia._id,
   };
 
-  // --- GENERATE TRANSACTION HISTORY ---
-  // Calculates rating and creates dummy products/orders to back it up
+  // --- TẠO LỊCH SỬ GIAO DỊCH ---
+  // Tính toán đánh giá và tạo sản phẩm/đơn hàng giả để hỗ trợ
   const generateTransactionHistory = async (
     targetUser: any,
-    targetRole: "seller" | "bidder", // Role of targetUser in this transaction
+    targetRole: "seller" | "bidder", // Vai trò của targetUser trong giao dịch này
     count: number
   ) => {
     for (let i = 0; i < count; i++) {
       const partner = getRandomElement(dummyPartners);
-      const isPositive = Math.random() > 0.1; // 90% positive
+      const isPositive = Math.random() > 0.1; // 90% tích cực
 
       const seller = targetRole === "seller" ? targetUser : partner;
       const bidder = targetRole === "bidder" ? targetUser : partner;
 
-      // Create dummy product
+      // Tạo sản phẩm giả
       const catKeys = Object.keys(PRODUCT_CATALOG);
       const catKey = getRandomElement(catKeys);
       const item = getRandomElement(PRODUCT_CATALOG[catKey] ?? []);
 
-      const endTime = new Date(Date.now() - randomInt(10, 90) * 24 * 60 * 60 * 1000); // 10-90 days ago
-      const startTime = new Date(endTime.getTime() - randomInt(7, 14) * 24 * 60 * 60 * 1000); // 7-14 days before end
+      const endTime = new Date(
+        Date.now() - randomInt(10, 90) * 24 * 60 * 60 * 1000
+      ); // 10-90 ngày trước
+      const startTime = new Date(
+        endTime.getTime() - randomInt(7, 14) * 24 * 60 * 60 * 1000
+      ); // 7-14 ngày trước khi kết thúc
 
       const startingPrice = item.price;
       const stepPrice = Math.ceil((item.price * 0.05) / 1000) * 1000;
@@ -1388,24 +1394,28 @@ const seed = async () => {
         descriptionHistory: [],
         rejectedBidders: [],
         allowUnratedBidders: true,
+        isEndedEmailSent: true,
       });
 
-      // Create multiple bids to simulate auction activity
+      // Tạo nhiều lượt đấu giá để mô phỏng hoạt động
       const numBids = product.bidCount;
       let currentBidPrice = startingPrice;
 
       for (let bidIndex = 0; bidIndex < numBids; bidIndex++) {
         currentBidPrice += stepPrice;
         const bidTime = new Date(
-          startTime.getTime() + 
-          ((endTime.getTime() - startTime.getTime()) / numBids) * (bidIndex + 1)
+          startTime.getTime() +
+            ((endTime.getTime() - startTime.getTime()) / numBids) *
+              (bidIndex + 1)
         );
 
-        // Alternate between bidder and other dummy bidders for realistic history
+        // Luân phiên giữa bidder và các bidder giả khác để có lịch sử thực tế
         const isFinalBid = bidIndex === numBids - 1;
-        const bidderForThisBid = isFinalBid 
-          ? bidder._id 
-          : (Math.random() > 0.5 ? bidder._id : getRandomElement(dummyPartners)._id);
+        const bidderForThisBid = isFinalBid
+          ? bidder._id
+          : Math.random() > 0.5
+          ? bidder._id
+          : getRandomElement(dummyPartners)._id;
 
         await Bid.create({
           product: product._id,
@@ -1415,7 +1425,7 @@ const seed = async () => {
         });
       }
 
-      // Create Order
+      // Tạo Đơn hàng
       const order = await Order.create({
         product: product._id,
         seller: seller._id,
@@ -1427,7 +1437,7 @@ const seed = async () => {
         updatedAt: new Date(endTime.getTime() + 100000),
       });
 
-      // Create Chat for this order
+      // Tạo Chat cho đơn hàng này
       const chat = await Chat.create({
         participants: [bidder._id, seller._id],
         product: product._id,
@@ -1454,12 +1464,11 @@ const seed = async () => {
         isPositive ? SAMPLE_COMMENTS.positive : SAMPLE_COMMENTS.negative
       );
 
-      // Create Rating linking to product
-      // If target is seller, they receive rating from buyer (partner)
-      // If target is bidder, they receive rating from seller (partner)
+      // Tạo Đánh giá liên kết với sản phẩm
+      // Nếu đối tượng là người bán thì nhận đánh giá từ người mua và ngược lại
       const rater = partner;
       const ratee = targetUser;
-      const type = targetRole === "seller" ? "seller" : "bidder"; // Type of rating received
+      const type = targetRole === "seller" ? "seller" : "bidder"; // Loại đánh giá nhận được
 
       try {
         const rating = await Rating.create({
@@ -1471,9 +1480,9 @@ const seed = async () => {
           comment: comment,
         });
 
-        // Update Order with rating
-        // Note: order.ratingByBuyer means 'Rating GIVEN BY Buyer'
-        // If target is seller, partner is buyer. So partner gives ratingByBuyer.
+        // Cập nhật Đơn hàng với đánh giá
+        // Lưu ý: order.ratingByBuyer nghĩa là 'Đánh giá ĐƯỢC ĐƯA RA BỞI Người mua'
+        // Nếu đối tượng là người bán, đối tác là người mua. Vì vậy đối tác đưa ra ratingByBuyer.
         if (targetRole === "seller") {
           order.ratingByBuyer = {
             score: score,
@@ -1481,7 +1490,7 @@ const seed = async () => {
             updatedAt: new Date(),
           };
         } else {
-          // Target is bidder. Partner is seller. Partner gives ratingBySeller.
+          // Mục tiêu là bidder. Đối tác là người bán. Đối tác đưa ra ratingBySeller.
           order.ratingBySeller = {
             score: score,
             comment: comment,
@@ -1490,7 +1499,7 @@ const seed = async () => {
         }
         await order.save();
       } catch (e) {
-        // Ignore duplicate key errors if any random collisions
+        // Bỏ qua lỗi trùng khóa nếu có va chạm ngẫu nhiên
       }
     }
   };
@@ -1504,7 +1513,7 @@ const seed = async () => {
   await generateTransactionHistory(seller6, "seller", 20); // SportsLegends
 
   for (const b of bidders) {
-    // Skip low reputation bidder - their ratings are manually set
+    // Bỏ qua bidder uy tín thấp - đánh giá của họ được thiết lập thủ công
     if (b._id.toString() === lowRepBidderId.toString()) continue;
     await generateTransactionHistory(b, "bidder", randomInt(3, 8));
   }
@@ -1523,11 +1532,11 @@ const seed = async () => {
     idx: number,
     forcedScenario?: number
   ) => {
-    // Determine suffix for name uniqueness
+    // Xác định hậu tố cho tính duy nhất của tên
     const suffix = forcedScenario === 4 ? `Active ${idx}` : `Number ${idx}`;
     const productName = `${item.name} ${suffix}`;
 
-    // Scenario logic
+    // Logic kịch bản
     let scenarioType = idx % 9;
     if (PRODUCT_CATALOG[catKey]!.length > 9) scenarioType = randomInt(0, 8);
 
@@ -1556,7 +1565,7 @@ const seed = async () => {
     // Logic bước giá
     const stepPrice = Math.ceil((item.price * 0.05) / 1000) * 1000;
 
-    // Sub-images: Prefer specific ones, fallback to generic
+    // Ảnh phụ: Ưu tiên ảnh cụ thể, dự phòng bằng ảnh chung
     const isTech = ["Phones", "Laptops"].includes(catKey);
     const subImages =
       item.subImages || (isTech ? TECH_SUB_IMAGES : FASHION_SUB_IMAGES);
@@ -1581,6 +1590,7 @@ const seed = async () => {
       descriptionHistory: [],
       rejectedBidders: [],
       allowUnratedBidders: true,
+      isEndedEmailSent: isEnded,
     });
 
     // Lịch sử mô tả (Ngẫu nhiên)
@@ -1603,11 +1613,13 @@ const seed = async () => {
     let currentPrice = item.price;
 
     if (shouldHaveBids) {
-      // Chọn 2 bidder ngẫu nhiên (excluding low reputation bidder)
+      // Chọn 2 bidder ngẫu nhiên (trừ bidder uy tín thấp)
       const eligibleBidders = bidders.filter(
         (b) => b._id.toString() !== lowRepBidderId.toString()
       );
-      const shuffledBidders = [...eligibleBidders].sort(() => 0.5 - Math.random());
+      const shuffledBidders = [...eligibleBidders].sort(
+        () => 0.5 - Math.random()
+      );
       const participantBidders = shuffledBidders.slice(0, 2);
 
       if (participantBidders.length === 2) {
@@ -1655,7 +1667,7 @@ const seed = async () => {
 
         // Vòng đấu giữa AutoBid
         while (currentBidPrice < maxPriceB) {
-          // A counters
+          // A trả giá
           if (currentBidPrice + stepPrice <= maxPriceA) {
             currentBidPrice += stepPrice;
             await Bid.create({
@@ -1706,7 +1718,7 @@ const seed = async () => {
       }
     }
 
-    // Only process Orders if Ended
+    // Chỉ xử lý Đơn hàng nếu Đã kết thúc
     if (isEnded && lastBidder) {
       if (scenarioType === 1) {
         // Không làm gì hết
@@ -1833,7 +1845,8 @@ const seed = async () => {
           });
           chat.messages.push({
             sender: sellerId as any,
-            content: "Confirmed! I've shipped your item. Tracking code: SHIPPING-CODE-123456",
+            content:
+              "Confirmed! I've shipped your item. Tracking code: SHIPPING-CODE-123456",
             timestamp: new Date(lastBidTime.getTime() + 200000),
           });
           await chat.save();
@@ -1881,7 +1894,7 @@ const seed = async () => {
       }
     }
 
-    // Save final product state
+    // Lưu trạng thái sản phẩm cuối cùng
     await product.save();
   };
 
@@ -1894,7 +1907,7 @@ const seed = async () => {
     const items = PRODUCT_CATALOG[catKey];
     if (!items) return;
 
-    // 1. Existing Mixed Logic (10 items) -> Generates 1 Active item (idx % 9 == 4)
+    // 1. Logic hỗn hợp hiện tại (10 mục) -> Tạo 1 mục Đang hoạt động (idx % 9 == 4)
     const targetCount = 10;
     for (let i = 0; i < targetCount; i++) {
       await createProductScenario(
@@ -1905,9 +1918,9 @@ const seed = async () => {
       );
     }
 
-    // 2. Additional Active Products Logic
+    // 2. Logic thêm sản phẩm Đang hoạt động
     for (let i = 0; i < activeCount; i++) {
-      // Use forcedScenario = 4 (Active)
+      // Sử dụng forcedScenario = 4 (Đang hoạt động)
       await createProductScenario(
         items[i % items.length],
         catKey,
@@ -1918,7 +1931,7 @@ const seed = async () => {
     }
   };
 
-  // Electronics (7 subcats): 7 * (1 + 3) = 28
+  // Đồ điện tử (7 danh mục con): 7 * (1 + 3) = 28
   await processCatalog("Phones", seller1._id, 3);
   await processCatalog("Laptops", seller1._id, 3);
   await processCatalog("Cameras", seller1._id, 3);
@@ -1927,7 +1940,7 @@ const seed = async () => {
   await processCatalog("Gaming", seller1._id, 3);
   await processCatalog("TechAccessories", seller1._id, 3);
 
-  // Fashion (6 subcats): 6 * (1 + 3) = 24
+  // Thời trang (6 danh mục con): 6 * (1 + 3) = 24
   await processCatalog("Shoes", seller2._id, 3);
   await processCatalog("Watches", seller2._id, 3);
   await processCatalog("Jewelry", seller2._id, 3);
@@ -1935,21 +1948,21 @@ const seed = async () => {
   await processCatalog("Clothing", seller2._id, 3);
   await processCatalog("Beauty", seller2._id, 3);
 
-  // Home (2 subcats): 2 * (1 + 11) = 24
+  // Nhà cửa (2 danh mục con): 2 * (1 + 11) = 24
   await processCatalog("Furniture", seller3._id, 11);
   await processCatalog("Decor", seller3._id, 11);
 
-  // Collectibles (5 subcats): 5 * (1 + 4) = 25
+  // Sưu tầm (5 danh mục con): 5 * (1 + 4) = 25
   await processCatalog("Comics", seller4._id, 4);
   await processCatalog("Cards", seller4._id, 4);
   await processCatalog("Stamps", seller4._id, 4);
   await processCatalog("Coins", seller4._id, 4);
   await processCatalog("Memorabilia", seller4._id, 4);
 
-  // Art (1 subcat): 1 * (1 + 23) = 24
+  // Nghệ thuật (1 danh mục con): 1 * (1 + 23) = 24
   await processCatalog("Art", seller5._id, 23);
 
-  // Sports (1 subcat): 1 * (1 + 23) = 24
+  // Thể thao (1 danh mục con): 1 * (1 + 23) = 24
   await processCatalog("SportsMemorabilia", seller6._id, 23);
 
   try {
@@ -2008,7 +2021,7 @@ const seed = async () => {
     console.error("❌ FAILED TO CREATE ZERO BID ITEMS:", error);
   }
 
-  // --- UPDATE USER RATINGS ---
+  // --- CẬP NHẬT ĐÁNH GIÁ NGƯỜI DÙNG ---
   console.log("📊 Updating User Ratings...");
   const allUsers = await User.find({});
   for (const user of allUsers) {

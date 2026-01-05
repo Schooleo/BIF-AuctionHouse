@@ -159,10 +159,6 @@ export const startAuctionCron = () => {
           bidder: { $ne: currentBidder._id },
         }).distinct("bidder");
 
-        console.log(
-          `[DEBUG] Product ${product._id}: Found ${participatingBidderIds.length} potentially outbid bidders.`
-        );
-
         const participatingBidders = await User.find({
           _id: { $in: participatingBidderIds },
         }).select("email name");
@@ -179,19 +175,6 @@ export const startAuctionCron = () => {
             (1000 * 60 * 60);
           return hoursSinceLast >= cooldownHours;
         };
-
-        // Debug filtering
-        console.log(`[DEBUG] Product ${product._id}: Checking recipients...`);
-        console.log(
-          `[DEBUG] Seller ${seller._id}: Should send? ${shouldSendToUser(
-            seller._id
-          )}`
-        );
-        console.log(
-          `[DEBUG] Current Bidder ${
-            currentBidder._id
-          }: Should send? ${shouldSendToUser(currentBidder._id)}`
-        );
 
         // Helper: Update lastSentAt for user
         const updateLastSent = (userId: string) => {
@@ -271,12 +254,7 @@ export const startAuctionCron = () => {
           );
         }
 
-        console.log(
-          `[DEBUG] Product ${product._id}: Generated ${emailPromises.length} email promises.`
-        );
-
         await Promise.allSettled(emailPromises);
-        console.log(`[DEBUG] Product ${product._id}: Email promises settled.`);
 
         // --- RESET ACCUMULATION ---
         product.firstPendingBidAt = undefined;
