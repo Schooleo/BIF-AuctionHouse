@@ -62,8 +62,8 @@ const AdminSystemConfigContainer: React.FC = () => {
     value: number,
     fieldName: string
   ) => {
-    if (isNaN(value) || value < 1) {
-      addAlert("error", "Please enter a valid number (at least 1)");
+    if (isNaN(value) || value < 0) {
+      addAlert("error", "Please enter a valid number (at least 0)");
       return;
     }
 
@@ -267,7 +267,7 @@ const AdminSystemConfigContainer: React.FC = () => {
               </span>
               <input
                 type="number"
-                min="1"
+                min="0"
                 value={autoBidDelay}
                 onChange={(e) => setAutoBidDelay(e.target.value)}
                 className="flex-1 border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-800"
@@ -369,7 +369,7 @@ const AdminSystemConfigContainer: React.FC = () => {
               </span>
               <input
                 type="number"
-                min="1"
+                min="0"
                 value={cooldownHours}
                 onChange={(e) => setCooldownHours(e.target.value)}
                 className="flex-1 border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-800"
