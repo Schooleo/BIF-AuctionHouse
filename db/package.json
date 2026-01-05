@@ -1,0 +1,20 @@
+{
+  "name": "bif-auction-house-db-seeder",
+  "version": "1.0.0",
+  "description": "Database seeder for BIF Auction House",
+  "main": "src/seed.ts",
+  "scripts": {
+    "seed": "ts-node src/seed.ts"
+  },
+  "dependencies": {
+    "dotenv": "^16.3.1",
+    "mongoose": "^8.9.3",
+    "bcrypt": "^5.1.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.6",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3",
+    "@types/bcrypt": "^5.0.2"
+  }
+}

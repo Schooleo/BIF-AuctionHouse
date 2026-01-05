@@ -1,0 +1,153 @@
+import mongoose, { Document, Schema, Types } from "mongoose";
+
+// Định nghĩa interface cho QA (1.5)
+export interface IQuestionAnswer extends Types.Subdocument {
+  question: string;
+  questioner: Types.ObjectId;
+  askedAt: Date;
+  answer?: string;
+  answeredAt?: Date;
+  answerer?: Types.ObjectId;
+}
+
+// Định nghĩa Schema cho QA
+const QuestionAnswerSchema = new Schema<IQuestionAnswer>({
+  question: { type: String, required: true },
+  questioner: {
+    type: Schema.Types.ObjectId,
+    ref: "User",
+    required: true,
+  },
+  askedAt: { type: Date, default: Date.now },
+  answer: { type: String },
+  answeredAt: { type: Date },
+  answerer: { type: Schema.Types.ObjectId, ref: "User" },
+});
+
+// Sub-document để update description (3.2)
+export interface IDescriptionUpdate extends Types.Subdocument {
+  content: string;
+  updatedAt: Date;
+}
+
+const DescriptionUpdateSchema = new Schema<IDescriptionUpdate>({
+  content: { type: String, required: true },
+  updatedAt: { type: Date, default: Date.now },
+});
+
+// Interface của product
+export interface IProduct extends Document {
+  name: string;
+  category: Types.ObjectId;
+  seller: Types.ObjectId;
+  mainImage: string;
+  subImages: string[]; // Tối thiểu 3 ảnh (3.1)
+  description: string;
+  descriptionHistory: IDescriptionUpdate[]; // Bổ sung mô tả (3.2)
+  startTime: Date;
+  endTime: Date;
+  startingPrice: number;
+  stepPrice: number; // Bước giá (3.1)
+  buyNowPrice?: number; // Giá mua ngay (nếu có) (3/1)
+  autoExtends: boolean; // Tự động gia hạn (3.1)
+
+  // Dữ liệu đáu giá trực tiếp
+  currentPrice: number;
+  currentBidder?: Types.ObjectId;
+  bidCount: number;
+
+  // Cho phép bidder chưa được đánh giá đặt giá (2.2)
+  allowUnratedBidders: boolean;
+
+  // Embedded Q&A
+  questions: IQuestionAnswer[];
+
+  winnerConfirmed?: boolean;
+  transactionCompleted?: boolean;
+
+  rejectedBidders: Types.ObjectId[];
+  isEndedEmailSent?: boolean;
+
+  // Email Throttling (3.5)
+  emailNotifications?: { user: Types.ObjectId; lastSentAt: Date }[];
+  firstPendingBidAt?: Date | undefined;
+}
+
+// Schema cho product
+const productSchema = new Schema<IProduct>(
+  {
+    name: { type: String, required: true },
+    category: {
+      type: Schema.Types.ObjectId,
+      ref: "Category",
+      required: true,
+    },
+    seller: { type: Schema.Types.ObjectId, ref: "User", required: true },
+    mainImage: { type: String, required: true },
+    subImages: {
+      type: [String],
+      required: true,
+      validate: [(val: string[]) => val.length >= 3, "Phải có ít nhất 3 ảnh"],
+    },
+    description: { type: String, required: true },
+    descriptionHistory: { type: [DescriptionUpdateSchema], default: [] },
+    startTime: { type: Date, default: Date.now },
+    endTime: { type: Date, required: true },
+    startingPrice: { type: Number, required: true },
+    stepPrice: { type: Number, required: true },
+    buyNowPrice: { type: Number },
+    autoExtends: { type: Boolean, default: false },
+    allowUnratedBidders: { type: Boolean, default: false },
+
+    // Dữ liệu đáu giá trực tiếp cho truy vấn
+    currentPrice: { type: Number },
+    currentBidder: { type: Schema.Types.ObjectId, ref: "User" },
+    bidCount: { type: Number, default: 0 },
+
+    // Embedded Q&A
+    questions: { type: [QuestionAnswerSchema], default: [] },
+
+    winnerConfirmed: { type: Boolean, default: false },
+    transactionCompleted: { type: Boolean, default: false }, // New field (3.3)
+
+    rejectedBidders: {
+      type: [
+        {
+          type: Schema.Types.ObjectId,
+          ref: "User",
+        },
+      ],
+      default: [],
+    },
+    isEndedEmailSent: { type: Boolean, default: false },
+    emailNotifications: {
+      type: [
+        {
+          user: { type: Schema.Types.ObjectId, ref: "User" },
+          lastSentAt: { type: Date, default: Date.now },
+        },
+      ],
+      default: [],
+    },
+    firstPendingBidAt: { type: Date },
+  },
+  { timestamps: true }
+);
+
+// Khởi tạo currentPrice bằng startingPrice
+productSchema.pre<IProduct>("validate", function (next) {
+  if (this.isNew) {
+    this.currentPrice = this.startingPrice;
+  }
+  next();
+});
+
+// Thêm Full-Text Search (1.4)
+productSchema.index({ name: "text", description: "text" });
+
+productSchema.index({ category: 1 }); // Lọc theo danh mục
+productSchema.index({ startTime: -1 }); // Kiểm tra sản phẩm mới nhất
+productSchema.index({ endTime: -1 }); // Sort theo thời gian kết thúc
+productSchema.index({ currentPrice: 1 }); // Sort theo giá hiện tại giảm dần
+
+export const Product = mongoose.model<IProduct>("Product", productSchema);

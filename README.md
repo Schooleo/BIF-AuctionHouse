@@ -10,23 +10,30 @@ Client-Side Rendered (CSR) Web Application
 **BIF-AuctionHouse** is a full-featured online auction platform built with a **React** frontend, an **Express.js** backend API, and a **MongoDB** database.  
 It supports multiple user roles (Guest, Bidder, Seller, Administrator) and provides features such as:
 
-- 🛒 Product listings and live bidding
-- 💰 Seller and bidder role upgrades
-- 🔐 Secure authentication and authorization
-- ⚙️ Account management and admin control
-- 🖥️ Responsive and modern UI built with TailwindCSS
+- 🛒 **Product Listings & Live Bidding**: Browse categories and place bids in real-time (Socket.IO).
+- ⚡ **Real-time Updates**: Instant notifications for new bids and auction changes.
+- 🤖 **Auto-Bidding**: Set a maximum budget and let the system bid for you automatically.
+- � **Rich Text Editor**: Sellers can create beautiful product descriptions with Tiptap.
+- 💰 **Role Management**: Upgrade from Bidder to Seller; Admin dashboard for user management.
+- 🔐 **Secure Auth**: Local & Google OAuth login with robust security.
+- ⚙️ **Automated System**: Cron jobs handle auction expiration and winner selection.
+- 🖥️ **Modern UI**: Fully responsive design built with React 19 and TailwindCSS 4.
 
 ---
 
 ## 🏗️ Tech Stack
 
-| Layer                | Framework / Library        | Description                                              |
-| -------------------- | -------------------------- | -------------------------------------------------------- |
-| **Frontend**         | React + Vite + TailwindCSS | Responsive client-side application                       |
-| **Backend**          | Express.js + TypeScript    | REST API service and authentication                      |
-| **Database**         | MongoDB (Mongoose)         | Stores users, products, bids, and system data            |
-| **Containerization** | Docker + Docker Compose    | Isolated environments for backend, frontend, and MongoDB |
-| **Auth & Security**  | Passport.js + bcrypt       | Handles login, registration, and role-based access       |
+| Layer                | Framework / Library             | Description                                              |
+| -------------------- | ------------------------------- | -------------------------------------------------------- |
+| **Frontend**         | React 19 + Vite + TailwindCSS 4 | Responsive client-side application                       |
+| **Backend**          | Express.js 5 + TypeScript       | REST API service and authentication                      |
+| **Database**         | MongoDB (Mongoose)              | Stores users, products, bids, and system data            |
+| **State Management** | Zustand                         | Lightweight global state management for React            |
+| **Real-time**        | Socket.IO                       | Live bidding updates and notifications                   |
+| **Containerization** | Docker + Docker Compose         | Isolated environments for backend, frontend, and MongoDB |
+| **Auth & Security**  | Passport.js + bcrypt + JWT      | Handles login (Local/Google), registration, and RBAC     |
+| **Validation**       | Zod                             | Schema validation for API requests and forms             |
+| **Rich Text**        | Tiptap                          | WYSIWYG editor for product descriptions                  |
 
 ---
 
@@ -69,15 +76,19 @@ The Docker setup will build and run the full system (frontend, backend, and Mong
 docker-compose up -d --build
 ```
 
+**Note**: This command will also start the `seeder` container, which automatically populates the database with sample data.
+
+````
+
 #### For subsequent runs:
 
 ```bash
 docker-compose up -d
-```
+````
 
 #### This builds and starts all services:
 
-- Frontend: http://localhost:3000
+- Frontend: http://localhost:5173
 - Backend (Express API): http://localhost:3001
 - MongoDB: mongodb://localhost:27017
 
@@ -119,19 +130,19 @@ Create a .env file inside the /server directory with the following variables:
 
 ```bash
 # MongoDB
-MONGO_URI=mongodb://mongo:27017/auction_db
+MONGO_URI=mongodb://root:example@bif_db:27017/bif-auction-db?authSource=admin
 
 # Server
 PORT=3001
 JWT_SECRET=supersecretkey
 
 # Frontend (used for CORS)
-CLIENT_URL=http://localhost:3000
+CLIENT_URL=http://localhost:5173
 ```
 
 ### 5️⃣ Project Directory Structure
 
-```bash
+```plaintext
 BIF-AuctionHouse/
 │
 ├── .gitignore
@@ -139,51 +150,60 @@ BIF-AuctionHouse/
 ├── LICENSE
 ├── README.md
 │
-├── client/                      # Frontend (React + Vite)
+├── db/                       # Database Seeder & Docker Config
+│   ├── src/                  # Seeder Source Code
+│   ├── .env                  # Seeder Environment Variables
+│   ├── docker-compose.yml    # Standalone DB Docker Compose
+│   ├── Dockerfile            # Seeder Dockerfile
+│   └── README.md             # DB specific instructions
+│
+├── client/                   # Frontend (React + Vite)
 │   ├── .env
 │   ├── .env.example
 │   ├── Dockerfile
 │   ├── package.json
 │   └── src/
-│       ├── index.css            # Tailwind directives
-│       ├── main.tsx             # React entry point
-│       ├── App.tsx              # Root component
-│       ├── components/          # Reusable UI components
-│       │   ├── forms/           # Form/Input components
-│       │   ├── navbar/          # Navbar components
-│       │   ├── product/         # Product-related components
-│       │   └── ui/              # UI components (Footer, Spinner, etc.)
-│       ├── containers/          # Container components (Login, Register, etc.)
-│       ├── interfaces/          # TypeScript interfaces/types
-│       ├── layouts/             # Layout components (MainLayout, AuthLayout)
-│       ├── pages/               # Page components
-│       │   ├── admin/           # Admin dashboard pages
-│       │   ├── auth/            # Auth pages (Login, Register, Reset Password)
-│       │   ├── shared/          # Shared pages (NotFound)
-│       │   └── user/            # User account pages (HomePage)
-│       ├── services/            # API services (auth.api.ts, product.api.ts)
-│       ├── stores/              # State management (e.g., useAuthStore)
-│       └── utils/               # Helper functions
-│
-└── server/                      # Backend (Express + MongoDB)
+│       ├── index.css         # Tailwind directives
+│       ├── main.tsx          # React entry point
+│       ├── App.tsx           # Root component
+│       ├── components/       # Reusable UI components
+│       │   ├── forms/        # Form/Input components
+│       │   ├── navbar/       # Navbar components
+│       │   ├── product/      # Product-related components
+│       │   └── ui/           # UI components
+│       ├── containers/       # Container components (split logic)
+│       ├── interfaces/       # TypeScript interfaces/types
+│       ├── layouts/          # Layout components
+│       ├── pages/            # Page components
+│       │   ├── admin/        # Admin dashboard pages
+│       │   ├── auth/         # Auth pages
+│       │   ├── shared/       # Shared pages
+│       │   └── user/         # User account pages
+│       ├── services/         # API services
+│       ├── stores/           # State management (socket, auth)
+│       └── utils/            # Helper function
+└── server/                   # Backend (Express + MongoDB)
     ├── .env
     ├── .env.example
     ├── Dockerfile
     ├── package.json
     ├── tsconfig.json
     └── src/
-        ├── app.ts               # Express app initialization
-        ├── server.ts            # Entry point
-        ├── config/              # Config files (db.ts, passport.ts, env.ts)
-        ├── constants/           # Global constants (e.g., messages.ts)
-        ├── controllers/         # Request handlers
-        ├── middleware/          # Custom middleware (auth, validation, etc.)
-        ├── models/              # Mongoose models
-        ├── routes/              # Express routes
-        ├── schemas/             # Validation schemas (e.g., auth.schema.ts)
-        ├── services/            # Service layer logic (e.g., auth.service.ts)
-        ├── types/               # TypeScript types/declarations
-        └── utils/               # Helper functions (jwt.util.ts, email.util.ts)
+        ├── app.ts            # Express app initialization
+        ├── server.ts         # Entry point
+        ├── socket.ts         # Socket.IO configuration
+        ├── config/           # Config files
+        ├── constants/        # Global constants
+        ├── controllers/      # Request handlers
+        ├── cron/             # Scheduled tasks (emails)
+        ├── middleware/       # Custom middleware
+        ├── models/           # Mongoose models
+        ├── routes/           # Express routes defined here
+        ├── schemas/          # Zod validation schemas
+        ├── scripts/          # Utility scripts
+        ├── services/         # Business logic
+        ├── types/            # TypeScript type definitions
+        └── utils/            # Helper functions
 ```
 
 ### 👥 Contributors
