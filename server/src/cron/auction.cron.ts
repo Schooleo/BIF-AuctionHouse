@@ -7,11 +7,20 @@ import {
 } from "../utils/email.util";
 import { maskBidderName } from "../utils/mask.util";
 
+// Flag to prevent overlapping executions
+let isAuctionJobRunning = false;
+
 /**
  * Run every minute to check for ended auctions that haven't sent emails yet
  */
 export const startAuctionCron = () => {
   cron.schedule("* * * * *", async () => {
+    if (isAuctionJobRunning) {
+      console.log("⚠️ Auction cron job already running. Skipping...");
+      return;
+    }
+
+    isAuctionJobRunning = true;
     const now = new Date();
 
     try {
@@ -68,21 +77,32 @@ export const startAuctionCron = () => {
       }
     } catch (error) {
       console.error("Error in auction cron job:", error);
+    } finally {
+      isAuctionJobRunning = false;
     }
   });
+
+  // Flag to prevent overlapping executions for throttled emails
+  let isThrottledBidJobRunning = false;
 
   /**
    * Run every minute to check for throttled bid emails
    */
   cron.schedule("* * * * *", async () => {
+    if (isThrottledBidJobRunning) {
+      console.log("⚠️ Throttled bid cron job already running. Skipping...");
+      return;
+    }
+
+    isThrottledBidJobRunning = true;
     try {
       // 1. Get System Config
       const { SystemConfig } = await import("../models/systemConfig.model");
       const config = await SystemConfig.findOne();
 
       // Default: 30 mins window, 6 hours cooldown
-      const throttlingWindowMinutes = config?.bidEmailThrottlingWindow || 30;
-      const cooldownHours = config?.bidEmailCooldown || 6;
+      const throttlingWindowMinutes = config?.bidEmailThrottlingWindow ?? 30;
+      const cooldownHours = config?.bidEmailCooldown ?? 6;
 
       const now = new Date();
 
@@ -139,6 +159,10 @@ export const startAuctionCron = () => {
           bidder: { $ne: currentBidder._id },
         }).distinct("bidder");
 
+        console.log(
+          `[DEBUG] Product ${product._id}: Found ${participatingBidderIds.length} potentially outbid bidders.`
+        );
+
         const participatingBidders = await User.find({
           _id: { $in: participatingBidderIds },
         }).select("email name");
@@ -156,19 +180,32 @@ export const startAuctionCron = () => {
           return hoursSinceLast >= cooldownHours;
         };
 
+        // Debug filtering
+        console.log(`[DEBUG] Product ${product._id}: Checking recipients...`);
+        console.log(
+          `[DEBUG] Seller ${seller._id}: Should send? ${shouldSendToUser(
+            seller._id
+          )}`
+        );
+        console.log(
+          `[DEBUG] Current Bidder ${
+            currentBidder._id
+          }: Should send? ${shouldSendToUser(currentBidder._id)}`
+        );
+
         // Helper: Update lastSentAt for user
         const updateLastSent = (userId: string) => {
-          const existingIndex = product.emailNotifications?.findIndex(
+          if (!product.emailNotifications) {
+            product.emailNotifications = [];
+          }
+
+          const existingIndex = product.emailNotifications.findIndex(
             (n) => n.user.toString() === userId.toString()
           );
-          if (
-            product.emailNotifications &&
-            existingIndex !== undefined &&
-            existingIndex > -1
-          ) {
+          if (existingIndex !== undefined && existingIndex > -1) {
             product.emailNotifications[existingIndex]!.lastSentAt = now;
           } else {
-            product.emailNotifications?.push({
+            product.emailNotifications.push({
               user: userId as any,
               lastSentAt: now,
             });
@@ -234,7 +271,12 @@ export const startAuctionCron = () => {
           );
         }
 
+        console.log(
+          `[DEBUG] Product ${product._id}: Generated ${emailPromises.length} email promises.`
+        );
+
         await Promise.allSettled(emailPromises);
+        console.log(`[DEBUG] Product ${product._id}: Email promises settled.`);
 
         // --- RESET ACCUMULATION ---
         product.firstPendingBidAt = undefined;
@@ -242,8 +284,8 @@ export const startAuctionCron = () => {
       }
     } catch (error) {
       console.error("Error in bid throttling cron job:", error);
+    } finally {
+      isThrottledBidJobRunning = false;
     }
   });
 };
-
-// Local maskBidderName removed, using import from ../utils/mask.util
